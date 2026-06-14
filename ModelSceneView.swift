@@ -1,86 +1,109 @@
 import SceneKit
 import SwiftUI
 
-private class ModelSCNView: SCNView {
-    var onLayout: (() -> Void)?
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        onLayout?()
-    }
-}
+// MARK: - ModelSceneView
 
 struct ModelSceneView: UIViewRepresentable {
     let assetName: String
     var gestureEnabled: Bool = true
+    var autoRotate: Bool = false
     var spinOnAppear: Bool = false
+    var modelScale: CGFloat = 1.0
     var handle: ModelSceneHandle? = nil
-    var padding: CGFloat = 16
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> SCNView {
-        let sceneView = ModelSCNView()
+        let sceneView = SCNView()
         sceneView.backgroundColor = .clear
         sceneView.autoenablesDefaultLighting = false
         sceneView.allowsCameraControl = false
         sceneView.antialiasingMode = .multisampling4X
 
-        if let asset = NSDataAsset(name: assetName) {
-            let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("\(assetName).usdz")
-            try? asset.data.write(to: tempURL)
-
-            if let scene = try? SCNScene(url: tempURL) {
-                let modelContainer = SCNNode()
-                for child in scene.rootNode.childNodes {
-                    modelContainer.addChildNode(child)
-                }
-
-                let (minB, maxB) = modelContainer.boundingBox
-                let size = SCNVector3(maxB.x - minB.x, maxB.y - minB.y, maxB.z - minB.z)
-                context.coordinator.normDim = max(size.x, size.y, size.z)
-                context.coordinator.boundingBoxCenter = SCNVector3(
-                    (minB.x + maxB.x) / 2,
-                    (minB.y + maxB.y) / 2,
-                    (minB.z + maxB.z) / 2
-                )
-
-                scene.rootNode.addChildNode(modelContainer)
-
-                let rectLight = SCNNode()
-                rectLight.light = SCNLight()
-                rectLight.light?.type = .area
-                rectLight.light?.areaType = .rectangle
-                rectLight.light?.areaExtents = simd_float3(5, 13, 1)
-                rectLight.light?.intensity = 900
-                rectLight.light?.castsShadow = false
-                rectLight.position = SCNVector3(1, 0.5, 4)
-                rectLight.eulerAngles = SCNVector3(0, 0, -Float(atan2(6.0, 11.0)))
-                scene.rootNode.addChildNode(rectLight)
-
-                let ambientLight = SCNNode()
-                ambientLight.light = SCNLight()
-                ambientLight.light?.type = .ambient
-                ambientLight.light?.color = UIColor.white
-                ambientLight.light?.intensity = 250
-                scene.rootNode.addChildNode(ambientLight)
-
-                let cameraNode = SCNNode()
-                cameraNode.camera = SCNCamera()
-                cameraNode.position = SCNVector3(0, 0, 10)
-                scene.rootNode.addChildNode(cameraNode)
-                sceneView.pointOfView = cameraNode
-
-                sceneView.scene = scene
-                context.coordinator.modelNode = modelContainer
-                handle?.coordinator = context.coordinator
-                handle?.sceneView = sceneView
-            }
+        guard let url = Bundle.main.url(forResource: assetName, withExtension: "usdz"),
+              let scene = try? SCNScene(url: url, options: nil) else {
+            return sceneView
         }
 
-        sceneView.onLayout = { [weak sceneView] in
-            guard let sceneView else { return }
-            self.applyScale(to: sceneView, coordinator: context.coordinator)
+        // Collect all geometry under a single model node
+        let model = SCNNode()
+        for child in scene.rootNode.childNodes {
+            model.addChildNode(child)
+        }
+
+        // Validate bounds
+        let (minB, maxB) = model.boundingBox
+        let maxDim = max(maxB.x - minB.x, maxB.y - minB.y, maxB.z - minB.z)
+        guard maxDim > 0 else { return sceneView }
+
+        // Center model at local origin so the tiltNode rotates around the true geometric center
+        let center = SCNVector3(
+            (minB.x + maxB.x) / 2,
+            (minB.y + maxB.y) / 2,
+            (minB.z + maxB.z) / 2
+        )
+        let s = Float(modelScale) / maxDim
+        model.scale = SCNVector3(s, s, s)
+        model.position = SCNVector3(-s * center.x, -s * center.y, -s * center.z)
+
+        // tiltNode corrects USDZ Z-up orientation to SceneKit Y-up so the canister stands upright.
+        // It is a static node — all spin animation happens on spinNode above it.
+        let tiltNode = SCNNode()
+        tiltNode.eulerAngles = SCNVector3(-Float.pi / 2, 0, 0)
+        tiltNode.addChildNode(model)
+
+        // spinNode sits at world origin with no initial rotation, so Y-axis animations
+        // correctly spin around the world Y axis (turntable effect).
+        let spinNode = SCNNode()
+        spinNode.addChildNode(tiltNode)
+        scene.rootNode.addChildNode(spinNode)
+
+        // Three-point + ambient lighting
+        func addLight(type: SCNLight.LightType, intensity: CGFloat, euler: SCNVector3) {
+            let node = SCNNode()
+            node.light = SCNLight()
+            node.light?.type = type
+            node.light?.intensity = intensity
+            node.light?.castsShadow = false
+            node.eulerAngles = euler
+            scene.rootNode.addChildNode(node)
+        }
+        addLight(type: .directional, intensity: 1400,
+                 euler: SCNVector3(-Float.pi / 4,  Float.pi / 6, 0))
+        addLight(type: .directional, intensity: 500,
+                 euler: SCNVector3(-Float.pi / 6, -Float.pi / 3, 0))
+        addLight(type: .directional, intensity: 300,
+                 euler: SCNVector3( Float.pi / 6,  Float.pi,     0))
+        let ambient = SCNNode()
+        ambient.light = SCNLight()
+        ambient.light?.type = .ambient
+        ambient.light?.color = UIColor.white
+        ambient.light?.intensity = 400
+        scene.rootNode.addChildNode(ambient)
+
+        // Camera: model fills ~55% of viewport at default scale 1.0
+        let camera = SCNCamera()
+        camera.fieldOfView = 45
+        let cameraNode = SCNNode()
+        cameraNode.camera = camera
+        cameraNode.position = SCNVector3(0, 0, 2.2)
+        scene.rootNode.addChildNode(cameraNode)
+        sceneView.pointOfView = cameraNode
+
+        sceneView.scene = scene
+        context.coordinator.modelNode = spinNode
+        context.coordinator.autoRotate = autoRotate
+        handle?.coordinator = context.coordinator
+        handle?.sceneView = sceneView
+
+        if autoRotate {
+            context.coordinator.startAutoRotate()
+        }
+
+        if spinOnAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                context.coordinator.triggerEntrySpin()
+            }
         }
 
         if gestureEnabled {
@@ -91,48 +114,22 @@ struct ModelSceneView: UIViewRepresentable {
             sceneView.addGestureRecognizer(pan)
         }
 
-        if spinOnAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                context.coordinator.triggerEntrySpin()
-            }
-        }
-
         return sceneView
     }
 
-    func updateUIView(_ uiView: SCNView, context: Context) {
-        guard padding != context.coordinator.lastPadding else { return }
-        applyScale(to: uiView, coordinator: context.coordinator)
-    }
+    func updateUIView(_ uiView: SCNView, context: Context) {}
 
-    private func applyScale(to sceneView: SCNView, coordinator: Coordinator) {
-        let bounds = sceneView.bounds
-        guard bounds.height > 0, coordinator.normDim > 0,
-              let modelNode = coordinator.modelNode else { return }
-        guard bounds != coordinator.lastBounds || padding != coordinator.lastPadding else { return }
-        coordinator.lastBounds = bounds
-        coordinator.lastPadding = padding
-
-        let center = coordinator.boundingBoxCenter
-        modelNode.position = SCNVector3(-center.x, -center.y, -center.z)
-
-        // Scale the model so its largest dimension fills the padded view area.
-        // Camera sits at z=4.5 with a 60° vertical FOV, so the visible scene height
-        // at the model plane (z=0) is 2 * 4.5 * tan(30°) ≈ 5.196 scene units.
-        let cameraZ: Float = 4.5
-        let fovRad: Float = Float(60.0 * Double.pi / 180.0)
-        let sceneHeight = 2.0 * cameraZ * tan(fovRad / 2.0)
-        let fillFraction = (Float(bounds.height) - Float(padding * 2)) / Float(bounds.height)
-        let scale = (sceneHeight * fillFraction) / coordinator.normDim
-        modelNode.scale = SCNVector3(scale, scale, scale)
-    }
+    // MARK: - Coordinator
 
     class Coordinator: NSObject {
         var modelNode: SCNNode?
-        var normDim: Float = 0
-        var boundingBoxCenter: SCNVector3 = SCNVector3Zero
-        var lastBounds: CGRect = .zero
-        var lastPadding: CGFloat = -1
+        var autoRotate: Bool = false
+
+        func startAutoRotate() {
+            guard let node = modelNode else { return }
+            let spin = SCNAction.rotateBy(x: 0, y: 2 * .pi, z: 0, duration: 4)
+            node.runAction(SCNAction.repeatForever(spin), forKey: "autoRotate")
+        }
 
         func triggerEntrySpin() {
             guard let node = modelNode else { return }
@@ -148,26 +145,44 @@ struct ModelSceneView: UIViewRepresentable {
         @objc func handlePan(_ gesture: UIPanGestureRecognizer) {
             guard let node = modelNode else { return }
             switch gesture.state {
+            case .began:
+                node.removeAction(forKey: "autoRotate")
+                node.removeAllAnimations()
+                node.eulerAngles = node.presentation.eulerAngles
+
             case .changed:
-                node.removeAllActions()
                 node.removeAllAnimations()
                 node.eulerAngles = node.presentation.eulerAngles
                 let delta = gesture.translation(in: gesture.view)
                 node.eulerAngles.y += Float(delta.x) * 0.01
                 gesture.setTranslation(.zero, in: gesture.view)
+
             case .ended, .cancelled:
-                let currentAngle = node.presentation.eulerAngles.y
-                let target = (currentAngle / .pi).rounded() * Float.pi
-                let spring = CASpringAnimation(keyPath: "eulerAngles.y")
-                spring.fromValue = currentAngle
-                spring.toValue = target
-                spring.damping = 4
-                spring.stiffness = 40
-                spring.mass = 1
-                spring.initialVelocity = 0
-                spring.duration = spring.settlingDuration
-                node.addAnimation(spring, forKey: "springBack")
-                node.eulerAngles.y = target
+                let current = node.presentation.eulerAngles.y
+                node.eulerAngles.y = current
+
+                // Coast to stop based on finger velocity — no snap points
+                let velocity = gesture.velocity(in: gesture.view)
+                if abs(velocity.x) > 80 {
+                    let coast = Float(velocity.x) * 0.0018
+                    let duration = min(Double(abs(velocity.x)) / 1800.0, 0.7)
+                    let momentum = CABasicAnimation(keyPath: "eulerAngles.y")
+                    momentum.fromValue = current
+                    momentum.toValue = current + coast
+                    momentum.duration = duration
+                    momentum.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                    momentum.isRemovedOnCompletion = true
+                    node.addAnimation(momentum, forKey: "momentum")
+                    node.eulerAngles.y = current + coast
+                }
+
+                if autoRotate {
+                    let delay = abs(velocity.x) > 80 ? 1.2 : 0.4
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                        self?.startAutoRotate()
+                    }
+                }
+
             default:
                 break
             }
@@ -175,12 +190,28 @@ struct ModelSceneView: UIViewRepresentable {
     }
 }
 
+// MARK: - ModelSceneHandle
+
 final class ModelSceneHandle: NSObject {
     weak var coordinator: ModelSceneView.Coordinator?
     var sceneView: SCNView?
 
     func triggerSpin() {
         coordinator?.triggerEntrySpin()
+    }
+
+    func triggerFullFlip() {
+        guard let node = coordinator?.modelNode else { return }
+        node.removeAllAnimations()
+        let current = node.presentation.eulerAngles.y
+        node.eulerAngles.y = current
+        let flip = CABasicAnimation(keyPath: "eulerAngles.y")
+        flip.fromValue = current
+        flip.toValue = current + Float.pi * 2
+        flip.duration = 0.6
+        flip.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        flip.isRemovedOnCompletion = true
+        node.addAnimation(flip, forKey: "fullFlip")
     }
 
     @MainActor
@@ -196,17 +227,23 @@ final class ModelSceneHandle: NSObject {
         return image
     }
 
-    func triggerFullFlip() {
-        guard let node = coordinator?.modelNode else { return }
+    @discardableResult
+    func flipToFrontIfNeeded() -> TimeInterval {
+        guard let node = coordinator?.modelNode else { return 0 }
         node.removeAllAnimations()
         let current = node.presentation.eulerAngles.y
         node.eulerAngles.y = current
+        let n = (current / Float.pi).rounded()
+        guard abs(Int(n)) % 2 == 1 else { return 0 }
+        let sign: Float = n > 0 ? -1 : 1
+        let target = (n + sign) * Float.pi
         let flip = CABasicAnimation(keyPath: "eulerAngles.y")
         flip.fromValue = current
-        flip.toValue = current + Float.pi * 2
-        flip.duration = 0.6
-        flip.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-        flip.isRemovedOnCompletion = true
-        node.addAnimation(flip, forKey: "fullFlip")
+        flip.toValue = target
+        flip.duration = 0.4
+        flip.timingFunction = CAMediaTimingFunction(name: .linear)
+        node.addAnimation(flip, forKey: "flipToFront")
+        node.eulerAngles.y = target
+        return 0.4
     }
 }

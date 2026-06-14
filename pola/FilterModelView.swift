@@ -14,7 +14,7 @@ struct FilterModelView: View {
                     assetName: usdzName,
                     gestureEnabled: true,
                     spinOnAppear: true,
-                    padding: 30
+                    modelScale: 0.65
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
