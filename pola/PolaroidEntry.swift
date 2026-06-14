@@ -4,6 +4,8 @@ import CoreLocation
 struct PolaroidEntry: Identifiable {
     let id: UUID
     let image: UIImage
+    var videoURL: URL? = nil
+    var isTimelapse: Bool = false
     var caption: String = ""
     var backText: String = ""
     var showMap: Bool = true
@@ -13,20 +15,25 @@ struct PolaroidEntry: Identifiable {
     let filterName: String?
     let packName: String?
 
-    init(image: UIImage, filterName: String? = nil, packName: String? = nil, coordinate: CLLocationCoordinate2D? = nil) {
+    init(image: UIImage, videoURL: URL? = nil, isTimelapse: Bool = false, filterName: String? = nil, packName: String? = nil, coordinate: CLLocationCoordinate2D? = nil) {
         self.id = UUID()
         self.image = image
+        self.videoURL = videoURL
+        self.isTimelapse = isTimelapse
         self.filterName = filterName
         self.packName = packName
         self.coordinate = coordinate
         self.timestamp = Date()
+        self.developmentProgress = 0.0
     }
 
-    init(id: UUID, image: UIImage, caption: String, backText: String, showMap: Bool,
+    init(id: UUID, image: UIImage, videoURL: URL? = nil, isTimelapse: Bool = false, caption: String, backText: String, showMap: Bool,
          coordinate: CLLocationCoordinate2D?, developmentProgress: Double,
          timestamp: Date, filterName: String?, packName: String?) {
         self.id = id
         self.image = image
+        self.videoURL = videoURL
+        self.isTimelapse = isTimelapse
         self.caption = caption
         self.backText = backText
         self.showMap = showMap

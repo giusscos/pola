@@ -1,10 +1,12 @@
+import AVFoundation
 import MapKit
 import SwiftUI
 
 struct PolaroidPhotoCell: View {
     var image: UIImage? = nil
-    // When animatedExternally=true, developmentProgress is driven by the caller (ejection overlay).
-    // When false, the cell animates itself based on elapsed time since timestamp.
+    var videoURL: URL? = nil
+    var isTimelapse: Bool = false
+    var playVideo: Bool = true
     var developmentProgress: Double = 1.0
     var animatedExternally: Bool = false
     var caption: String = ""
@@ -24,6 +26,9 @@ struct PolaroidPhotoCell: View {
 
     init(
         image: UIImage? = nil,
+        videoURL: URL? = nil,
+        isTimelapse: Bool = false,
+        playVideo: Bool = true,
         developmentProgress: Double = 1.0,
         animatedExternally: Bool = false,
         caption: String = "",
@@ -38,6 +43,9 @@ struct PolaroidPhotoCell: View {
         onSingleTap: (() -> Void)? = nil
     ) {
         self.image = image
+        self.videoURL = videoURL
+        self.isTimelapse = isTimelapse
+        self.playVideo = playVideo
         self.developmentProgress = developmentProgress
         self.animatedExternally = animatedExternally
         self.caption = caption
@@ -51,8 +59,6 @@ struct PolaroidPhotoCell: View {
         self.onDeveloped = onDeveloped
         self.onSingleTap = onSingleTap
 
-        // Compute how far development has already progressed based on elapsed time.
-        // For externally-animated cells (ejection overlay), localReveal is irrelevant.
         if developmentProgress >= 1.0 || animatedExternally {
             self._localReveal = State(initialValue: 1.0)
         } else if let ts = timestamp {
@@ -66,8 +72,6 @@ struct PolaroidPhotoCell: View {
         self._showingBack = State(initialValue: false)
     }
 
-    // Externally-controlled cells use the passed-in developmentProgress directly;
-    // self-animating cells use localReveal.
     private var revealProgress: Double {
         animatedExternally ? developmentProgress : localReveal
     }
@@ -79,11 +83,9 @@ struct PolaroidPhotoCell: View {
 
     var body: some View {
         ZStack {
-            // Always keep frontFace in the ZStack so layout size never changes.
             frontFace
                 .opacity(showingBack ? 0 : 1)
 
-            // Only instantiate backFace (with its Map) when actually visible.
             if showingBack {
                 backFace.scaleEffect(x: -1)
             }
@@ -122,23 +124,43 @@ struct PolaroidPhotoCell: View {
 
     private var frontFace: some View {
         VStack(spacing: 0) {
-            Group {
-                if let image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .clipped()
-                        .overlay {
-                            if revealProgress < 1.0 {
-                                Color.black.opacity(1.0 - revealProgress)
-                            }
+            Color.clear
+                .overlay {
+                    Group {
+                        if let videoURL, playVideo {
+                            LoopingVideoView(url: videoURL)
+                                .overlay {
+                                    if revealProgress < 1.0 {
+                                        Color.black.opacity(1.0 - revealProgress)
+                                    }
+                                }
+                        } else if let image {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                                .overlay {
+                                    if revealProgress < 1.0 {
+                                        Color.black.opacity(1.0 - revealProgress)
+                                    }
+                                }
+                        } else {
+                            Color.black
                         }
-                } else {
-                    Color.black
+                    }
                 }
-            }
-            .padding(.horizontal, 8)
-            .padding(.top, 8)
+                .clipped()
+                .overlay(alignment: .topTrailing) {
+                    if videoURL != nil && !playVideo {
+                        Image(systemName: isTimelapse ? "timer" : "video.fill")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(4)
+                            .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 4))
+                            .padding(4)
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.top, 8)
 
             Text(caption.isEmpty ? " " : caption)
                 .font(.custom("Bradley Hand", size: 13 * fontScale))
@@ -219,6 +241,77 @@ struct PolaroidPhotoCell: View {
             try? await Task.sleep(for: .seconds(0.18))
             showingBack.toggle()
             withAnimation(.easeOut(duration: 0.18)) { flipAngle = targetAngle }
+        }
+    }
+}
+
+// MARK: - Looping video view
+
+struct LoopingVideoView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context: Context) -> PlayerView {
+        let view = PlayerView()
+        view.configure(url: url)
+        return view
+    }
+
+    func updateUIView(_ uiView: PlayerView, context: Context) {}
+
+    static func dismantleUIView(_ uiView: PlayerView, coordinator: ()) {
+        uiView.pause()
+    }
+
+    final class PlayerView: UIView {
+        private var player: AVPlayer?
+        private var token: NSObjectProtocol?
+
+        // Behave like Image.resizable() — no intrinsic size, stretches to fill container
+        override var intrinsicContentSize: CGSize {
+            CGSize(width: UIView.noIntrinsicMetric, height: UIView.noIntrinsicMetric)
+        }
+
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            setContentHuggingPriority(.defaultLow, for: .horizontal)
+            setContentHuggingPriority(.defaultLow, for: .vertical)
+            setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        }
+        required init?(coder: NSCoder) { fatalError() }
+
+        override class var layerClass: AnyClass { AVPlayerLayer.self }
+        var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            playerLayer.frame = bounds
+        }
+
+        func configure(url: URL) {
+            let p = AVPlayer(url: url)
+            p.actionAtItemEnd = .none
+            playerLayer.videoGravity = .resizeAspectFill
+            playerLayer.player = p
+            token = NotificationCenter.default.addObserver(
+                forName: .AVPlayerItemDidPlayToEndTime,
+                object: p.currentItem,
+                queue: .main
+            ) { [weak p] _ in
+                p?.seek(to: .zero)
+                p?.play()
+            }
+            player = p
+            p.play()
+        }
+
+        func pause() {
+            player?.pause()
+        }
+
+        deinit {
+            if let token { NotificationCenter.default.removeObserver(token) }
+            player?.pause()
         }
     }
 }

@@ -26,15 +26,6 @@ struct LibraryView: View {
     @AppStorage("libraryColumnCount") private var columnCount: Int = 3
     @GestureState private var pinchScale: CGFloat = 1.0
 
-    // Ejection animation
-    @State private var ejectedEntry: PolaroidEntry? = nil
-    @State private var ejectCenterY: CGFloat = -200
-    @State private var ejectOffsetX: CGFloat = 0
-    @State private var ejectScale: CGFloat = 1.0
-    @State private var ejectOpacity: Double = 1.0
-    @State private var ejectRotation: Double = 0
-    @State private var ejectDevelopmentProgress: Double = 0.0
-
     private let categories: [(name: String, color: Color)] = [
         ("All",   .gray),
         ("FLÄRN", Color(red: 0.95, green: 0.78, blue: 0.12)),
@@ -99,26 +90,6 @@ struct LibraryView: View {
                 if isSelectMode && !selectedIDs.isEmpty {
                     selectActionBar
                 }
-            }
-            .overlay {
-                GeometryReader { geo in
-                    if let entry = ejectedEntry {
-                        PolaroidPhotoCell(
-                            image: entry.image,
-                            developmentProgress: ejectDevelopmentProgress,
-                            animatedExternally: true
-                        )
-                        .frame(width: 280, height: 340)
-                        .rotationEffect(.degrees(ejectRotation))
-                        .scaleEffect(ejectScale)
-                        .opacity(ejectOpacity)
-                        .position(
-                            x: geo.size.width / 2 + ejectOffsetX,
-                            y: ejectCenterY
-                        )
-                    }
-                }
-                .allowsHitTesting(false)
             }
             .navigationTitle("Library")
             .navigationBarTitleDisplayMode(.inline)
@@ -207,36 +178,7 @@ struct LibraryView: View {
                         }
                     }
                 }
-                
-//                ToolbarItemGroup(placement: .bottomBar) {
-//                    Spacer()
-//                    Button {
-//                        withAnimation(.spring(duration: 0.4, bounce: 0.2)) { columnCount = 1 }
-//                    } label: {
-//                        Image(systemName: columnCount == 1 ? "rectangle.grid.1x2.fill" : "rectangle.grid.1x2")
-//                            .foregroundStyle(columnCount == 1 ? .primary : .secondary)
-//                    }
-//                    Spacer()
-//                    Button {
-//                        withAnimation(.spring(duration: 0.4, bounce: 0.2)) { columnCount = 2 }
-//                    } label: {
-//                        Image(systemName: columnCount == 2 ? "square.grid.2x2.fill" : "square.grid.2x2")
-//                            .foregroundStyle(columnCount == 2 ? .primary : .secondary)
-//                    }
-//                    Spacer()
-//                    Button {
-//                        withAnimation(.spring(duration: 0.4, bounce: 0.2)) { columnCount = 3 }
-//                    } label: {
-//                        Image(systemName: columnCount == 3 ? "square.grid.3x2.fill" : "square.grid.3x2")
-//                            .foregroundStyle(columnCount == 3 ? .primary : .secondary)
-//                    }
-//                    Spacer()
-//                }
             }
-        }
-        .onChange(of: store.entries.count) { oldCount, newCount in
-            guard newCount > oldCount, let newest = store.entries.first else { return }
-            triggerEjectionAnimation(for: newest)
         }
         .interactiveDismissDisabled(showDetail)
         .sheet(item: $editingEntry) { item in
@@ -267,6 +209,9 @@ struct LibraryView: View {
     private func gridCell(for entry: PolaroidEntry) -> some View {
         PolaroidPhotoCell(
             image: entry.image,
+            videoURL: entry.videoURL,
+            isTimelapse: entry.isTimelapse,
+            playVideo: false,
             developmentProgress: entry.developmentProgress,
             caption: entry.caption,
             backText: entry.backText,
@@ -398,41 +343,6 @@ struct LibraryView: View {
             try? await Task.sleep(for: .seconds(0.4))
             store.delete(ids: ids)
             deletingIDs.subtract(ids)
-        }
-    }
-
-    // MARK: - Ejection animation
-
-    private func triggerEjectionAnimation(for entry: PolaroidEntry) {
-        ejectedEntry = entry
-
-        ejectCenterY = -24
-        ejectOffsetX = 0
-        ejectScale = 0.3
-        ejectOpacity = 1.0
-        ejectRotation = 0.0
-        ejectDevelopmentProgress = 0.0
-
-        withAnimation(.spring(duration: 2.0)) {
-            ejectCenterY = 200
-            ejectScale = 1.0
-        }
-
-        Task {
-            try? await Task.sleep(for: .seconds(2.0))
-
-            withAnimation(.linear(duration: 6)) {
-                ejectDevelopmentProgress = 1.0
-            }
-
-            withAnimation(.easeInOut(duration: 0.5)) {
-                ejectCenterY = 600
-                ejectOffsetX = -100
-                ejectScale = 0.15
-                ejectOpacity = 0
-            }
-            try? await Task.sleep(for: .seconds(0.55))
-            ejectedEntry = nil
         }
     }
 }

@@ -108,6 +108,9 @@ struct PolaroidDetailView: View {
 
                 PolaroidPhotoCell(
                     image: entry.image,
+                    videoURL: entry.videoURL,
+                    isTimelapse: entry.isTimelapse,
+                    playVideo: false,
                     developmentProgress: entry.developmentProgress,
                     caption: entry.caption,
                     backText: entry.backText,
@@ -131,6 +134,9 @@ struct PolaroidDetailView: View {
             let entry = store.entries[currentIndex]
             PolaroidPhotoCell(
                 image: entry.image,
+                videoURL: entry.videoURL,
+                isTimelapse: entry.isTimelapse,
+                playVideo: true,
                 developmentProgress: entry.developmentProgress,
                 caption: entry.caption,
                 backText: entry.backText,

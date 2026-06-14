@@ -5,6 +5,12 @@ struct SettingsView: View {
     @AppStorage("captionPromptEnabled") private var captionPromptEnabled: Bool = true
     @AppStorage("iCloudSyncEnabled") private var iCloudSyncEnabled: Bool = false
     @AppStorage("libraryColumnCount") private var libraryColumnCount: Int = 3
+    @AppStorage("videoAudioEnabled") private var videoAudioEnabled: Bool = true
+    @AppStorage("timelapseInterval") private var timelapseInterval: Double = 5
+    @AppStorage("timelapseDuration") private var timelapseDuration: Double = 60
+    @AppStorage("timelapseSaveAsVideo") private var timelapseSaveAsVideo: Bool = false
+
+    private var totalTimelapsePhotos: Int { max(1, Int(timelapseDuration / timelapseInterval)) }
 
     var body: some View {
         NavigationStack {
@@ -18,6 +24,43 @@ struct SettingsView: View {
                     } label: {
                         Label("Default Filter", systemImage: "camera.filters")
                     }
+                }
+
+                Section("Video") {
+                    Toggle(isOn: $videoAudioEnabled) {
+                        Label("Record audio", systemImage: videoAudioEnabled ? "mic.fill" : "mic.slash.fill")
+                    }
+                }
+
+                Section {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Interval: \(Int(timelapseInterval))s between shots")
+                            .font(.subheadline)
+                        Slider(value: $timelapseInterval, in: 1...60, step: 1)
+                    }
+                    .padding(.vertical, 4)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Duration: \(formatDuration(timelapseDuration))")
+                            .font(.subheadline)
+                        Slider(value: $timelapseDuration, in: 10...3600, step: 10)
+                    }
+                    .padding(.vertical, 4)
+
+                    Toggle(isOn: $timelapseSaveAsVideo) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Save as video polaroid")
+                            Text(timelapseSaveAsVideo
+                                 ? "All frames combined into one video"
+                                 : "\(totalTimelapsePhotos) separate photo polaroids")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Time Lapse")
+                } footer: {
+                    Text("Total frames: \(totalTimelapsePhotos)")
                 }
 
                 Section("Library") {
@@ -84,6 +127,14 @@ struct SettingsView: View {
             }
         }
     }
+}
+
+private func formatDuration(_ seconds: Double) -> String {
+    let s = Int(seconds)
+    if s < 60 { return "\(s)s" }
+    let m = s / 60
+    let rem = s % 60
+    return rem == 0 ? "\(m)m" : "\(m)m \(rem)s"
 }
 
 #Preview {
