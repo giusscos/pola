@@ -348,7 +348,7 @@ func compositePolaroidVideo(_ entry: PolaroidEntry) async -> URL? {
     let s: CGFloat = 3
     let frameW: CGFloat = 270 * s, frameH: CGFloat = 360 * s
     let pad: CGFloat = 8 * s
-    let captionH: CGFloat = 32 * 1.7 * s
+    let captionH: CGFloat = 26 * 1.7 * s
     let imgW = frameW - 2 * pad, imgH = frameH - captionH - pad
     let renderSize = CGSize(width: frameW, height: frameH)
 
@@ -358,7 +358,7 @@ func compositePolaroidVideo(_ entry: PolaroidEntry) async -> URL? {
 
     // Position in image area using BL (bottom-left) coordinates used by AVFoundation
     let tx = pad - (scaledW - imgW) / 2
-    let ty = captionH - (scaledH - imgH) / 2
+    let ty = captionH - 64 - (scaledH - imgH) / 2
     let finalTransform = preferredTransform
         .concatenating(CGAffineTransform(scaleX: fillScale, y: fillScale))
         .concatenating(CGAffineTransform(translationX: tx, y: ty))
