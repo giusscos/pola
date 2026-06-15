@@ -129,26 +129,21 @@ struct PolaroidPhotoCell: View {
                     Group {
                         if let videoURL, playVideo {
                             LoopingVideoView(url: videoURL)
-                                .overlay {
-                                    if revealProgress < 1.0 {
-                                        Color.black.opacity(1.0 - revealProgress)
-                                    }
-                                }
                         } else if let image {
                             Image(uiImage: image)
                                 .resizable()
                                 .scaledToFill()
-                                .overlay {
-                                    if revealProgress < 1.0 {
-                                        Color.black.opacity(1.0 - revealProgress)
-                                    }
-                                }
                         } else {
                             Color.black
                         }
                     }
                 }
                 .clipped()
+                .overlay {
+                    Color.black
+                        .opacity(max(0, 1.0 - revealProgress))
+                        .allowsHitTesting(false)
+                }
                 .overlay(alignment: .topTrailing) {
                     if videoURL != nil && !playVideo {
                         Image(systemName: isTimelapse ? "timer" : "video.fill")
@@ -314,6 +309,188 @@ struct LoopingVideoView: UIViewRepresentable {
             player?.pause()
         }
     }
+}
+
+// Returns shareable items: composited polaroid video for video entries, rendered frame for photos.
+func prepareShareItems(for entries: [PolaroidEntry]) async -> [Any] {
+    var items: [Any] = []
+    for entry in entries {
+        if entry.videoURL != nil {
+            if let composited = await compositePolaroidVideo(entry) {
+                items.append(composited)
+            } else if let url = entry.videoURL {
+                items.append(url)
+            }
+        } else {
+            let frame = await MainActor.run { renderPolaroidFrame(entry) }
+            items.append(frame)
+        }
+    }
+    return items
+}
+
+// Composites the polaroid frame (border + caption) over a video and exports to a temp .mp4.
+func compositePolaroidVideo(_ entry: PolaroidEntry) async -> URL? {
+    guard let sourceURL = entry.videoURL else { return nil }
+
+    let asset = AVURLAsset(url: sourceURL)
+    guard let videoTrack = try? await asset.loadTracks(withMediaType: .video).first else { return nil }
+    let naturalSize = (try? await videoTrack.load(.naturalSize)) ?? .zero
+    let preferredTransform = (try? await videoTrack.load(.preferredTransform)) ?? .identity
+    let duration = (try? await asset.load(.duration)) ?? .zero
+
+    // Display size after rotation
+    let tSize = naturalSize.applying(preferredTransform)
+    let displaySize = CGSize(width: abs(tSize.width), height: abs(tSize.height))
+    guard displaySize.width > 0, displaySize.height > 0 else { return nil }
+
+    // Polaroid dimensions at 3x
+    let s: CGFloat = 3
+    let frameW: CGFloat = 270 * s, frameH: CGFloat = 360 * s
+    let pad: CGFloat = 8 * s
+    let captionH: CGFloat = 32 * 1.7 * s
+    let imgW = frameW - 2 * pad, imgH = frameH - captionH - pad
+    let renderSize = CGSize(width: frameW, height: frameH)
+
+    // Scale-to-fill the image area
+    let fillScale = max(imgW / displaySize.width, imgH / displaySize.height)
+    let scaledW = displaySize.width * fillScale, scaledH = displaySize.height * fillScale
+
+    // Position in image area using BL (bottom-left) coordinates used by AVFoundation
+    let tx = pad - (scaledW - imgW) / 2
+    let ty = captionH - (scaledH - imgH) / 2
+    let finalTransform = preferredTransform
+        .concatenating(CGAffineTransform(scaleX: fillScale, y: fillScale))
+        .concatenating(CGAffineTransform(translationX: tx, y: ty))
+
+    // Composition
+    let composition = AVMutableComposition()
+    guard let compTrack = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else { return nil }
+    try? compTrack.insertTimeRange(CMTimeRange(start: .zero, duration: duration), of: videoTrack, at: .zero)
+
+    if let audioTrack = try? await asset.loadTracks(withMediaType: .audio).first,
+       let compAudio = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) {
+        try? compAudio.insertTimeRange(CMTimeRange(start: .zero, duration: duration), of: audioTrack, at: .zero)
+    }
+
+    // CALayer overlay: polaroid border + caption with transparent video window
+    // isGeometryFlipped = true makes sublayers use UIKit (top-left, y-down) coordinates
+    let parentLayer = CALayer()
+    parentLayer.frame = CGRect(origin: .zero, size: renderSize)
+    parentLayer.isGeometryFlipped = true
+
+    let videoLayer = CALayer()
+    videoLayer.frame = CGRect(origin: .zero, size: renderSize)
+
+    // In UIKit coords: top-padding | image area | caption (bottom)
+    let imageHole = CGRect(x: pad, y: pad, width: imgW, height: imgH)
+    let captionRect = CGRect(x: 0, y: pad + imgH, width: frameW, height: captionH)
+    let packColor = UIColor(polaPackColors.first(where: { $0.name == entry.packName })?.color ?? .white)
+    let overlayImage = makePolaroidOverlayImage(
+        size: renderSize, imageHole: imageHole, captionRect: captionRect,
+        caption: entry.caption, packColor: packColor
+    )
+
+    let overlayLayer = CALayer()
+    overlayLayer.frame = CGRect(origin: .zero, size: renderSize)
+    overlayLayer.contents = overlayImage.cgImage
+    overlayLayer.contentsScale = 1
+
+    parentLayer.addSublayer(videoLayer)
+    parentLayer.addSublayer(overlayLayer)
+
+    let animationTool = AVVideoCompositionCoreAnimationTool(postProcessingAsVideoLayer: videoLayer, in: parentLayer)
+
+    // Build video composition using iOS 26 Configuration API
+    var layerConfig = AVVideoCompositionLayerInstruction.Configuration(assetTrack: compTrack)
+    layerConfig.setTransform(finalTransform, at: .zero)
+    let layerInstruction = AVVideoCompositionLayerInstruction(configuration: layerConfig)
+
+    let instructionConfig = AVVideoCompositionInstruction.Configuration(
+        backgroundColor: nil,
+        enablePostProcessing: true,
+        layerInstructions: [layerInstruction],
+        requiredSourceSampleDataTrackIDs: [],
+        timeRange: CMTimeRange(start: .zero, duration: duration)
+    )
+    let instruction = AVVideoCompositionInstruction(configuration: instructionConfig)
+
+    let vcConfig = AVVideoComposition.Configuration(
+        animationTool: animationTool,
+        colorPrimaries: nil, colorTransferFunction: nil, colorYCbCrMatrix: nil,
+        customVideoCompositorClass: nil,
+        frameDuration: CMTime(value: 1, timescale: 30),
+        instructions: [instruction],
+        outputBufferDescription: nil,
+        renderScale: 1.0,
+        renderSize: renderSize,
+        sourceSampleDataTrackIDs: [],
+        sourceTrackIDForFrameTiming: kCMPersistentTrackID_Invalid,
+        spatialVideoConfigurations: []
+    )
+    let videoComposition = AVVideoComposition(configuration: vcConfig)
+
+    // Export
+    let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
+    guard let export = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else { return nil }
+    export.videoComposition = videoComposition
+    do {
+        try await export.export(to: outputURL, as: .mp4)
+    } catch {
+        return nil
+    }
+    return outputURL
+}
+
+private func makePolaroidOverlayImage(size: CGSize, imageHole: CGRect, captionRect: CGRect, caption: String, packColor: UIColor) -> UIImage {
+    let format = UIGraphicsImageRendererFormat()
+    format.opaque = false
+    format.scale = 1
+    let renderer = UIGraphicsImageRenderer(size: size, format: format)
+    return renderer.image { ctx in
+        let cgCtx = ctx.cgContext
+        packColor.setFill()
+        cgCtx.fill(CGRect(origin: .zero, size: size))
+        cgCtx.clear(imageHole)
+        guard !caption.isEmpty else { return }
+        let fontSize: CGFloat = 13 * 1.7 * 3
+        let font = UIFont(name: "Bradley Hand", size: fontSize) ?? UIFont.systemFont(ofSize: fontSize)
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor.black.withAlphaComponent(0.65)
+        ]
+        let str = caption as NSString
+        let textSize = str.boundingRect(with: captionRect.size, options: .usesLineFragmentOrigin, attributes: attrs, context: nil).size
+        let textRect = CGRect(
+            x: captionRect.minX + (captionRect.width - min(textSize.width, captionRect.width)) / 2,
+            y: captionRect.minY + (captionRect.height - textSize.height) / 2,
+            width: min(textSize.width, captionRect.width),
+            height: textSize.height
+        )
+        str.draw(in: textRect, withAttributes: attrs)
+    }
+}
+
+// Renders the full polaroid frame (border + caption) as a UIImage for sharing/saving.
+@MainActor
+func renderPolaroidFrame(_ entry: PolaroidEntry) -> UIImage {
+    let cell = PolaroidPhotoCell(
+        image: entry.image,
+        developmentProgress: 1.0,
+        caption: entry.caption,
+        backText: entry.backText,
+        showMap: entry.showMap,
+        coordinate: entry.coordinate,
+        timestamp: entry.timestamp,
+        filterName: entry.filterName,
+        packName: entry.packName,
+        fontScale: 1.7
+    )
+    .frame(width: 270, height: 360)
+
+    let renderer = ImageRenderer(content: cell)
+    renderer.scale = 3.0
+    return renderer.uiImage ?? entry.image
 }
 
 #Preview {

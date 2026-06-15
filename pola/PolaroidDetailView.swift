@@ -70,8 +70,11 @@ struct PolaroidDetailView: View {
                     HStack(spacing: 16) {
                         Button {
                             guard currentIndex < store.entries.count else { return }
-                            shareItems = [store.entries[currentIndex].image]
-                            showShareSheet = true
+                            let entry = store.entries[currentIndex]
+                            Task {
+                                shareItems = await prepareShareItems(for: [entry])
+                                showShareSheet = true
+                            }
                         } label: {
                             Image(systemName: "square.and.arrow.up")
                         }
@@ -85,9 +88,7 @@ struct PolaroidDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showShareSheet) {
-            ActivitySheet(items: shareItems)
-        }
+        .background(ActivitySheet(items: shareItems, isPresented: $showShareSheet))
         .confirmationDialog("Delete this photo?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 deleteCurrentPhoto()
@@ -254,8 +255,16 @@ struct PolaroidDetailView: View {
 
 private struct ActivitySheet: UIViewControllerRepresentable {
     let items: [Any]
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    @Binding var isPresented: Bool
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        UIViewController()
     }
-    func updateUIViewController(_ uvc: UIActivityViewController, context: Context) {}
+
+    func updateUIViewController(_ uvc: UIViewController, context: Context) {
+        guard isPresented, uvc.presentedViewController == nil, !items.isEmpty else { return }
+        let avc = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        avc.completionWithItemsHandler = { _, _, _, _ in isPresented = false }
+        uvc.present(avc, animated: true)
+    }
 }

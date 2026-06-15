@@ -3,10 +3,18 @@ import Photos
 
 private struct ActivitySheet: UIViewControllerRepresentable {
     let items: [Any]
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    @Binding var isPresented: Bool
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        UIViewController()
     }
-    func updateUIViewController(_ uvc: UIActivityViewController, context: Context) {}
+
+    func updateUIViewController(_ uvc: UIViewController, context: Context) {
+        guard isPresented, uvc.presentedViewController == nil, !items.isEmpty else { return }
+        let avc = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        avc.completionWithItemsHandler = { _, _, _, _ in isPresented = false }
+        uvc.present(avc, animated: true)
+    }
 }
 
 struct LibraryView: View {
@@ -86,11 +94,6 @@ struct LibraryView: View {
                     )
                 }
             }
-            .safeAreaInset(edge: .bottom) {
-                if isSelectMode && !selectedIDs.isEmpty {
-                    selectActionBar
-                }
-            }
             .navigationTitle("Library")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -111,6 +114,39 @@ struct LibraryView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
+                    }
+                }
+
+                if isSelectMode && !selectedIDs.isEmpty {
+                    ToolbarItem(placement: .bottomBar) {
+                        Button {
+                            let selected = store.entries.filter { selectedIDs.contains($0.id) }
+                            Task {
+                                shareItems = await prepareShareItems(for: selected)
+                                showShareSheet = true
+                            }
+                        } label: {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                    }
+                    ToolbarSpacer(.fixed, placement: .bottomBar)
+                    ToolbarItem(placement: .bottomBar) {
+                        Button {
+                            let selected = store.entries.filter { selectedIDs.contains($0.id) }
+                            Task { await saveToPhotosApp(selected) }
+                        } label: {
+                            Label("Save", systemImage: "square.and.arrow.down")
+                        }
+                    }
+                    ToolbarSpacer(.fixed, placement: .bottomBar)
+                    ToolbarItem(placement: .bottomBar) {
+                        Button(role: .destructive) {
+                            showDeleteConfirm = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        .tint(.red)
+                        .buttonStyle(.glassProminent)
                     }
                 }
 
@@ -187,9 +223,7 @@ struct LibraryView: View {
                     .onDisappear { store.persistMetadata() }
             }
         }
-        .sheet(isPresented: $showShareSheet) {
-            ActivitySheet(items: shareItems)
-        }
+        .background(ActivitySheet(items: shareItems, isPresented: $showShareSheet))
         .confirmationDialog(
             "Delete \(selectedIDs.count) photo\(selectedIDs.count == 1 ? "" : "s")?",
             isPresented: $showDeleteConfirm,
@@ -251,11 +285,13 @@ struct LibraryView: View {
                 editingEntry = entry
             }
             Button("Save to Photos", systemImage: "square.and.arrow.down") {
-                Task { await saveToPhotosApp([entry.image]) }
+                Task { await saveToPhotosApp([entry]) }
             }
             Button("Share", systemImage: "square.and.arrow.up") {
-                shareItems = [entry.image]
-                showShareSheet = true
+                Task {
+                    shareItems = await prepareShareItems(for: [entry])
+                    showShareSheet = true
+                }
             }
             Divider()
             Button("Delete", systemImage: "trash", role: .destructive) {
@@ -265,40 +301,6 @@ struct LibraryView: View {
         .scaleEffect(deletingIDs.contains(entry.id) ? 0.5 : 1.0)
         .opacity(deletingIDs.contains(entry.id) ? 0.0 : 1.0)
         .animation(.spring(duration: 0.35, bounce: 0), value: deletingIDs.contains(entry.id))
-    }
-
-    private var selectActionBar: some View {
-        HStack(spacing: 0) {
-            Button {
-                let images = store.entries.filter { selectedIDs.contains($0.id) }.map { $0.image }
-                shareItems = images
-                showShareSheet = true
-            } label: {
-                Label("Share", systemImage: "square.and.arrow.up")
-                    .frame(maxWidth: .infinity)
-            }
-
-            Divider().frame(height: 24)
-
-            Button {
-                let images = store.entries.filter { selectedIDs.contains($0.id) }.map { $0.image }
-                Task { await saveToPhotosApp(images) }
-            } label: {
-                Label("Save", systemImage: "square.and.arrow.down")
-                    .frame(maxWidth: .infinity)
-            }
-
-            Divider().frame(height: 24)
-
-            Button(role: .destructive) {
-                showDeleteConfirm = true
-            } label: {
-                Label("Delete", systemImage: "trash")
-                    .frame(maxWidth: .infinity)
-            }
-        }
-        .padding(.vertical, 12)
-        .background(.regularMaterial)
     }
 
     // Inline overlay so the library content blurs through behind the detail view
@@ -325,12 +327,25 @@ struct LibraryView: View {
     }
 
     @MainActor
-    private func saveToPhotosApp(_ images: [UIImage]) async {
+    private func saveToPhotosApp(_ entries: [PolaroidEntry]) async {
         let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         guard status == .authorized || status == .limited else { return }
+        var items: [(image: UIImage?, videoURL: URL?)] = []
+        for entry in entries {
+            if entry.videoURL != nil {
+                let composited = await compositePolaroidVideo(entry) ?? entry.videoURL
+                items.append((nil, composited))
+            } else {
+                items.append((renderPolaroidFrame(entry), nil))
+            }
+        }
         try? await PHPhotoLibrary.shared().performChanges {
-            for image in images {
-                PHAssetChangeRequest.creationRequestForAsset(from: image)
+            for item in items {
+                if let videoURL = item.videoURL {
+                    PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: videoURL)
+                } else if let image = item.image {
+                    PHAssetChangeRequest.creationRequestForAsset(from: image)
+                }
             }
         }
     }

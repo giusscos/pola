@@ -99,7 +99,20 @@ struct ContentView: View {
                             .saturation(activeFilter?.previewSaturation ?? 1.0)
                             .overlay {
                                 if let tint = activeFilter?.previewTintColor {
-                                    tint.opacity(0.10)
+                                    // Stronger tint so the filter is visible in the viewfinder
+                                    tint.opacity(0.20).blendMode(.multiply)
+                                }
+                            }
+                            .overlay {
+                                // Vignette hint in preview when a filter is active
+                                if activeFilter?.effect != nil {
+                                    RadialGradient(
+                                        colors: [.clear, .black.opacity(0.50)],
+                                        center: .center,
+                                        startRadius: 80,
+                                        endRadius: 300
+                                    )
+                                    .allowsHitTesting(false)
                                 }
                             }
                             .overlay {
@@ -191,7 +204,7 @@ struct ContentView: View {
                 }
             }
         }
-        .sheet(isPresented: $showLibrary) {
+        .fullScreenCover(isPresented: $showLibrary) {
             LibraryView(store: store)
                 .navigationTransition(.zoom(sourceID: "library", in: sheetZoom))
         }

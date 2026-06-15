@@ -4,67 +4,78 @@ import SwiftUI
 // MARK: - Filter Effect
 
 enum FilmFilterEffect {
-    case chrome
-    case warm
-    case sepia
-    case cool
-    case noir
+    case chrome   // FLÄRN — Kodachrome-inspired pushed contrast
+    case warm     // SOLVA — warm analog, Ektar-like
+    case sepia    // BRÖKK — old Polaroid SX-70, heavy fade
+    case cool     // VYLUR — cross-processed, cyan/purple cast
+    case noir     // GRÅLT — silver-gelatin B&W, heavy grain
 
     private static let context = CIContext()
 
     func apply(to image: UIImage) -> UIImage {
         guard let ciImage = CIImage(image: image),
-              let output = filtered(ciImage),
-              let cgImage = Self.context.createCGImage(output, from: output.extent) else {
-            return image
-        }
+              let output  = colorGraded(ciImage),
+              let cgImage = Self.context.createCGImage(output, from: output.extent)
+        else { return image }
         return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
     }
 
-    private func filtered(_ input: CIImage) -> CIImage? {
-        let base: CIImage?
+    private func colorGraded(_ input: CIImage) -> CIImage? {
         switch self {
         case .chrome:
-            guard let f = CIFilter(name: "CIPhotoEffectChrome") else { return nil }
-            f.setValue(input, forKey: kCIInputImageKey)
-            base = f.outputImage
+            guard let chrome   = CIFilter(name: "CIPhotoEffectChrome"),
+                  let controls = CIFilter(name: "CIColorControls") else { return input }
+            chrome.setValue(input, forKey: kCIInputImageKey)
+            guard let out = chrome.outputImage else { return input }
+            controls.setValue(out, forKey: kCIInputImageKey)
+            controls.setValue(1.08, forKey: kCIInputContrastKey)
+            controls.setValue(1.06, forKey: kCIInputSaturationKey)
+            return controls.outputImage ?? out
 
         case .warm:
-            guard let f = CIFilter(name: "CIColorMatrix") else { return nil }
-            f.setValue(input, forKey: kCIInputImageKey)
-            f.setValue(CIVector(x: 1.12, y: 0, z: 0, w: 0), forKey: "inputRVector")
-            f.setValue(CIVector(x: 0, y: 1.06, z: 0, w: 0), forKey: "inputGVector")
-            f.setValue(CIVector(x: 0, y: 0, z: 0.82, w: 0), forKey: "inputBVector")
-            f.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
-            base = f.outputImage
+            guard let temp     = CIFilter(name: "CITemperatureAndTint"),
+                  let controls = CIFilter(name: "CIColorControls") else { return input }
+            temp.setValue(input, forKey: kCIInputImageKey)
+            temp.setValue(CIVector(x: 6500, y: 0),  forKey: "inputNeutral")
+            temp.setValue(CIVector(x: 5000, y: 20), forKey: "inputTargetNeutral")
+            guard let out = temp.outputImage else { return input }
+            controls.setValue(out, forKey: kCIInputImageKey)
+            controls.setValue(0.92, forKey: kCIInputSaturationKey)
+            controls.setValue(0.03, forKey: kCIInputBrightnessKey)
+            return controls.outputImage ?? out
 
         case .sepia:
-            guard let f = CIFilter(name: "CISepiaTone") else { return nil }
+            guard let f        = CIFilter(name: "CISepiaTone"),
+                  let controls = CIFilter(name: "CIColorControls") else { return input }
             f.setValue(input, forKey: kCIInputImageKey)
-            f.setValue(0.75, forKey: kCIInputIntensityKey)
-            base = f.outputImage
+            f.setValue(0.88,  forKey: kCIInputIntensityKey)
+            guard let out = f.outputImage else { return input }
+            controls.setValue(out, forKey: kCIInputImageKey)
+            controls.setValue(0.90, forKey: kCIInputContrastKey)
+            return controls.outputImage ?? out
 
         case .cool:
-            guard let f = CIFilter(name: "CIColorMatrix") else { return nil }
-            f.setValue(input, forKey: kCIInputImageKey)
-            f.setValue(CIVector(x: 0.88, y: 0, z: 0, w: 0), forKey: "inputRVector")
-            f.setValue(CIVector(x: 0, y: 0.90, z: 0, w: 0), forKey: "inputGVector")
-            f.setValue(CIVector(x: 0, y: 0, z: 1.20, w: 0), forKey: "inputBVector")
-            f.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
-            base = f.outputImage
+            guard let matrix   = CIFilter(name: "CIColorMatrix"),
+                  let controls = CIFilter(name: "CIColorControls") else { return input }
+            matrix.setValue(input, forKey: kCIInputImageKey)
+            matrix.setValue(CIVector(x: 0.82, y: 0, z: 0, w: 0), forKey: "inputRVector")
+            matrix.setValue(CIVector(x: 0, y: 0.94, z: 0, w: 0), forKey: "inputGVector")
+            matrix.setValue(CIVector(x: 0, y: 0, z: 1.28, w: 0), forKey: "inputBVector")
+            matrix.setValue(CIVector(x: 0, y: 0, z: 0,    w: 1), forKey: "inputAVector")
+            guard let out = matrix.outputImage else { return input }
+            controls.setValue(out, forKey: kCIInputImageKey)
+            controls.setValue(1.12, forKey: kCIInputSaturationKey)
+            return controls.outputImage ?? out
 
         case .noir:
-            guard let f = CIFilter(name: "CIPhotoEffectNoir") else { return nil }
-            f.setValue(input, forKey: kCIInputImageKey)
-            base = f.outputImage
+            guard let noir     = CIFilter(name: "CIPhotoEffectNoir"),
+                  let controls = CIFilter(name: "CIColorControls") else { return input }
+            noir.setValue(input, forKey: kCIInputImageKey)
+            guard let out = noir.outputImage else { return input }
+            controls.setValue(out, forKey: kCIInputImageKey)
+            controls.setValue(1.18, forKey: kCIInputContrastKey)
+            return controls.outputImage ?? out
         }
-
-        guard let base else { return nil }
-        guard let vignette = CIFilter(name: "CIVignette") else { return base }
-        vignette.setValue(base, forKey: kCIInputImageKey)
-        vignette.setValue(0.5, forKey: kCIInputIntensityKey)
-        vignette.setValue(1.8, forKey: kCIInputRadiusKey)
-        return vignette.outputImage
     }
 }
 
@@ -80,6 +91,7 @@ struct FilmFilter: Identifiable {
     var previewSaturation: Double {
         guard let effect else { return 1.0 }
         if case .noir = effect { return 0.2 }
+        if case .cool = effect { return 1.1 }
         return 1.0
     }
 
