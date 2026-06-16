@@ -2,6 +2,95 @@ import AVFoundation
 import MapKit
 import SwiftUI
 
+enum PolaroidFontWeight: String, CaseIterable {
+    case thin
+    case regular
+    case semibold
+    case bold
+
+    var displayName: String {
+        switch self {
+        case .thin: "Thin"
+        case .regular: "Normal"
+        case .semibold: "Semibold"
+        case .bold: "Bold"
+        }
+    }
+
+    var swiftUIWeight: Font.Weight {
+        switch self {
+        case .thin: .thin
+        case .regular: .regular
+        case .semibold: .semibold
+        case .bold: .bold
+        }
+    }
+
+    var uiFontWeight: UIFont.Weight {
+        switch self {
+        case .thin: .thin
+        case .regular: .regular
+        case .semibold: .semibold
+        case .bold: .bold
+        }
+    }
+}
+
+enum PolaroidFont: String, CaseIterable {
+    case handwriting
+    case sansNormal
+    case sansExpanded
+    case sansCondensed
+    case serif
+    case rounded
+
+    var displayName: String {
+        switch self {
+        case .handwriting: "Handwriting"
+        case .sansNormal: "Default"
+        case .sansExpanded: "Default Wide"
+        case .sansCondensed: "Default Narrow"
+        case .serif: "Serif"
+        case .rounded: "Rounded"
+        }
+    }
+
+    func swiftUIFont(size: CGFloat, weight: PolaroidFontWeight = .regular) -> Font {
+        switch self {
+        case .handwriting: .custom("Bradley Hand", size: size)
+        case .sansNormal: .system(size: size, weight: weight.swiftUIWeight)
+        case .sansExpanded: .system(size: size, weight: weight.swiftUIWeight).width(.expanded)
+        case .sansCondensed: .system(size: size, weight: weight.swiftUIWeight).width(.condensed)
+        case .serif: .system(size: size, weight: weight.swiftUIWeight, design: .serif)
+        case .rounded: .system(size: size, weight: weight.swiftUIWeight, design: .rounded)
+        }
+    }
+
+    func uiFont(size: CGFloat, weight: PolaroidFontWeight = .regular) -> UIFont {
+        let w = weight.uiFontWeight
+        switch self {
+        case .handwriting:
+            return UIFont(name: "Bradley Hand", size: size) ?? UIFont.systemFont(ofSize: size, weight: w)
+        case .sansNormal:
+            return UIFont.systemFont(ofSize: size, weight: w)
+        case .sansExpanded:
+            return UIFont.systemFont(ofSize: size, weight: w, width: .expanded)
+        case .sansCondensed:
+            return UIFont.systemFont(ofSize: size, weight: w, width: .condensed)
+        case .serif:
+            let base = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body)
+            guard let designed = base.withDesign(.serif) else { return UIFont.systemFont(ofSize: size, weight: w) }
+            let weighted = designed.addingAttributes([.traits: [UIFontDescriptor.TraitKey.weight: w.rawValue]])
+            return UIFont(descriptor: weighted.withSize(size), size: size)
+        case .rounded:
+            let base = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body)
+            guard let designed = base.withDesign(.rounded) else { return UIFont.systemFont(ofSize: size, weight: w) }
+            let weighted = designed.addingAttributes([.traits: [UIFontDescriptor.TraitKey.weight: w.rawValue]])
+            return UIFont(descriptor: weighted.withSize(size), size: size)
+        }
+    }
+}
+
 struct PolaroidPhotoCell: View {
     var image: UIImage? = nil
     var videoURL: URL? = nil
@@ -20,9 +109,14 @@ struct PolaroidPhotoCell: View {
     var onDeveloped: (() -> Void)? = nil
     var onSingleTap: (() -> Void)? = nil
 
+    @AppStorage("polaroidFont") private var polaroidFontRaw: String = PolaroidFont.handwriting.rawValue
+    @AppStorage("polaroidFontWeight") private var polaroidFontWeightRaw: String = PolaroidFontWeight.regular.rawValue
     @State private var localReveal: Double
     @State private var flipAngle: Double = 0
     @State private var showingBack = false
+
+    private var currentFont: PolaroidFont { PolaroidFont(rawValue: polaroidFontRaw) ?? .handwriting }
+    private var currentWeight: PolaroidFontWeight { PolaroidFontWeight(rawValue: polaroidFontWeightRaw) ?? .regular }
 
     init(
         image: UIImage? = nil,
@@ -158,7 +252,7 @@ struct PolaroidPhotoCell: View {
                 .padding(.top, 8)
 
             Text(caption.isEmpty ? " " : caption)
-                .font(.custom("Bradley Hand", size: 13 * fontScale))
+                .font(currentFont.swiftUIFont(size: 13 * fontScale, weight: currentWeight))
                 .foregroundStyle(.black.opacity(0.65))
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -219,7 +313,7 @@ struct PolaroidPhotoCell: View {
             .padding(.horizontal, 8)
             if !backText.isEmpty {
                 Text(backText)
-                    .font(.custom("Bradley Hand", size: 14 * fontScale))
+                    .font(currentFont.swiftUIFont(size: 14 * fontScale, weight: currentWeight))
                     .foregroundStyle(.black.opacity(0.5))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)
@@ -386,9 +480,13 @@ func compositePolaroidVideo(_ entry: PolaroidEntry) async -> URL? {
     let imageHole = CGRect(x: pad, y: pad, width: imgW, height: imgH)
     let captionRect = CGRect(x: 0, y: pad + imgH, width: frameW, height: captionH)
     let packColor = UIColor(polaPackColors.first(where: { $0.name == entry.packName })?.color ?? .white)
+    let storedFontName = UserDefaults.standard.string(forKey: "polaroidFont") ?? PolaroidFont.handwriting.rawValue
+    let storedWeightName = UserDefaults.standard.string(forKey: "polaroidFontWeight") ?? PolaroidFontWeight.regular.rawValue
+    let captionFont = (PolaroidFont(rawValue: storedFontName) ?? .handwriting)
+        .uiFont(size: 13 * 1.7 * 3, weight: PolaroidFontWeight(rawValue: storedWeightName) ?? .regular)
     let overlayImage = makePolaroidOverlayImage(
         size: renderSize, imageHole: imageHole, captionRect: captionRect,
-        caption: entry.caption, packColor: packColor
+        caption: entry.caption, packColor: packColor, captionFont: captionFont
     )
 
     let overlayLayer = CALayer()
@@ -442,7 +540,52 @@ func compositePolaroidVideo(_ entry: PolaroidEntry) async -> URL? {
     return outputURL
 }
 
-private func makePolaroidOverlayImage(size: CGSize, imageHole: CGRect, captionRect: CGRect, caption: String, packColor: UIColor) -> UIImage {
+private func drawPolaroidWatermark(in ctx: CGContext, imageRect: CGRect, scale: CGFloat) {
+    guard !(PremiumManager.shared.isPremium && PremiumManager.shared.watermarkDisabled) else { return }
+    let margin: CGFloat = 5 * scale
+    let fontSize: CGFloat = 8 * scale
+    let font = UIFont.systemFont(ofSize: fontSize, weight: .semibold, width: .expanded)
+    let text = "Poly" as NSString
+    let attrs: [NSAttributedString.Key: Any] = [
+        .font: font,
+        .foregroundColor: UIColor.white.withAlphaComponent(0.8)
+    ]
+    let textSize = text.size(withAttributes: attrs)
+    let iconSize: CGFloat = textSize.height
+    let spacing: CGFloat = 3 * scale
+    let originX = imageRect.minX + margin
+    let originY = imageRect.maxY - textSize.height - margin
+
+    ctx.saveGState()
+    ctx.setShadow(
+        offset: CGSize(width: 0, height: 0.5 * scale),
+        blur: 2 * scale,
+        color: UIColor.black.withAlphaComponent(0.6).cgColor
+    )
+
+    // Draw app icon with rounded corners to the left of the text
+    if let icon = UIImage(named: "AppIcon") {
+        let iconRect = CGRect(x: originX, y: originY, width: iconSize, height: iconSize)
+        ctx.saveGState()
+        let cornerRadius = iconSize * 0.22
+        let path = CGPath(roundedRect: iconRect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil)
+        ctx.addPath(path)
+        ctx.clip()
+        icon.draw(in: iconRect)
+        ctx.restoreGState()
+    }
+
+    let textRect = CGRect(
+        x: originX + iconSize + spacing,
+        y: originY,
+        width: textSize.width,
+        height: textSize.height
+    )
+    text.draw(in: textRect, withAttributes: attrs)
+    ctx.restoreGState()
+}
+
+private func makePolaroidOverlayImage(size: CGSize, imageHole: CGRect, captionRect: CGRect, caption: String, packColor: UIColor, captionFont: UIFont) -> UIImage {
     let format = UIGraphicsImageRendererFormat()
     format.opaque = false
     format.scale = 1
@@ -452,9 +595,9 @@ private func makePolaroidOverlayImage(size: CGSize, imageHole: CGRect, captionRe
         packColor.setFill()
         cgCtx.fill(CGRect(origin: .zero, size: size))
         cgCtx.clear(imageHole)
+        drawPolaroidWatermark(in: cgCtx, imageRect: imageHole, scale: 3)
         guard !caption.isEmpty else { return }
-        let fontSize: CGFloat = 13 * 1.7 * 3
-        let font = UIFont(name: "Bradley Hand", size: fontSize) ?? UIFont.systemFont(ofSize: fontSize)
+        let font = captionFont
         let attrs: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: UIColor.black.withAlphaComponent(0.65)
@@ -490,7 +633,16 @@ func renderPolaroidFrame(_ entry: PolaroidEntry) -> UIImage {
 
     let renderer = ImageRenderer(content: cell)
     renderer.scale = 3.0
-    return renderer.uiImage ?? entry.image
+    let rendered = renderer.uiImage ?? entry.image
+    // Image area within the polaroid frame (270x360 at fontScale 1.7): 8pt pad top/sides, 32*1.7pt caption bottom
+    let imageAreaRect = CGRect(x: 8, y: 8, width: 254, height: 360 - 32 * 1.7 - 8)
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = rendered.scale
+    let wmRenderer = UIGraphicsImageRenderer(size: rendered.size, format: format)
+    return wmRenderer.image { ctx in
+        rendered.draw(in: CGRect(origin: .zero, size: rendered.size))
+        drawPolaroidWatermark(in: ctx.cgContext, imageRect: imageAreaRect, scale: 1)
+    }
 }
 
 #Preview {

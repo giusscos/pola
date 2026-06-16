@@ -1,8 +1,14 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(PremiumManager.self) private var premium
+    @State private var showPaywall = false
+    @State private var showOnboarding = false
+
     @AppStorage("defaultFilter") private var defaultFilter: String = "None"
     @AppStorage("captionPromptEnabled") private var captionPromptEnabled: Bool = true
+    @AppStorage("polaroidFont") private var polaroidFontRaw: String = PolaroidFont.handwriting.rawValue
+    @AppStorage("polaroidFontWeight") private var polaroidFontWeightRaw: String = PolaroidFontWeight.regular.rawValue
     @AppStorage("iCloudSyncEnabled") private var iCloudSyncEnabled: Bool = false
     @AppStorage("libraryColumnCount") private var libraryColumnCount: Int = 3
     @AppStorage("videoAudioEnabled") private var videoAudioEnabled: Bool = true
@@ -15,6 +21,60 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    if premium.isPremium {
+                        HStack(spacing: 12) {
+                            Image(systemName: "crown.fill")
+                                .foregroundStyle(Color(red: 1.0, green: 0.8, blue: 0.3))
+                                .font(.title3)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Premium Active")
+                                    .font(.headline)
+                                Text("All features unlocked")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.title3)
+                        }
+
+                        Toggle(isOn: Binding(
+                            get: { premium.watermarkDisabled },
+                            set: { premium.watermarkDisabled = $0 }
+                        )) {
+                            Label("Hide watermark on exports", systemImage: "photo")
+                        }
+                    } else {
+                        Button { showPaywall = true } label: {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color(red: 1.0, green: 0.8, blue: 0.3).opacity(0.15))
+                                        .frame(width: 40, height: 40)
+                                    Image(systemName: "crown.fill")
+                                        .foregroundStyle(Color(red: 1.0, green: 0.8, blue: 0.3))
+                                }
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Unlock pola. Premium")
+                                        .font(.headline)
+                                        .foregroundStyle(.primary)
+                                    Text("Filters, fonts & watermark-free exports")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                                    .font(.caption)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Premium")
+                }
+
                 Section("Camera") {
                     Picker(selection: $defaultFilter) {
                         Text("None").tag("None")
@@ -74,12 +134,47 @@ struct SettingsView: View {
                     .pickerStyle(.menu)
                 }
 
-                Section {
+                Section("Polaroid") {
+                    if premium.isPremium {
+                        Picker(selection: $polaroidFontRaw) {
+                            ForEach(PolaroidFont.allCases, id: \.rawValue) { font in
+                                Text(font.displayName).tag(font.rawValue)
+                            }
+                        } label: {
+                            Label("Caption Font", systemImage: "textformat")
+                        }
+                        Picker(selection: $polaroidFontWeightRaw) {
+                            ForEach(PolaroidFontWeight.allCases, id: \.rawValue) { w in
+                                Text(w.displayName).tag(w.rawValue)
+                            }
+                        } label: {
+                            Label("Font Weight", systemImage: "bold")
+                        }
+                    } else {
+                        Button { showPaywall = true } label: {
+                            HStack {
+                                Label("Caption Font", systemImage: "textformat")
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Image(systemName: "lock.fill")
+                                    .foregroundStyle(.secondary)
+                                    .font(.caption)
+                            }
+                        }
+                        Button { showPaywall = true } label: {
+                            HStack {
+                                Label("Font Weight", systemImage: "bold")
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Image(systemName: "lock.fill")
+                                    .foregroundStyle(.secondary)
+                                    .font(.caption)
+                            }
+                        }
+                    }
                     Toggle(isOn: $captionPromptEnabled) {
                         Label("Caption prompt after photo", systemImage: "text.bubble")
                     }
-                } footer: {
-                    Text("Show a note field after each shot so you can caption the photo on the spot.")
                 }
 
                 Section {
@@ -115,6 +210,10 @@ struct SettingsView: View {
                         Label("Feedback", systemImage: "envelope")
                             .foregroundStyle(.primary)
                     }
+                    Button { showOnboarding = true } label: {
+                        Label("Show Onboarding", systemImage: "sparkles")
+                            .foregroundStyle(.primary)
+                    }
                 }
             }
             .navigationTitle("Settings")
@@ -125,6 +224,14 @@ struct SettingsView: View {
                         .font(.largeTitle.width(.expanded).weight(.bold))
                 }
             }
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+                .environment(PremiumManager.shared)
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView(hasSeenOnboarding: .constant(true))
+                .environment(PremiumManager.shared)
         }
     }
 }
@@ -139,4 +246,5 @@ private func formatDuration(_ seconds: Double) -> String {
 
 #Preview {
     SettingsView()
+        .environment(PremiumManager.shared)
 }

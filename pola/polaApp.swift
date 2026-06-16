@@ -23,9 +23,19 @@ struct polaApp: App {
         }
     }()
 
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(PremiumManager.shared)
+                .fullScreenCover(isPresented: Binding(
+                    get: { !hasSeenOnboarding },
+                    set: { if !$0 { hasSeenOnboarding = true } }
+                )) {
+                    OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)
+                        .environment(PremiumManager.shared)
+                }
         }
         .modelContainer(sharedModelContainer)
     }

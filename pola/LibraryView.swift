@@ -19,6 +19,8 @@ private struct ActivitySheet: UIViewControllerRepresentable {
 
 struct LibraryView: View {
     @Bindable var store: PhotoStore
+    @Environment(PremiumManager.self) private var premium
+    @State private var showPaywall = false
 
     @State private var selectedCategory = "All"
     @State private var editingEntry: PolaroidEntry? = nil
@@ -30,8 +32,12 @@ struct LibraryView: View {
     @State private var showShareSheet = false
     @State private var showDeleteConfirm = false
     @State private var deletingIDs: Set<UUID> = []
+    @State private var isSaving = false
+    @State private var saveDidSucceed = false
 
     @AppStorage("libraryColumnCount") private var columnCount: Int = 3
+    @AppStorage("polaroidFont") private var polaroidFontRaw: String = PolaroidFont.handwriting.rawValue
+    @AppStorage("polaroidFontWeight") private var polaroidFontWeightRaw: String = PolaroidFontWeight.regular.rawValue
     @GestureState private var pinchScale: CGFloat = 1.0
 
     private let categories: [(name: String, color: Color)] = [
@@ -132,11 +138,30 @@ struct LibraryView: View {
                     ToolbarSpacer(.fixed, placement: .bottomBar)
                     ToolbarItem(placement: .bottomBar) {
                         Button {
+                            guard !isSaving, !saveDidSucceed else { return }
                             let selected = store.entries.filter { selectedIDs.contains($0.id) }
-                            Task { await saveToPhotosApp(selected) }
+                            Task {
+                                isSaving = true
+                                await saveToPhotosApp(selected)
+                                isSaving = false
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                    saveDidSucceed = true
+                                }
+                                try? await Task.sleep(for: .seconds(2))
+                                withAnimation {
+                                    saveDidSucceed = false
+                                }
+                            }
                         } label: {
-                            Label("Save", systemImage: "square.and.arrow.down")
+                            if isSaving {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                            } else {
+                                Label("Save", systemImage: saveDidSucceed ? "checkmark" : "square.and.arrow.down")
+                                    .contentTransition(.symbolEffect(.replace))
+                            }
                         }
+                        .disabled(isSaving || saveDidSucceed)
                     }
                     ToolbarSpacer(.fixed, placement: .bottomBar)
                     ToolbarItem(placement: .bottomBar) {
@@ -195,6 +220,8 @@ struct LibraryView: View {
                                     Label("Sort", systemImage: "arrow.up.arrow.down")
                                 }
 
+                                Divider()
+
                                 Menu {
                                     Button { withAnimation(.spring(duration: 0.4, bounce: 0.2)) { columnCount = 1 } } label: {
                                         Label("1 Column", systemImage: columnCount == 1 ? "checkmark" : "rectangle.grid.1x2")
@@ -207,6 +234,37 @@ struct LibraryView: View {
                                     }
                                 } label: {
                                     Label("Grid", systemImage: "square.grid.2x2")
+                                }
+                                
+                                Divider()
+                                
+                                if premium.isPremium {
+                                    Menu {
+                                        ForEach(PolaroidFont.allCases, id: \.rawValue) { font in
+                                            Button { polaroidFontRaw = font.rawValue } label: {
+                                                Label(font.displayName, systemImage: polaroidFontRaw == font.rawValue ? "checkmark" : "textformat")
+                                            }
+                                        }
+                                    } label: {
+                                        Label("Caption Font", systemImage: "textformat")
+                                    }
+
+                                    Menu {
+                                        ForEach(PolaroidFontWeight.allCases, id: \.rawValue) { w in
+                                            Button { polaroidFontWeightRaw = w.rawValue } label: {
+                                                Label(w.displayName, systemImage: polaroidFontWeightRaw == w.rawValue ? "checkmark" : "bold")
+                                            }
+                                        }
+                                    } label: {
+                                        Label("Font Weight", systemImage: "bold")
+                                    }
+                                } else {
+                                    Button { showPaywall = true } label: {
+                                        Label("Caption Font", systemImage: "lock.fill")
+                                    }
+                                    Button { showPaywall = true } label: {
+                                        Label("Font Weight", systemImage: "lock.fill")
+                                    }
                                 }
                             } label: {
                                 Label("Filter", systemImage: "ellipsis")
@@ -237,6 +295,10 @@ struct LibraryView: View {
             }
         }
         .overlay { detailOverlay }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+                .environment(PremiumManager.shared)
+        }
     }
 
     @ViewBuilder
@@ -273,11 +335,12 @@ struct LibraryView: View {
         .aspectRatio(0.75, contentMode: .fit)
         .overlay(alignment: .topLeading) {
             if isSelectMode {
-                Image(systemName: selectedIDs.contains(entry.id) ? "checkmark.circle.fill" : "circle")
+                Image(systemName: selectedIDs.contains(entry.id) ?"checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(selectedIDs.contains(entry.id) ? .blue : .white)
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, .blue)
                     .padding(6)
-                    .shadow(color: .black.opacity(0.4), radius: 2)
+                    .contentTransition(.symbolEffect(.replace))
             }
         }
         .contextMenu {
@@ -364,4 +427,5 @@ struct LibraryView: View {
 
 #Preview {
     LibraryView(store: PhotoStore())
+        .environment(PremiumManager.shared)
 }

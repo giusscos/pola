@@ -41,6 +41,8 @@ struct ContentView: View {
     @State private var shutterScaleTrigger = false
     @Namespace private var sheetZoom
     @Namespace private var zoomNamespace
+    @Environment(PremiumManager.self) private var premium
+    @State private var showPaywall = false
 
     private var activeFilter: FilmFilter? {
         filmFilters.first { $0.name == selectedFilterName }
@@ -206,11 +208,17 @@ struct ContentView: View {
         }
         .fullScreenCover(isPresented: $showLibrary) {
             LibraryView(store: store)
+                .environment(PremiumManager.shared)
                 .navigationTransition(.zoom(sourceID: "library", in: sheetZoom))
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
+                .environment(PremiumManager.shared)
                 .navigationTransition(.zoom(sourceID: "settings", in: sheetZoom))
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+                .environment(PremiumManager.shared)
         }
         .sheet(isPresented: $showTimeLapseSettings) {
             TimeLapseSettingsView(interval: $timelapsInterval, duration: $timelapseDuration, saveAsVideo: $timelapseSaveAsVideo)
@@ -289,9 +297,14 @@ struct ContentView: View {
             HStack(spacing: 10) {
                 ForEach(filmFilters) { filter in
                     let isSelected = selectedFilterName == filter.name
-                    filterCard(filter: filter, isSelected: isSelected) {
-                        withAnimation(.snappy) {
-                            selectedFilterName = isSelected ? nil : filter.name
+                    let locked = !premium.isPremium
+                    filterCard(filter: filter, isSelected: isSelected, locked: locked) {
+                        if locked {
+                            showPaywall = true
+                        } else {
+                            withAnimation(.snappy) {
+                                selectedFilterName = isSelected ? nil : filter.name
+                            }
                         }
                     }
                 }
@@ -308,9 +321,14 @@ struct ContentView: View {
             HStack(spacing: 10) {
                 ForEach(polaPackColors) { pack in
                     let isSelected = selectedPackName == pack.name
-                    packCard(pack: pack, isSelected: isSelected) {
-                        withAnimation(.snappy) {
-                            selectedPackName = isSelected ? nil : pack.name
+                    let locked = !premium.isPremium
+                    packCard(pack: pack, isSelected: isSelected, locked: locked) {
+                        if locked {
+                            showPaywall = true
+                        } else {
+                            withAnimation(.snappy) {
+                                selectedPackName = isSelected ? nil : pack.name
+                            }
                         }
                     }
                 }
@@ -321,7 +339,7 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private func packCard(pack: PolaPackColor, isSelected: Bool, onTap: @escaping () -> Void) -> some View {
+    private func packCard(pack: PolaPackColor, isSelected: Bool, locked: Bool = false, onTap: @escaping () -> Void) -> some View {
         VStack(spacing: 5) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
@@ -333,6 +351,14 @@ struct ContentView: View {
                     autoRotate: true,
                     modelScale: 0.85
                 )
+
+                if locked {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.black.opacity(0.5))
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
             }
             .frame(width: 60, height: 60)
             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -343,14 +369,14 @@ struct ContentView: View {
 
             Text(pack.name)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(locked ? .white.opacity(0.45) : .white)
                 .lineLimit(1)
         }
         .onTapGesture { onTap() }
     }
 
     @ViewBuilder
-    private func filterCard(filter: FilmFilter, isSelected: Bool, onTap: @escaping () -> Void) -> some View {
+    private func filterCard(filter: FilmFilter, isSelected: Bool, locked: Bool = false, onTap: @escaping () -> Void) -> some View {
         VStack(spacing: 5) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
@@ -368,6 +394,14 @@ struct ContentView: View {
                         .fill(filter.color)
                         .frame(width: 22, height: 22)
                 }
+
+                if locked {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.black.opacity(0.5))
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
             }
             .frame(width: 60, height: 60)
             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -378,7 +412,7 @@ struct ContentView: View {
 
             Text(filter.name)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(locked ? .white.opacity(0.45) : .white)
                 .lineLimit(1)
         }
         .onTapGesture { onTap() }

@@ -1,4 +1,5 @@
 import SwiftUI
+import Photos
 
 struct PolaroidDetailView: View {
     var store: PhotoStore
@@ -14,6 +15,8 @@ struct PolaroidDetailView: View {
     @State private var shareItems: [Any] = []
     @State private var showShareSheet = false
     @State private var showDeleteConfirm = false
+    @State private var isSaving = false
+    @State private var saveDidSucceed = false
 
     // Natural stack positions for back cards (rotation, x offset, y offset, scale)
     private let backOffsets: [(rotation: Double, x: CGFloat, y: CGFloat, scale: Double)] = [
@@ -66,25 +69,44 @@ struct PolaroidDetailView: View {
                         Image(systemName: "xmark")
                     }
                 }
+                
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 16) {
-                        Button {
-                            guard currentIndex < store.entries.count else { return }
-                            let entry = store.entries[currentIndex]
-                            Task {
-                                shareItems = await prepareShareItems(for: [entry])
-                                showShareSheet = true
-                            }
-                        } label: {
-                            Image(systemName: "square.and.arrow.up")
+                    Button {
+                        guard currentIndex < store.entries.count else { return }
+                        let entry = store.entries[currentIndex]
+                        Task {
+                            shareItems = await prepareShareItems(for: [entry])
+                            showShareSheet = true
                         }
-                        Button {
-                            showDeleteConfirm = true
-                        } label: {
-                            Image(systemName: "trash")
-                        }
-                        .foregroundStyle(.red)
+                    } label: {
+                        Label("Share", systemImage: "square.and.arrow.up")
                     }
+                }
+                
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        guard !isSaving, !saveDidSucceed else { return }
+                        Task { await saveCurrentPhoto() }
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Label("Save to Photos", systemImage: saveDidSucceed ? "checkmark" : "square.and.arrow.down")
+                                .contentTransition(.symbolEffect(.replace))
+                        }
+                    }
+                    .disabled(isSaving || saveDidSucceed)
+                }
+                
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button (role: .destructive) {
+                        showDeleteConfirm = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                    .tint(.red)
+                    .buttonStyle(.glassProminent)
                 }
             }
         }
@@ -237,6 +259,36 @@ struct PolaroidDetailView: View {
             handleDismiss()
         } else {
             currentIndex = min(currentIndex, store.entries.count - 1)
+        }
+    }
+
+    // MARK: - Save
+
+    @MainActor
+    private func saveCurrentPhoto() async {
+        guard currentIndex < store.entries.count else { return }
+        let entry = store.entries[currentIndex]
+        let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+        guard status == .authorized || status == .limited else { return }
+        isSaving = true
+        if entry.videoURL != nil {
+            let url = await compositePolaroidVideo(entry) ?? entry.videoURL!
+            try? await PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+            }
+        } else {
+            let image = renderPolaroidFrame(entry)
+            try? await PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.creationRequestForAsset(from: image)
+            }
+        }
+        isSaving = false
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            saveDidSucceed = true
+        }
+        try? await Task.sleep(for: .seconds(2))
+        withAnimation {
+            saveDidSucceed = false
         }
     }
 
