@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var cameraManager = CameraManager()
     @AppStorage("captionPromptEnabled") private var captionPromptEnabled: Bool = true
     @AppStorage("iCloudSyncEnabled") private var iCloudSyncEnabled: Bool = false
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var store = PhotoStore()
     @State private var pendingEntryID: UUID? = nil
     @State private var pendingCaption: String = ""
@@ -226,8 +227,15 @@ struct ContentView: View {
                 .navigationTransition(.zoom(sourceID: "timelapse", in: sheetZoom))
         }
         .task {
-            await cameraManager.configure()
+            if hasSeenOnboarding {
+                await cameraManager.configure()
+            }
             store.configure(iCloudEnabled: iCloudSyncEnabled)
+        }
+        .onChange(of: hasSeenOnboarding) { _, newValue in
+            if newValue {
+                Task { await cameraManager.configure() }
+            }
         }
         .onChange(of: iCloudSyncEnabled) { _, newValue in
             store.configure(iCloudEnabled: newValue)

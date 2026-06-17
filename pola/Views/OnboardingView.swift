@@ -1,4 +1,29 @@
 import SwiftUI
+import AVFoundation
+import CoreLocation
+
+private final class LocationAuthorizationHelper: NSObject, CLLocationManagerDelegate {
+    private let manager = CLLocationManager()
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    override init() {
+        super.init()
+        manager.delegate = self
+    }
+
+    func request() async {
+        guard manager.authorizationStatus == .notDetermined else { return }
+        await withCheckedContinuation { c in
+            continuation = c
+            manager.requestWhenInUseAuthorization()
+        }
+    }
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        continuation?.resume()
+        continuation = nil
+    }
+}
 
 struct OnboardingView: View {
     @Binding var hasSeenOnboarding: Bool
@@ -7,6 +32,7 @@ struct OnboardingView: View {
 
     @State private var page = 0
     @State private var appeared = false
+    @State private var locationHelper = LocationAuthorizationHelper()
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -36,13 +62,31 @@ struct OnboardingView: View {
                     description: "Share and save your memories without any branding. Pure, clean polaroids every time.",
                     visual: AnyView(watermarkVisual)
                 ).tag(3)
-                paywallPage.tag(4)
+                permissionPage(
+                    color: Color(red: 0.2, green: 0.6, blue: 1.0),
+                    systemIcon: "camera.fill",
+                    title: "Camera\nAccess",
+                    description: "Pola needs access to your camera to capture authentic polaroid-style photos and videos."
+                ).tag(4)
+                permissionPage(
+                    color: Color(red: 1.0, green: 0.55, blue: 0.2),
+                    systemIcon: "mic.fill",
+                    title: "Microphone\nAccess",
+                    description: "Allow microphone access so Pola can record audio when capturing videos and time-lapses."
+                ).tag(5)
+                permissionPage(
+                    color: Color(red: 0.2, green: 0.85, blue: 0.55),
+                    systemIcon: "location.fill",
+                    title: "Location\nAccess",
+                    description: "Optionally tag your memories with a location to remember exactly where each shot was taken."
+                ).tag(6)
+                paywallPage.tag(7)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
             .animation(.easeInOut(duration: 0.35), value: page)
 
-            if page < 4 {
+            if page < 7 {
                 navOverlay
                     .transition(.opacity)
             }
@@ -63,7 +107,7 @@ struct OnboardingView: View {
             HStack {
                 Spacer()
                 Button {
-                    withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = 4 }
+                    withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = 7 }
                 } label: {
                     Text("Skip")
                         .font(.system(size: 15, weight: .medium))
@@ -81,12 +125,10 @@ struct OnboardingView: View {
                 pageIndicator
 
                 Button {
-                    withAnimation(.spring(duration: 0.4, bounce: 0.1)) {
-                        page = min(page + 1, 4)
-                    }
+                    handleContinue()
                 } label: {
                     HStack(spacing: 6) {
-                        Text(page == 0 ? "Get Started" : "Continue")
+                        Text(page == 0 ? "Get Started" : (4...6).contains(page) ? "Allow Access" : "Continue")
                             .font(.system(size: 17, weight: .semibold))
                         Image(systemName: "arrow.right")
                             .font(.system(size: 14, weight: .semibold))
@@ -105,7 +147,7 @@ struct OnboardingView: View {
 
     private var pageIndicator: some View {
         HStack(spacing: 6) {
-            ForEach(0..<4, id: \.self) { i in
+            ForEach(0..<7, id: \.self) { i in
                 Capsule()
                     .fill(i == page ? Color.white : Color.white.opacity(0.3))
                     .frame(width: i == page ? 22 : 6, height: 6)
@@ -391,6 +433,79 @@ struct OnboardingView: View {
     private func background(topColor: Color, bottomColor: Color) -> some View {
         LinearGradient(colors: [topColor, bottomColor], startPoint: .top, endPoint: .bottom)
             .ignoresSafeArea()
+    }
+
+    // MARK: - Permission page
+
+    private func permissionPage(color: Color, systemIcon: String, title: String, description: String) -> some View {
+        ZStack {
+            background(topColor: Color(red: 0.07, green: 0.07, blue: 0.12), bottomColor: Color(red: 0.06, green: 0.06, blue: 0.1))
+
+            Circle()
+                .fill(color.opacity(0.18))
+                .frame(width: 300, height: 300)
+                .blur(radius: 70)
+                .offset(y: -100)
+
+            VStack(spacing: 0) {
+                Spacer()
+
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.12))
+                        .frame(width: 130, height: 130)
+                    Circle()
+                        .strokeBorder(color.opacity(0.3), lineWidth: 1.5)
+                        .frame(width: 130, height: 130)
+                    Image(systemName: systemIcon)
+                        .font(.system(size: 52, weight: .thin))
+                        .foregroundStyle(color)
+                }
+                .padding(.bottom, 44)
+
+                VStack(spacing: 14) {
+                    Text(LocalizedStringKey(title))
+                        .font(.system(size: 38, weight: .bold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(2)
+
+                    Text(LocalizedStringKey(description))
+                        .font(.system(size: 16))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                        .padding(.horizontal, 36)
+                }
+
+                Spacer()
+                Spacer()
+            }
+        }
+    }
+
+    // MARK: - Permission handling
+
+    private func handleContinue() {
+        switch page {
+        case 4:
+            Task {
+                await AVCaptureDevice.requestAccess(for: .video)
+                await MainActor.run { withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = 5 } }
+            }
+        case 5:
+            Task {
+                await AVCaptureDevice.requestAccess(for: .audio)
+                await MainActor.run { withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = 6 } }
+            }
+        case 6:
+            Task {
+                await locationHelper.request()
+                await MainActor.run { withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = 7 } }
+            }
+        default:
+            withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = min(page + 1, 7) }
+        }
     }
 }
 

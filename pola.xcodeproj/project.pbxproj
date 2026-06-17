@@ -156,7 +156,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = pola/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Poly;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
+				INFOPLIST_KEY_NSCameraUsageDescription = "pola uses the camera to capture photos with vintage film filters.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "pola saves your photo location so you can see where each shot was taken on the back of the polaroid.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "pola uses the microphone to record audio with video.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "pola needs access to save your polaroids to your photo library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -198,7 +203,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = pola/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Poly;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
+				INFOPLIST_KEY_NSCameraUsageDescription = "pola uses the camera to capture photos with vintage film filters.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "pola saves your photo location so you can see where each shot was taken on the back of the polaroid.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "pola uses the microphone to record audio with video.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "pola needs access to save your polaroids to your photo library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
