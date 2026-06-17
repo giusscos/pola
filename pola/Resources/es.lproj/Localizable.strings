@@ -90,6 +90,13 @@
 "Share and save your memories without any branding. Pure, clean polaroids every time." = "Comparte y guarda tus recuerdos sin ninguna marca. Polaroids puros y limpios cada vez.";
 "Poly." = "Poly.";
 "Authentic polaroids,\ndirect from your camera." = "Polaroids auténticos,\ndirectamente desde tu cámara.";
+"Camera\nAccess" = "Cámara\nAcceso";
+"Pola needs access to your camera to capture authentic polaroid-style photos and videos." = "Pola necesita acceso a la cámara para capturar fotos y vídeos auténticos al estilo polaroid.";
+"Microphone\nAccess" = "Micrófono\nAcceso";
+"Allow microphone access so Pola can record audio when capturing videos and time-lapses." = "Permite el acceso al micrófono para que Pola grabe audio al capturar vídeos y lapsos de tiempo.";
+"Location\nAccess" = "Ubicación\nAcceso";
+"Optionally tag your memories with a location to remember exactly where each shot was taken." = "Etiqueta opcionalmente tus recuerdos con una ubicación para recordar dónde se tomó cada foto.";
+"Allow Access" = "Permitir acceso";
 
 /* Paywall */
 "Film Filters & Packs" = "Filtros Film & Packs";

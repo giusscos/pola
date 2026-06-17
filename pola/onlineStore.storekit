@@ -1,0 +1,227 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "55DFFB61",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "29.99",
+      "familyShareable" : false,
+      "internalID" : "6781263765",
+      "localizations" : [
+        {
+          "description" : "Schalte alle Premium-Funktionen dauerhaft frei.",
+          "displayName" : "Lebenszeit",
+          "locale" : "de"
+        },
+        {
+          "description" : "Débloquez les fonctionnalités premium pour toujours.",
+          "displayName" : "À vie",
+          "locale" : "fr"
+        },
+        {
+          "description" : "Desbloquea todas las funciones premium para siempre.",
+          "displayName" : "De por vida",
+          "locale" : "es_ES"
+        },
+        {
+          "description" : "Sblocca tutte le funzioni premium per sempre.",
+          "displayName" : "A vita",
+          "locale" : "it"
+        },
+        {
+          "description" : "Unlock all premium features forever",
+          "displayName" : "Lifetime",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.pola.premium.lifetime",
+      "referenceName" : "Premium Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6781238494",
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_developerTeamID" : "MA7MBQ947C",
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 803396902.30323195,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "22163646",
+      "localizations" : [
+        {
+          "description" : "",
+          "displayName" : "Premium",
+          "locale" : "it"
+        },
+        {
+          "description" : "",
+          "displayName" : "Premium",
+          "locale" : "fr"
+        },
+        {
+          "description" : "",
+          "displayName" : "Premium",
+          "locale" : "de"
+        },
+        {
+          "description" : "",
+          "displayName" : "Premium",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "",
+          "displayName" : "Premium",
+          "locale" : "es_ES"
+        }
+      ],
+      "name" : "Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "billingPlans" : [
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "commitmentDisplayPrice" : "2.99",
+              "displayPrice" : "2.99",
+              "internalID" : "6781270859_BILLED_UPFRONT",
+              "isEnabled" : true
+            }
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6781270859",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "Sblocca tutte le funzioni premium.",
+              "displayName" : "Mensile",
+              "locale" : "it"
+            },
+            {
+              "description" : "Desbloquea todas las funciones premium.",
+              "displayName" : "Mensual",
+              "locale" : "es_ES"
+            },
+            {
+              "description" : "Débloquez toutes les fonctionnalités premium.",
+              "displayName" : "Mensuel",
+              "locale" : "fr"
+            },
+            {
+              "description" : "Alle Premium-Funktionen freischalten.",
+              "displayName" : "Monatlich",
+              "locale" : "de"
+            },
+            {
+              "description" : "Unlock all premium features.",
+              "displayName" : "Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.pola.premium.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly",
+          "subscriptionGroupID" : "22163646",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "billingPlans" : [
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "commitmentDisplayPrice" : "19.99",
+              "displayPrice" : "19.99",
+              "internalID" : "6781272109_BILLED_UPFRONT",
+              "isEnabled" : true
+            }
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "19.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6781272109",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "Alle Premium-Funktionen freischalten.",
+              "displayName" : "Jährlich",
+              "locale" : "de"
+            },
+            {
+              "description" : "Unlock all premium features.",
+              "displayName" : "Yearly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "Débloquez toutes les fonctionnalités premium.",
+              "displayName" : "Annuel",
+              "locale" : "fr"
+            },
+            {
+              "description" : "Sblocca tutte le funzioni premium.",
+              "displayName" : "Annuale",
+              "locale" : "it"
+            },
+            {
+              "description" : "Desbloquea todas las funciones premium.",
+              "displayName" : "Anual",
+              "locale" : "es_ES"
+            }
+          ],
+          "productID" : "com.pola.premium.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Yearly",
+          "subscriptionGroupID" : "22163646",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 5,
+    "minor" : 0
+  }
+}
