@@ -9,7 +9,6 @@ struct EditPolaroidSheet: View {
             Form {
                 Section {
                     TextField("Short note...", text: $entry.caption)
-                        .font(.custom("Bradley Hand", size: 16))
                 } header: {
                     Text("Caption (front strip)")
                 }
@@ -18,14 +17,12 @@ struct EditPolaroidSheet: View {
                     ZStack(alignment: .topLeading) {
                         if entry.backText.isEmpty {
                             Text("Write something on the back...")
-                                .font(.custom("Bradley Hand", size: 15))
                                 .foregroundStyle(.secondary)
                                 .padding(.top, 8)
                                 .padding(.leading, 4)
                                 .allowsHitTesting(false)
                         }
                         TextEditor(text: $entry.backText)
-                            .font(.custom("Bradley Hand", size: 15))
                             .frame(minHeight: 90)
                             .scrollContentBackground(.hidden)
                     }

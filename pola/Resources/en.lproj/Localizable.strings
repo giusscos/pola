@@ -1,0 +1,128 @@
+/* Settings */
+"Settings" = "Settings";
+"Language" = "Language";
+"Premium" = "Premium";
+"Premium Active" = "Premium Active";
+"All features unlocked" = "All features unlocked";
+"Hide watermark on exports" = "Hide watermark on exports";
+"Unlock poly Premium" = "Unlock poly Premium";
+"Filters, fonts & watermark-free exports" = "Filters, fonts & watermark-free exports";
+"Camera" = "Camera";
+"Default Filter" = "Default Filter";
+"None" = "None";
+"Video" = "Video";
+"Record audio" = "Record audio";
+"Save as video polaroid" = "Save as video polaroid";
+"All frames combined into one video" = "All frames combined into one video";
+"Time Lapse" = "Time Lapse";
+"Library" = "Library";
+"1 Column" = "1 Column";
+"2 Columns" = "2 Columns";
+"3 Columns" = "3 Columns";
+"Grid Columns" = "Grid Columns";
+"Polaroid" = "Polaroid";
+"Caption Font" = "Caption Font";
+"Font Weight" = "Font Weight";
+"Caption prompt after photo" = "Caption prompt after photo";
+"iCloud" = "iCloud";
+"Sync with iCloud" = "Sync with iCloud";
+"Store your polaroids in iCloud so they're available across your devices. Changes take effect immediately." = "Store your polaroids in iCloud so they're available across your devices. Changes take effect immediately.";
+"Privacy" = "Privacy";
+"Privacy Policy" = "Privacy Policy";
+"Terms of Use" = "Terms of Use";
+"App" = "App";
+"About" = "About";
+"Feedback" = "Feedback";
+"Show Onboarding" = "Show Onboarding";
+
+/* Camera / ContentView */
+"Camera access required" = "Camera access required";
+"Add a note..." = "Add a note...";
+"Skip" = "Skip";
+"Done" = "Done";
+"FILM" = "FILM";
+"PACK" = "PACK";
+"VIDEO" = "VIDEO";
+"PHOTO" = "PHOTO";
+"TIME LAPSE" = "TIME LAPSE";
+"Interval" = "Interval";
+"Duration" = "Duration";
+"Output" = "Output";
+
+/* Library */
+"No Photos Yet" = "No Photos Yet";
+"Take your first photo to see it here" = "Take your first photo to see it here";
+"Share" = "Share";
+"Save" = "Save";
+"Delete" = "Delete";
+"Cancel" = "Cancel";
+"Select" = "Select";
+"Filter" = "Filter";
+"Sort" = "Sort";
+"Grid" = "Grid";
+"Edit Caption & Notes" = "Edit Caption & Notes";
+"Save to Photos" = "Save to Photos";
+"Delete this photo?" = "Delete this photo?";
+"1 item" = "1 item";
+"%d items" = "%d items";
+"Delete 1 photo?" = "Delete 1 photo?";
+"Delete %d photos?" = "Delete %d photos?";
+
+/* EditPolaroidSheet */
+"Short note..." = "Short note...";
+"Caption (front strip)" = "Caption (front strip)";
+"Back of polaroid" = "Back of polaroid";
+"Write something on the back..." = "Write something on the back...";
+"Show map on back" = "Show map on back";
+"Map" = "Map";
+"Disable to show your note instead of the map." = "Disable to show your note instead of the map.";
+"Edit Polaroid" = "Edit Polaroid";
+
+/* Onboarding */
+"Get Started" = "Get Started";
+"Continue" = "Continue";
+"PREMIUM" = "PREMIUM";
+"Film Filters\n& Packs" = "Film Filters\n& Packs";
+"Choose from 5 authentic film emulations and colorful Polaroid frames that make every shot uniquely yours." = "Choose from 5 authentic film emulations and colorful Polaroid frames that make every shot uniquely yours.";
+"Your Caption\nStyle" = "Your Caption\nStyle";
+"Personalize every polaroid with 6 fonts and 4 weight options — a signature that's uniquely yours." = "Personalize every polaroid with 6 fonts and 4 weight options — a signature that's uniquely yours.";
+"Watermark-\nFree" = "Watermark-\nFree";
+"Share and save your memories without any branding. Pure, clean polaroids every time." = "Share and save your memories without any branding. Pure, clean polaroids every time.";
+"Poly." = "Poly.";
+"Authentic polaroids,\ndirect from your camera." = "Authentic polaroids,\ndirect from your camera.";
+
+/* Paywall */
+"Film Filters & Packs" = "Film Filters & Packs";
+"5 film emulations + colored frames" = "5 film emulations + colored frames";
+"Caption Style" = "Caption Style";
+"6 fonts × 4 weights" = "6 fonts × 4 weights";
+"Watermark-Free" = "Watermark-Free";
+"Pure, clean exports" = "Pure, clean exports";
+"poly Premium" = "poly Premium";
+"Unlock the full experience" = "Unlock the full experience";
+"BEST VALUE" = "BEST VALUE";
+"One-time purchase" = "One-time purchase";
+"per month" = "per month";
+"per year" = "per year";
+"per week" = "per week";
+"per day" = "per day";
+"Monthly" = "Monthly";
+"Yearly" = "Yearly";
+"Lifetime" = "Lifetime";
+"Unlock Premium" = "Unlock Premium";
+"Restore Purchases" = "Restore Purchases";
+"Continue for Free" = "Continue for Free";
+"Subscriptions auto-renew unless cancelled. Manage in Settings." = "Subscriptions auto-renew unless cancelled. Manage in Settings.";
+
+/* Language change dialog */
+"Apply Language?" = "Apply Language?";
+"Close and reopen the app to fully apply the language changes." = "Close and reopen the app to fully apply the language changes.";
+"Apply" = "Apply";
+
+/* Dynamic format strings */
+"Interval: %d s between shots" = "Interval: %d s between shots";
+"Duration: %@" = "Duration: %@";
+"%d separate photo polaroids" = "%d separate photo polaroids";
+"Total frames: %d" = "Total frames: %d";
+"Between photos: %d s" = "Between photos: %d s";
+"Total duration: %d s" = "Total duration: %d s";

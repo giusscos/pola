@@ -2,8 +2,12 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(PremiumManager.self) private var premium
+    @Environment(LanguageManager.self) private var languageManager
+    @Environment(\.openURL) private var openURL
     @State private var showPaywall = false
     @State private var showOnboarding = false
+    @State private var pendingLanguage: String? = nil
+    @State private var showLanguageAlert = false
 
     @AppStorage("defaultFilter") private var defaultFilter: String = "None"
     @AppStorage("captionPromptEnabled") private var captionPromptEnabled: Bool = true
@@ -57,7 +61,7 @@ struct SettingsView: View {
                                         .foregroundStyle(Color(red: 1.0, green: 0.8, blue: 0.3))
                                 }
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Unlock pola. Premium")
+                                    Text("Unlock poly Premium")
                                         .font(.headline)
                                         .foregroundStyle(.primary)
                                     Text("Filters, fonts & watermark-free exports")
@@ -94,14 +98,14 @@ struct SettingsView: View {
 
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Interval: \(Int(timelapseInterval))s between shots")
+                        Text(verbatim: String(format: NSLocalizedString("Interval: %d s between shots", comment: ""), Int(timelapseInterval)))
                             .font(.subheadline)
                         Slider(value: $timelapseInterval, in: 1...60, step: 1)
                     }
                     .padding(.vertical, 4)
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Duration: \(formatDuration(timelapseDuration))")
+                        Text(verbatim: String(format: NSLocalizedString("Duration: %@", comment: ""), formatDuration(timelapseDuration)))
                             .font(.subheadline)
                         Slider(value: $timelapseDuration, in: 10...3600, step: 10)
                     }
@@ -110,9 +114,9 @@ struct SettingsView: View {
                     Toggle(isOn: $timelapseSaveAsVideo) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Save as video polaroid")
-                            Text(timelapseSaveAsVideo
-                                 ? "All frames combined into one video"
-                                 : "\(totalTimelapsePhotos) separate photo polaroids")
+                            Text(verbatim: timelapseSaveAsVideo
+                                 ? NSLocalizedString("All frames combined into one video", comment: "")
+                                 : String(format: NSLocalizedString("%d separate photo polaroids", comment: ""), totalTimelapsePhotos))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -120,7 +124,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Time Lapse")
                 } footer: {
-                    Text("Total frames: \(totalTimelapsePhotos)")
+                    Text(verbatim: String(format: NSLocalizedString("Total frames: %d", comment: ""), totalTimelapsePhotos))
                 }
 
                 Section("Library") {
@@ -189,13 +193,13 @@ struct SettingsView: View {
 
                 Section("Privacy") {
                     Button {
-                        // TODO: open privacy policy URL
+                        openURL(URL(string: "https://poly-vintage.com/privacy")!)
                     } label: {
                         Label("Privacy Policy", systemImage: "hand.raised.fill")
                             .foregroundStyle(.primary)
                     }
                     Button {
-                        // TODO: open terms of use URL
+                        openURL(URL(string: "https://poly-vintage.com/terms")!)
                     } label: {
                         Label("Terms of Use", systemImage: "doc.text.fill")
                             .foregroundStyle(.primary)
@@ -203,9 +207,8 @@ struct SettingsView: View {
                 }
 
                 Section("App") {
-                    Label("About", systemImage: "info.circle")
                     Button {
-                        // TODO: open mail composer
+                        openURL(URL(string: "mailto:hello@giusscos.com")!)
                     } label: {
                         Label("Feedback", systemImage: "envelope")
                             .foregroundStyle(.primary)
@@ -214,6 +217,23 @@ struct SettingsView: View {
                         Label("Show Onboarding", systemImage: "sparkles")
                             .foregroundStyle(.primary)
                     }
+                }
+
+                Section("Language") {
+                    Picker(selection: Binding(
+                        get: { languageManager.selectedCode },
+                        set: {
+                            pendingLanguage = $0
+                            showLanguageAlert = true
+                        }
+                    )) {
+                        ForEach(languageManager.supportedLanguages, id: \.code) { lang in
+                            Text(lang.localName).tag(lang.code)
+                        }
+                    } label: {
+                        Label("Language", systemImage: "globe")
+                    }
+                    .pickerStyle(.menu)
                 }
             }
             .navigationTitle("Settings")
@@ -233,6 +253,16 @@ struct SettingsView: View {
             OnboardingView(hasSeenOnboarding: .constant(true))
                 .environment(PremiumManager.shared)
         }
+        .alert(Text("Apply Language?"), isPresented: $showLanguageAlert, presenting: pendingLanguage) { lang in
+            Button(role: .cancel) {} label: { Text("Cancel") }
+            Button {
+                languageManager.setLanguage(lang)
+            } label: {
+                Text("Apply")
+            }
+        } message: { _ in
+            Text("Close and reopen the app to fully apply the language changes.")
+        }
     }
 }
 
@@ -247,4 +277,5 @@ private func formatDuration(_ seconds: Double) -> String {
 #Preview {
     SettingsView()
         .environment(PremiumManager.shared)
+        .environment(LanguageManager.shared)
 }

@@ -6,17 +6,8 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		3B8E760F2FE13AC800F818CE /* PremiumManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B8E760E2FE13AC800F818CE /* PremiumManager.swift */; };
-		3B8E76112FE13AEE00F818CE /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B8E76102FE13AEE00F818CE /* PaywallView.swift */; };
-		3B8E76132FE13B2C00F818CE /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B8E76122FE13B2C00F818CE /* OnboardingView.swift */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
 		3B66EB192FD6BB8100C775B0 /* pola.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = pola.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		3B8E760E2FE13AC800F818CE /* PremiumManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumManager.swift; sourceTree = "<group>"; };
-		3B8E76102FE13AEE00F818CE /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
-		3B8E76122FE13B2C00F818CE /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -56,9 +47,6 @@
 			children = (
 				3B66EB1B2FD6BB8100C775B0 /* pola */,
 				3B66EB1A2FD6BB8100C775B0 /* Products */,
-				3B8E760E2FE13AC800F818CE /* PremiumManager.swift */,
-				3B8E76102FE13AEE00F818CE /* PaywallView.swift */,
-				3B8E76122FE13B2C00F818CE /* OnboardingView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -116,6 +104,10 @@
 			knownRegions = (
 				en,
 				Base,
+				it,
+				es,
+				fr,
+				de,
 			);
 			mainGroup = 3B66EB102FD6BB8100C775B0;
 			minimizedProjectReferenceProxies = 1;
@@ -144,9 +136,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3B8E76132FE13B2C00F818CE /* OnboardingView.swift in Sources */,
-				3B8E760F2FE13AC800F818CE /* PremiumManager.swift in Sources */,
-				3B8E76112FE13AEE00F818CE /* PaywallView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

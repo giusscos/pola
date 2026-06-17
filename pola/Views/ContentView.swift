@@ -214,6 +214,7 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
                 .environment(PremiumManager.shared)
+                .environment(LanguageManager.shared)
                 .navigationTransition(.zoom(sourceID: "settings", in: sheetZoom))
         }
         .sheet(isPresented: $showPaywall) {
@@ -504,7 +505,7 @@ struct ContentView: View {
                     .foregroundStyle(isActive ? .white : .white.opacity(0.65))
                     .scaleEffect(isActive ? 1.08 : 1.0)
             }
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(isActive ? .white : .white.opacity(0.55))
         }
@@ -697,7 +698,7 @@ struct ContentView: View {
 
     private func modeLabel(for mode: CameraMode) -> some View {
         let isSelected = cameraMode == mode
-        return Text(mode.rawValue)
+        return Text(LocalizedStringKey(mode.rawValue))
             .font(.system(size: 12, weight: .semibold))
             .tracking(0.3)
             .lineLimit(1)
@@ -937,7 +938,7 @@ private struct TimeLapseSettingsView: View {
             Form {
                 Section("Interval") {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Between photos: \(Int(interval))s")
+                        Text(verbatim: String(format: NSLocalizedString("Between photos: %d s", comment: ""), Int(interval)))
                             .font(.subheadline)
                         Slider(value: $interval, in: 1...60, step: 1)
                     }
@@ -945,7 +946,7 @@ private struct TimeLapseSettingsView: View {
                 }
                 Section("Duration") {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Total duration: \(Int(duration))s")
+                        Text(verbatim: String(format: NSLocalizedString("Total duration: %d s", comment: ""), Int(duration)))
                             .font(.subheadline)
                         Slider(value: $duration, in: 10...3600, step: 10)
                     }
@@ -955,16 +956,16 @@ private struct TimeLapseSettingsView: View {
                     Toggle(isOn: $saveAsVideo) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Save as video polaroid")
-                            Text(saveAsVideo
-                                 ? "All frames combined into one video"
-                                 : "\(totalPhotos) separate photo polaroids")
+                            Text(verbatim: saveAsVideo
+                                 ? NSLocalizedString("All frames combined into one video", comment: "")
+                                 : String(format: NSLocalizedString("%d separate photo polaroids", comment: ""), totalPhotos))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
                 }
                 Section {
-                    Text("Total frames: \(totalPhotos)")
+                    Text(verbatim: String(format: NSLocalizedString("Total frames: %d", comment: ""), totalPhotos))
                         .foregroundStyle(.secondary)
                 }
             }

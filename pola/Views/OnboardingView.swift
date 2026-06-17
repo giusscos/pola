@@ -202,7 +202,7 @@ struct OnboardingView: View {
 
                 VStack(spacing: 14) {
                     // Premium badge
-                    Text(badge)
+                    Text(LocalizedStringKey(badge))
                         .font(.system(size: 11, weight: .bold).width(.expanded))
                         .foregroundStyle(color)
                         .padding(.horizontal, 14)
@@ -210,14 +210,14 @@ struct OnboardingView: View {
                         .background(color.opacity(0.15), in: Capsule())
 
                     // Title
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.system(size: 38, weight: .bold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                         .lineSpacing(2)
 
                     // Description
-                    Text(description)
+                    Text(LocalizedStringKey(description))
                         .font(.system(size: 16))
                         .foregroundStyle(.white.opacity(0.55))
                         .multilineTextAlignment(.center)

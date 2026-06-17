@@ -114,8 +114,10 @@ struct LibraryView: View {
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             } else {
-                                let isPlural = store.entries.count == 1 ? "" : "s"
-                                Text("\(store.entries.count) item\(isPlural)")
+                                let itemLabel = store.entries.count == 1
+                                    ? NSLocalizedString("1 item", comment: "")
+                                    : String(format: NSLocalizedString("%d items", comment: ""), store.entries.count)
+                                Text(verbatim: itemLabel)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -283,7 +285,9 @@ struct LibraryView: View {
         }
         .background(ActivitySheet(items: shareItems, isPresented: $showShareSheet))
         .confirmationDialog(
-            "Delete \(selectedIDs.count) photo\(selectedIDs.count == 1 ? "" : "s")?",
+            selectedIDs.count == 1
+                ? NSLocalizedString("Delete 1 photo?", comment: "")
+                : String(format: NSLocalizedString("Delete %d photos?", comment: ""), selectedIDs.count),
             isPresented: $showDeleteConfirm,
             titleVisibility: .visible
         ) {

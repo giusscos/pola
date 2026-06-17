@@ -63,11 +63,11 @@ struct PaywallView: View {
             .padding(.top, 52)
             .padding(.bottom, 4)
 
-            Text("pola. Premium")
+            Text(LocalizedStringKey("poly Premium"))
                 .font(.system(size: 30, weight: .bold).width(.expanded))
                 .foregroundStyle(.white)
 
-            Text("Unlock the full experience")
+            Text(LocalizedStringKey("Unlock the full experience"))
                 .font(.system(size: 16))
                 .foregroundStyle(.white.opacity(0.5))
         }
@@ -90,10 +90,10 @@ struct PaywallView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(f.title)
+                        Text(LocalizedStringKey(f.title))
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
-                        Text(f.subtitle)
+                        Text(LocalizedStringKey(f.subtitle))
                             .font(.system(size: 13))
                             .foregroundStyle(.white.opacity(0.45))
                     }
@@ -131,7 +131,6 @@ struct PaywallView: View {
     private func productCard(_ product: Product) -> some View {
         let isSelected = selectedProductID == product.id
         let isYearly   = product.id == PremiumManager.yearlyID
-        let isLifetime = product.id == PremiumManager.lifetimeID
         let accentColor = Color(red: 1.0, green: 0.8, blue: 0.3)
 
         return Button {
@@ -154,7 +153,7 @@ struct PaywallView: View {
                                 .background(accentColor, in: Capsule())
                         }
                     }
-                    Text(isLifetime ? "One-time purchase" : periodLabel(product))
+                    Text(product.description)
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.45))
                 }
@@ -191,21 +190,11 @@ struct PaywallView: View {
         .buttonStyle(.plain)
     }
 
-    private func periodLabel(_ product: Product) -> String {
-        switch product.subscription?.subscriptionPeriod.unit {
-        case .month: return "per month"
-        case .year:  return "per year"
-        case .week:  return "per week"
-        case .day:   return "per day"
-        default:     return ""
-        }
-    }
-
     private var placeholderPricing: some View {
         VStack(spacing: 10) {
             ForEach(["Monthly", "Yearly", "Lifetime"], id: \.self) { name in
                 HStack {
-                    Text(name)
+                    Text(LocalizedStringKey(name))
                         .font(.system(size: 15, weight: .semibold))
                     Spacer()
                     Text("–")
@@ -287,6 +276,14 @@ struct PaywallView: View {
                 .foregroundStyle(.white.opacity(0.2))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
+
+            HStack(spacing: 16) {
+                Link("Privacy Policy", destination: URL(string: "https://poly-vintage.com/privacy")!)
+                Text("·")
+                Link("Terms of Use", destination: URL(string: "https://poly-vintage.com/terms")!)
+            }
+            .font(.system(size: 11))
+            .foregroundStyle(.white.opacity(0.25))
         }
         .padding(.top, 16)
         .padding(.bottom, 52)

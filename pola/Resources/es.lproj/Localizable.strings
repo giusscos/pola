@@ -1,0 +1,128 @@
+/* Settings */
+"Settings" = "Configuración";
+"Language" = "Idioma";
+"Premium" = "Premium";
+"Premium Active" = "Premium Activo";
+"All features unlocked" = "Todas las funciones desbloqueadas";
+"Hide watermark on exports" = "Ocultar marca de agua en exportaciones";
+"Unlock poly Premium" = "Desbloquear poly Premium";
+"Filters, fonts & watermark-free exports" = "Filtros, fuentes y exportaciones sin marca de agua";
+"Camera" = "Cámara";
+"Default Filter" = "Filtro predeterminado";
+"None" = "Ninguno";
+"Video" = "Vídeo";
+"Record audio" = "Grabar audio";
+"Save as video polaroid" = "Guardar como vídeo polaroid";
+"All frames combined into one video" = "Todos los fotogramas en un vídeo";
+"Time Lapse" = "Lapso de tiempo";
+"Library" = "Biblioteca";
+"1 Column" = "1 Columna";
+"2 Columns" = "2 Columnas";
+"3 Columns" = "3 Columnas";
+"Grid Columns" = "Columnas de cuadrícula";
+"Polaroid" = "Polaroid";
+"Caption Font" = "Fuente de la leyenda";
+"Font Weight" = "Grosor de la fuente";
+"Caption prompt after photo" = "Pedir leyenda después de la foto";
+"iCloud" = "iCloud";
+"Sync with iCloud" = "Sincronizar con iCloud";
+"Store your polaroids in iCloud so they're available across your devices. Changes take effect immediately." = "Almacena tus polaroids en iCloud para tenerlos en todos tus dispositivos. Los cambios tienen efecto inmediato.";
+"Privacy" = "Privacidad";
+"Privacy Policy" = "Política de privacidad";
+"Terms of Use" = "Términos de uso";
+"App" = "App";
+"About" = "Acerca de";
+"Feedback" = "Comentarios";
+"Show Onboarding" = "Mostrar presentación";
+
+/* Camera / ContentView */
+"Camera access required" = "Se requiere acceso a la cámara";
+"Add a note..." = "Añade una nota...";
+"Skip" = "Omitir";
+"Done" = "Listo";
+"FILM" = "FILM";
+"PACK" = "PACK";
+"VIDEO" = "VIDEO";
+"PHOTO" = "FOTO";
+"TIME LAPSE" = "TIME LAPSE";
+"Interval" = "Intervalo";
+"Duration" = "Duración";
+"Output" = "Salida";
+
+/* Library */
+"No Photos Yet" = "Sin fotos aún";
+"Take your first photo to see it here" = "Toma tu primera foto para verla aquí";
+"Share" = "Compartir";
+"Save" = "Guardar";
+"Delete" = "Eliminar";
+"Cancel" = "Cancelar";
+"Select" = "Seleccionar";
+"Filter" = "Filtrar";
+"Sort" = "Ordenar";
+"Grid" = "Cuadrícula";
+"Edit Caption & Notes" = "Editar leyenda y notas";
+"Save to Photos" = "Guardar en fotos";
+"Delete this photo?" = "¿Eliminar esta foto?";
+"1 item" = "1 elemento";
+"%d items" = "%d elementos";
+"Delete 1 photo?" = "¿Eliminar 1 foto?";
+"Delete %d photos?" = "¿Eliminar %d fotos?";
+
+/* EditPolaroidSheet */
+"Short note..." = "Nota breve...";
+"Caption (front strip)" = "Leyenda (tira frontal)";
+"Back of polaroid" = "Reverso del polaroid";
+"Write something on the back..." = "Escribe algo en el reverso...";
+"Show map on back" = "Mostrar mapa en el reverso";
+"Map" = "Mapa";
+"Disable to show your note instead of the map." = "Desactiva para mostrar tu nota en lugar del mapa.";
+"Edit Polaroid" = "Editar Polaroid";
+
+/* Onboarding */
+"Get Started" = "Empezar";
+"Continue" = "Continuar";
+"PREMIUM" = "PREMIUM";
+"Film Filters\n& Packs" = "Filtros Film\ny Packs";
+"Choose from 5 authentic film emulations and colorful Polaroid frames that make every shot uniquely yours." = "Elige entre 5 emulaciones de película auténticas y coloridos marcos Polaroid que hacen cada toma única.";
+"Your Caption\nStyle" = "Tu Estilo\nde Leyenda";
+"Personalize every polaroid with 6 fonts and 4 weight options — a signature that's uniquely yours." = "Personaliza cada polaroid con 6 fuentes y 4 opciones de grosor — una firma que es tuya.";
+"Watermark-\nFree" = "Sin\nMarca de Agua";
+"Share and save your memories without any branding. Pure, clean polaroids every time." = "Comparte y guarda tus recuerdos sin ninguna marca. Polaroids puros y limpios cada vez.";
+"Poly." = "Poly.";
+"Authentic polaroids,\ndirect from your camera." = "Polaroids auténticos,\ndirectamente desde tu cámara.";
+
+/* Paywall */
+"Film Filters & Packs" = "Filtros Film & Packs";
+"5 film emulations + colored frames" = "5 emulaciones film + marcos de colores";
+"Caption Style" = "Estilo de leyenda";
+"6 fonts × 4 weights" = "6 fuentes × 4 pesos";
+"Watermark-Free" = "Sin marca de agua";
+"Pure, clean exports" = "Exportaciones puras y limpias";
+"poly Premium" = "poly Premium";
+"Unlock the full experience" = "Desbloquea la experiencia completa";
+"BEST VALUE" = "MEJOR VALOR";
+"One-time purchase" = "Compra única";
+"per month" = "al mes";
+"per year" = "al año";
+"per week" = "a la semana";
+"per day" = "al día";
+"Monthly" = "Mensual";
+"Yearly" = "Anual";
+"Lifetime" = "De por vida";
+"Unlock Premium" = "Desbloquear Premium";
+"Restore Purchases" = "Restaurar compras";
+"Continue for Free" = "Continuar gratis";
+"Subscriptions auto-renew unless cancelled. Manage in Settings." = "Las suscripciones se renuevan automáticamente salvo cancelación. Gestiona en Configuración.";
+
+/* Language change dialog */
+"Apply Language?" = "¿Aplicar idioma?";
+"Close and reopen the app to fully apply the language changes." = "Cierra y vuelve a abrir la app para aplicar completamente los cambios de idioma.";
+"Apply" = "Aplicar";
+
+/* Dynamic format strings */
+"Interval: %d s between shots" = "Intervalo: %d s entre tomas";
+"Duration: %@" = "Duración: %@";
+"%d separate photo polaroids" = "%d polaroids fotográficos separados";
+"Total frames: %d" = "Total fotogramas: %d";
+"Between photos: %d s" = "Entre fotos: %d s";
+"Total duration: %d s" = "Duración total: %d s";
