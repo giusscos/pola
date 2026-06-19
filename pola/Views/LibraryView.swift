@@ -1,5 +1,6 @@
-import SwiftUI
 import Photos
+import SwiftData
+import SwiftUI
 
 private struct ActivitySheet: UIViewControllerRepresentable {
     let items: [Any]
@@ -18,14 +19,18 @@ private struct ActivitySheet: UIViewControllerRepresentable {
 }
 
 struct LibraryView: View {
-    @Bindable var store: PhotoStore
+    @Environment(PhotoStore.self) private var store
+    @Environment(\.modelContext) private var modelContext
     @Environment(PremiumManager.self) private var premium
-    @State private var showPaywall = false
+    @Query(sort: \PolaroidEntry.timestamp, order: .reverse) private var entries: [PolaroidEntry]
 
+    @State private var showPaywall = false
     @State private var selectedCategory = "All"
+    @State private var sortNewest = true
+    @State private var searchText = ""
     @State private var editingEntry: PolaroidEntry? = nil
-    @State private var detailIndex: Int? = nil
-    @State private var showDetail = false
+    @State private var selectedEntryID: UUID? = nil
+    @State private var currentDetailEntryID: UUID? = nil
     @State private var isSelectMode = false
     @State private var selectedIDs: Set<UUID> = []
     @State private var shareItems: [Any] = []
@@ -39,6 +44,7 @@ struct LibraryView: View {
     @AppStorage("polaroidFont") private var polaroidFontRaw: String = PolaroidFont.handwriting.rawValue
     @AppStorage("polaroidFontWeight") private var polaroidFontWeightRaw: String = PolaroidFontWeight.regular.rawValue
     @GestureState private var pinchScale: CGFloat = 1.0
+    @Namespace private var zoomNamespace
 
     private let categories: [(name: String, color: Color)] = [
         ("All",   .gray),
@@ -48,6 +54,22 @@ struct LibraryView: View {
         ("VYLUR", Color(red: 0.68, green: 0.27, blue: 0.82)),
         ("GRÅLT", Color(red: 0.28, green: 0.28, blue: 0.28)),
     ]
+
+    private var filteredEntries: [PolaroidEntry] {
+        var result = Array(entries)
+        if selectedCategory != "All" {
+            result = result.filter {
+                $0.packName == selectedCategory || $0.filterName == selectedCategory
+            }
+        }
+        if !searchText.isEmpty {
+            result = result.filter {
+                $0.caption.localizedCaseInsensitiveContains(searchText) ||
+                $0.backText.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+        return sortNewest ? result : result.reversed()
+    }
 
     private var gridColumns: [GridItem] {
         Array(repeating: GridItem(.flexible(), spacing: 10), count: columnCount)
@@ -63,21 +85,30 @@ struct LibraryView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                if store.entries.isEmpty {
+            VStack(spacing: 0) {
+                if entries.isEmpty {
                     ContentUnavailableView {
                         Label("No Photos Yet", systemImage: "camera")
                     } description: {
                         Text("Take your first photo to see it here")
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if filteredEntries.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Results", systemImage: "magnifyingglass")
+                    } description: {
+                        let query = searchText.isEmpty ? selectedCategory : searchText
+                        Text(verbatim: String(format: NSLocalizedString("No photos matching \"%@\"", comment: ""), query))
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
                         LazyVGrid(columns: gridColumns, spacing: 10) {
-                            ForEach(store.entries) { entry in
+                            ForEach(filteredEntries) { entry in
                                 gridCell(for: entry)
                             }
                         }
-                        .animation(.spring(duration: 0.35, bounce: 0.2), value: store.entries.map(\.id))
+                        .animation(.spring(duration: 0.35, bounce: 0.2), value: filteredEntries.map(\.id))
                         .animation(.spring(duration: 0.4, bounce: 0.2), value: columnCount)
                         .padding(12)
                         .padding(.horizontal, columnCount == 1 ? 60 : 0)
@@ -102,21 +133,23 @@ struct LibraryView: View {
             }
             .navigationTitle("Library")
             .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $searchText, prompt: "Search captions…")
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     VStack(alignment: isSelectMode ? .center : .leading, spacing: 0) {
                         Text("Library")
                             .font(.largeTitle.width(.expanded).weight(.bold))
                             .lineHeight(.normal)
-                        if !store.entries.isEmpty {
+                        if !entries.isEmpty {
                             if isSelectMode && !selectedIDs.isEmpty {
-                                Text("\(selectedIDs.count)/\(store.entries.count)")
+                                Text("\(selectedIDs.count)/\(entries.count)")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             } else {
-                                let itemLabel = store.entries.count == 1
+                                let count = filteredEntries.count
+                                let itemLabel = count == 1
                                     ? NSLocalizedString("1 item", comment: "")
-                                    : String(format: NSLocalizedString("%d items", comment: ""), store.entries.count)
+                                    : String(format: NSLocalizedString("%d items", comment: ""), count)
                                 Text(verbatim: itemLabel)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
@@ -128,9 +161,9 @@ struct LibraryView: View {
                 if isSelectMode && !selectedIDs.isEmpty {
                     ToolbarItem(placement: .bottomBar) {
                         Button {
-                            let selected = store.entries.filter { selectedIDs.contains($0.id) }
+                            let selected = entries.filter { selectedIDs.contains($0.id) }
                             Task {
-                                shareItems = await prepareShareItems(for: selected)
+                                shareItems = await prepareShareItems(for: selected, videoDirectory: store.videoDirectory)
                                 showShareSheet = true
                             }
                         } label: {
@@ -141,7 +174,7 @@ struct LibraryView: View {
                     ToolbarItem(placement: .bottomBar) {
                         Button {
                             guard !isSaving, !saveDidSucceed else { return }
-                            let selected = store.entries.filter { selectedIDs.contains($0.id) }
+                            let selected = entries.filter { selectedIDs.contains($0.id) }
                             Task {
                                 isSaving = true
                                 await saveToPhotosApp(selected)
@@ -179,7 +212,7 @@ struct LibraryView: View {
 
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack {
-                        if !store.entries.isEmpty {
+                        if !entries.isEmpty {
                             Button(isSelectMode ? "Cancel" : "Select") {
                                 withAnimation {
                                     isSelectMode.toggle()
@@ -190,33 +223,27 @@ struct LibraryView: View {
                         if !isSelectMode {
                             Menu {
                                 Menu {
-                                    ForEach(categories, id: \.name) { category in
-                                        let isSelected = selectedCategory == category.name
+                                    ForEach(categories, id: \.name) { cat in
                                         Button {
-                                            selectedCategory = category.name
-                                        } label: {
-                                            if isSelected {
-                                                Label(category.name, systemImage: "checkmark")
-                                            } else {
-                                                Text(category.name)
+                                            withAnimation(.snappy) {
+                                                selectedCategory = (selectedCategory == cat.name && cat.name != "All") ? "All" : cat.name
                                             }
+                                        } label: {
+                                            Label(cat.name, systemImage: selectedCategory == cat.name ? "checkmark" : "tag")
                                         }
                                     }
                                 } label: {
-                                    Label("Filter", systemImage: "line.3.horizontal.decrease")
+                                    Label("Filter", systemImage: selectedCategory == "All" ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
                                 }
 
+                                Divider()
+
                                 Menu {
-                                    ForEach(categories, id: \.name) { category in
-                                        let isSelected = selectedCategory == category.name
-                                        Button {
-                                            selectedCategory = category.name
-                                        } label: {
-                                            HStack {
-                                                if isSelected { Image(systemName: "checkmark") }
-                                                Text(category.name)
-                                            }
-                                        }
+                                    Button { withAnimation { sortNewest = true } } label: {
+                                        Label("Newest First", systemImage: sortNewest ? "checkmark" : "arrow.up")
+                                    }
+                                    Button { withAnimation { sortNewest = false } } label: {
+                                        Label("Oldest First", systemImage: !sortNewest ? "checkmark" : "arrow.down")
                                     }
                                 } label: {
                                     Label("Sort", systemImage: "arrow.up.arrow.down")
@@ -237,9 +264,9 @@ struct LibraryView: View {
                                 } label: {
                                     Label("Grid", systemImage: "square.grid.2x2")
                                 }
-                                
+
                                 Divider()
-                                
+
                                 if premium.isPremium {
                                     Menu {
                                         ForEach(PolaroidFont.allCases, id: \.rawValue) { font in
@@ -269,19 +296,25 @@ struct LibraryView: View {
                                     }
                                 }
                             } label: {
-                                Label("Filter", systemImage: "ellipsis")
+                                Label("Options", systemImage: "ellipsis")
                             }
                         }
                     }
                 }
             }
+        .navigationDestination(item: $selectedEntryID) { id in
+            PolaroidDetailView(
+                startIndex: entries.firstIndex(where: { $0.id == id }) ?? 0,
+                currentEntryID: $currentDetailEntryID
+            )
+            .navigationTransition(.zoom(sourceID: currentDetailEntryID ?? id, in: zoomNamespace))
         }
-        .interactiveDismissDisabled(showDetail)
+        .onChange(of: selectedEntryID) { _, newID in
+            if let newID { currentDetailEntryID = newID }
+        }
+        }
         .sheet(item: $editingEntry) { item in
-            if let idx = store.entries.firstIndex(where: { $0.id == item.id }) {
-                EditPolaroidSheet(entry: $store.entries[idx])
-                    .onDisappear { store.persistMetadata() }
-            }
+            EditPolaroidSheet(entry: item)
         }
         .background(ActivitySheet(items: shareItems, isPresented: $showShareSheet))
         .confirmationDialog(
@@ -298,20 +331,21 @@ struct LibraryView: View {
                 deleteWithAnimation(ids: ids)
             }
         }
-        .overlay { detailOverlay }
         .sheet(isPresented: $showPaywall) {
-            PaywallView()
+            PaywallView(onClose: { showPaywall = false })
                 .environment(PremiumManager.shared)
         }
     }
+
+    // MARK: - Grid cell
 
     @ViewBuilder
     private func gridCell(for entry: PolaroidEntry) -> some View {
         PolaroidPhotoCell(
             image: entry.image,
-            videoURL: entry.videoURL,
+            videoURL: entry.videoURL(in: store.videoDirectory),
             isTimelapse: entry.isTimelapse,
-            playVideo: false,
+            playVideo: entry.isTimelapse,
             developmentProgress: entry.developmentProgress,
             caption: entry.caption,
             backText: entry.backText,
@@ -322,24 +356,20 @@ struct LibraryView: View {
             packName: entry.packName,
             fontScale: cellFontScale,
             onDeveloped: {
-                if let idx = store.entries.firstIndex(where: { $0.id == entry.id }) {
-                    store.entries[idx].developmentProgress = 1.0
-                    store.persistMetadata()
-                }
+                entry.developmentProgress = 1.0
             },
             onSingleTap: {
                 if isSelectMode {
                     toggleSelection(entry.id)
-                } else if let idx = store.entries.firstIndex(where: { $0.id == entry.id }) {
-                    detailIndex = idx
-                    showDetail = true
+                } else {
+                    selectedEntryID = entry.id
                 }
             }
         )
         .aspectRatio(0.75, contentMode: .fit)
         .overlay(alignment: .topLeading) {
             if isSelectMode {
-                Image(systemName: selectedIDs.contains(entry.id) ?"checkmark.circle.fill" : "circle")
+                Image(systemName: selectedIDs.contains(entry.id) ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(.white, .blue)
@@ -356,7 +386,7 @@ struct LibraryView: View {
             }
             Button("Share", systemImage: "square.and.arrow.up") {
                 Task {
-                    shareItems = await prepareShareItems(for: [entry])
+                    shareItems = await prepareShareItems(for: [entry], videoDirectory: store.videoDirectory)
                     showShareSheet = true
                 }
             }
@@ -368,19 +398,7 @@ struct LibraryView: View {
         .scaleEffect(deletingIDs.contains(entry.id) ? 0.5 : 1.0)
         .opacity(deletingIDs.contains(entry.id) ? 0.0 : 1.0)
         .animation(.spring(duration: 0.35, bounce: 0), value: deletingIDs.contains(entry.id))
-    }
-
-    // Inline overlay so the library content blurs through behind the detail view
-    var detailOverlay: some View {
-        Group {
-            if showDetail, let idx = detailIndex {
-                PolaroidDetailView(
-                    store: store,
-                    startIndex: idx,
-                    onDismiss: { showDetail = false }
-                )
-            }
-        }
+        .matchedTransitionSource(id: entry.id, in: zoomNamespace)
     }
 
     // MARK: - Helpers
@@ -394,13 +412,14 @@ struct LibraryView: View {
     }
 
     @MainActor
-    private func saveToPhotosApp(_ entries: [PolaroidEntry]) async {
+    private func saveToPhotosApp(_ entriesToSave: [PolaroidEntry]) async {
         let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         guard status == .authorized || status == .limited else { return }
         var items: [(image: UIImage?, videoURL: URL?)] = []
-        for entry in entries {
-            if entry.videoURL != nil {
-                let composited = await compositePolaroidVideo(entry) ?? entry.videoURL
+        for entry in entriesToSave {
+            if let filename = entry.videoFilename {
+                let srcURL = store.videoDirectory.appendingPathComponent(filename)
+                let composited = await compositePolaroidVideo(entry, sourceURL: srcURL) ?? srcURL
                 items.append((nil, composited))
             } else {
                 items.append((renderPolaroidFrame(entry), nil))
@@ -423,13 +442,22 @@ struct LibraryView: View {
         }
         Task {
             try? await Task.sleep(for: .seconds(0.4))
-            store.delete(ids: ids)
+            for id in ids {
+                if let entry = entries.first(where: { $0.id == id }) {
+                    if let filename = entry.videoFilename {
+                        store.deleteVideo(filename: filename)
+                    }
+                    modelContext.delete(entry)
+                }
+            }
             deletingIDs.subtract(ids)
         }
     }
 }
 
 #Preview {
-    LibraryView(store: PhotoStore())
+    LibraryView()
+        .environment(PhotoStore())
         .environment(PremiumManager.shared)
+        .modelContainer(for: PolaroidEntry.self, inMemory: true)
 }

@@ -96,6 +96,8 @@ struct PolaroidPhotoCell: View {
     var videoURL: URL? = nil
     var isTimelapse: Bool = false
     var playVideo: Bool = true
+    var isVideoPlaying: Bool = true
+    var isVideoLooping: Bool = true
     var developmentProgress: Double = 1.0
     var animatedExternally: Bool = false
     var caption: String = ""
@@ -123,6 +125,8 @@ struct PolaroidPhotoCell: View {
         videoURL: URL? = nil,
         isTimelapse: Bool = false,
         playVideo: Bool = true,
+        isVideoPlaying: Bool = true,
+        isVideoLooping: Bool = true,
         developmentProgress: Double = 1.0,
         animatedExternally: Bool = false,
         caption: String = "",
@@ -140,6 +144,8 @@ struct PolaroidPhotoCell: View {
         self.videoURL = videoURL
         self.isTimelapse = isTimelapse
         self.playVideo = playVideo
+        self.isVideoPlaying = isVideoPlaying
+        self.isVideoLooping = isVideoLooping
         self.developmentProgress = developmentProgress
         self.animatedExternally = animatedExternally
         self.caption = caption
@@ -220,16 +226,17 @@ struct PolaroidPhotoCell: View {
         VStack(spacing: 0) {
             Color.clear
                 .overlay {
-                    Group {
-                        if let videoURL, playVideo {
-                            LoopingVideoView(url: videoURL)
-                        } else if let image {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            Color.black
-                        }
+                    if let image {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Color.black
+                    }
+                }
+                .overlay {
+                    if let videoURL, playVideo {
+                        LoopingVideoView(url: videoURL, isPlaying: isVideoPlaying, isLooping: isVideoLooping)
                     }
                 }
                 .clipped()
@@ -338,14 +345,19 @@ struct PolaroidPhotoCell: View {
 
 struct LoopingVideoView: UIViewRepresentable {
     let url: URL
+    var isPlaying: Bool = true
+    var isLooping: Bool = true
 
     func makeUIView(context: Context) -> PlayerView {
         let view = PlayerView()
-        view.configure(url: url)
+        view.configure(url: url, isLooping: isLooping)
         return view
     }
 
-    func updateUIView(_ uiView: PlayerView, context: Context) {}
+    func updateUIView(_ uiView: PlayerView, context: Context) {
+        uiView.setLooping(isLooping)
+        isPlaying ? uiView.play() : uiView.pause()
+    }
 
     static func dismantleUIView(_ uiView: PlayerView, coordinator: ()) {
         uiView.pause()
@@ -354,6 +366,7 @@ struct LoopingVideoView: UIViewRepresentable {
     final class PlayerView: UIView {
         private var player: AVPlayer?
         private var token: NSObjectProtocol?
+        private var loops: Bool = true
 
         // Behave like Image.resizable() — no intrinsic size, stretches to fill container
         override var intrinsicContentSize: CGSize {
@@ -377,7 +390,8 @@ struct LoopingVideoView: UIViewRepresentable {
             playerLayer.frame = bounds
         }
 
-        func configure(url: URL) {
+        func configure(url: URL, isLooping: Bool = true) {
+            loops = isLooping
             let p = AVPlayer(url: url)
             p.actionAtItemEnd = .none
             playerLayer.videoGravity = .resizeAspectFill
@@ -386,17 +400,21 @@ struct LoopingVideoView: UIViewRepresentable {
                 forName: .AVPlayerItemDidPlayToEndTime,
                 object: p.currentItem,
                 queue: .main
-            ) { [weak p] _ in
-                p?.seek(to: .zero)
-                p?.play()
+            ) { [weak self, weak p] _ in
+                if self?.loops == true {
+                    p?.seek(to: .zero)
+                    p?.play()
+                } else {
+                    p?.seek(to: .zero)
+                }
             }
             player = p
             p.play()
         }
 
-        func pause() {
-            player?.pause()
-        }
+        func play() { player?.play() }
+        func pause() { player?.pause() }
+        func setLooping(_ loops: Bool) { self.loops = loops }
 
         deinit {
             if let token { NotificationCenter.default.removeObserver(token) }
@@ -406,14 +424,15 @@ struct LoopingVideoView: UIViewRepresentable {
 }
 
 // Returns shareable items: composited polaroid video for video entries, rendered frame for photos.
-func prepareShareItems(for entries: [PolaroidEntry]) async -> [Any] {
+func prepareShareItems(for entries: [PolaroidEntry], videoDirectory: URL) async -> [Any] {
     var items: [Any] = []
     for entry in entries {
-        if entry.videoURL != nil {
-            if let composited = await compositePolaroidVideo(entry) {
+        if let filename = entry.videoFilename {
+            let srcURL = videoDirectory.appendingPathComponent(filename)
+            if let composited = await compositePolaroidVideo(entry, sourceURL: srcURL) {
                 items.append(composited)
-            } else if let url = entry.videoURL {
-                items.append(url)
+            } else {
+                items.append(srcURL)
             }
         } else {
             let frame = await MainActor.run { renderPolaroidFrame(entry) }
@@ -424,8 +443,8 @@ func prepareShareItems(for entries: [PolaroidEntry]) async -> [Any] {
 }
 
 // Composites the polaroid frame (border + caption) over a video and exports to a temp .mp4.
-func compositePolaroidVideo(_ entry: PolaroidEntry) async -> URL? {
-    guard let sourceURL = entry.videoURL else { return nil }
+func compositePolaroidVideo(_ entry: PolaroidEntry, sourceURL: URL) async -> URL? {
+    let sourceURL = sourceURL
 
     let asset = AVURLAsset(url: sourceURL)
     guard let videoTrack = try? await asset.loadTracks(withMediaType: .video).first else { return nil }
@@ -633,7 +652,7 @@ func renderPolaroidFrame(_ entry: PolaroidEntry) -> UIImage {
 
     let renderer = ImageRenderer(content: cell)
     renderer.scale = 3.0
-    let rendered = renderer.uiImage ?? entry.image
+    let rendered = renderer.uiImage ?? entry.image ?? UIImage()
     // Image area within the polaroid frame (270x360 at fontScale 1.7): 8pt pad top/sides, 32*1.7pt caption bottom
     let imageAreaRect = CGRect(x: 8, y: 8, width: 254, height: 360 - 32 * 1.7 - 8)
     let format = UIGraphicsImageRendererFormat()

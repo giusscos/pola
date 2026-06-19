@@ -10,6 +10,7 @@ struct ModelSceneView: UIViewRepresentable {
     var spinOnAppear: Bool = false
     var modelScale: CGFloat = 1.0
     var handle: ModelSceneHandle? = nil
+    var antialiasingMode: SCNAntialiasingMode = .multisampling2X
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
@@ -18,7 +19,7 @@ struct ModelSceneView: UIViewRepresentable {
         sceneView.backgroundColor = .clear
         sceneView.autoenablesDefaultLighting = false
         sceneView.allowsCameraControl = false
-        sceneView.antialiasingMode = .multisampling4X
+        sceneView.antialiasingMode = antialiasingMode
 
         guard let url = Bundle.main.url(forResource: assetName, withExtension: "usdz"),
               let scene = try? SCNScene(url: url, options: nil) else {

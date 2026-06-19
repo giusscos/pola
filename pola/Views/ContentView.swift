@@ -1,4 +1,7 @@
 import AVFoundation
+import SceneKit
+import StoreKit
+import SwiftData
 import SwiftUI
 
 enum CameraMode: String, CaseIterable {
@@ -16,9 +19,10 @@ enum ActiveStrip: Equatable {
 struct ContentView: View {
     @State private var cameraManager = CameraManager()
     @AppStorage("captionPromptEnabled") private var captionPromptEnabled: Bool = true
-    @AppStorage("iCloudSyncEnabled") private var iCloudSyncEnabled: Bool = false
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
-    @State private var store = PhotoStore()
+    @Environment(PhotoStore.self) private var store
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \PolaroidEntry.timestamp, order: .reverse) private var allEntries: [PolaroidEntry]
     @State private var pendingEntryID: UUID? = nil
     @State private var pendingCaption: String = ""
     @State private var showCaptionInput = false
@@ -43,6 +47,8 @@ struct ContentView: View {
     @Namespace private var sheetZoom
     @Namespace private var zoomNamespace
     @Environment(PremiumManager.self) private var premium
+    @Environment(\.requestReview) private var requestReview
+    @AppStorage("totalPhotosCount") private var totalPhotosCount: Int = 0
     @State private var showPaywall = false
 
     private var activeFilter: FilmFilter? {
@@ -208,7 +214,7 @@ struct ContentView: View {
             }
         }
         .fullScreenCover(isPresented: $showLibrary) {
-            LibraryView(store: store)
+            LibraryView()
                 .environment(PremiumManager.shared)
                 .navigationTransition(.zoom(sourceID: "library", in: sheetZoom))
         }
@@ -219,7 +225,7 @@ struct ContentView: View {
                 .navigationTransition(.zoom(sourceID: "settings", in: sheetZoom))
         }
         .sheet(isPresented: $showPaywall) {
-            PaywallView()
+            PaywallView(onClose: { showPaywall = false })
                 .environment(PremiumManager.shared)
         }
         .sheet(isPresented: $showTimeLapseSettings) {
@@ -230,15 +236,19 @@ struct ContentView: View {
             if hasSeenOnboarding {
                 await cameraManager.configure()
             }
-            store.configure(iCloudEnabled: iCloudSyncEnabled)
+            store.migrateIfNeeded(into: modelContext)
         }
         .onChange(of: hasSeenOnboarding) { _, newValue in
             if newValue {
                 Task { await cameraManager.configure() }
             }
         }
-        .onChange(of: iCloudSyncEnabled) { _, newValue in
-            store.configure(iCloudEnabled: newValue)
+        .onChange(of: showLibrary) { _, isShowing in
+            if isShowing {
+                cameraManager.stop()
+            } else {
+                cameraManager.resume()
+            }
         }
         .onChange(of: cameraManager.capturedImage) { _, image in
             guard let image else { return }
@@ -251,9 +261,12 @@ struct ContentView: View {
                 packName: selectedPackName,
                 coordinate: cameraManager.lastCoordinate
             )
-            store.add(entry)
+            modelContext.insert(entry)
             pendingEntryID = entry.id
-            // Suppress caption prompt for individual timelapse frames
+            if !cameraManager.isTimelapsing {
+                totalPhotosCount += 1
+                if totalPhotosCount == 7 { requestReview() }
+            }
             if captionPromptEnabled && !cameraManager.isTimelapsing { showCaptionInput = true }
         }
         .onChange(of: cameraManager.capturedVideoURL) { _, url in
@@ -264,13 +277,15 @@ struct ContentView: View {
             let processed = effect?.apply(to: thumbnail) ?? thumbnail
             let entry = PolaroidEntry(
                 image: processed,
-                videoURL: url,
                 filterName: selectedFilterName,
                 packName: selectedPackName,
                 coordinate: cameraManager.lastCoordinate
             )
-            store.add(entry)
+            entry.videoFilename = store.saveVideo(from: url, id: entry.id)
+            modelContext.insert(entry)
             pendingEntryID = entry.id
+            totalPhotosCount += 1
+            if totalPhotosCount == 7 { requestReview() }
             if captionPromptEnabled { showCaptionInput = true }
         }
         .onChange(of: cameraManager.timelapseVideoFrames) { _, frames in
@@ -282,16 +297,16 @@ struct ContentView: View {
             Task {
                 guard let videoURL = await composeVideo(from: processed) else { return }
                 let thumbnail = processed.first ?? UIImage()
-                let entry = PolaroidEntry(
-                    image: thumbnail,
-                    videoURL: videoURL,
-                    isTimelapse: true,
-                    filterName: selectedFilterName,
-                    packName: selectedPackName,
-                    coordinate: coord
-                )
                 await MainActor.run {
-                    store.add(entry)
+                    let entry = PolaroidEntry(
+                        image: thumbnail,
+                        isTimelapse: true,
+                        filterName: selectedFilterName,
+                        packName: selectedPackName,
+                        coordinate: coord
+                    )
+                    entry.videoFilename = store.saveVideo(from: videoURL, id: entry.id)
+                    modelContext.insert(entry)
                     pendingEntryID = entry.id
                     if captionPromptEnabled { showCaptionInput = true }
                 }
@@ -358,7 +373,8 @@ struct ContentView: View {
                     assetName: pack.usdzName,
                     gestureEnabled: false,
                     autoRotate: true,
-                    modelScale: 0.85
+                    modelScale: 0.85,
+                    antialiasingMode: .none
                 )
 
                 if locked {
@@ -396,7 +412,8 @@ struct ContentView: View {
                         assetName: usdzName,
                         gestureEnabled: false,
                         autoRotate: true,
-                        modelScale: 0.85
+                        modelScale: 0.85,
+                        antialiasingMode: .none
                     )
                 } else {
                     Circle()
@@ -559,7 +576,7 @@ struct ContentView: View {
     private var bottomRow: some View {
         HStack(spacing: 0) {
             Button { showLibrary = true } label: {
-                let recent = Array(store.entries.prefix(2))
+                let recent = Array(allEntries.prefix(2))
 
                 ZStack {
                     if recent.isEmpty {
@@ -572,16 +589,16 @@ struct ContentView: View {
                                     .foregroundStyle(.white)
                             }
                     }
-                    if recent.count >= 2 {
-                        miniPolaroid(image: recent[1].image, packName: recent[1].packName)
+                    if recent.count >= 2, let img = recent[1].image {
+                        miniPolaroid(image: img, packName: recent[1].packName)
                             .rotationEffect(.degrees(-9))
                             .scaleEffect(0.85)
                             .opacity(0.85)
                             .offset(x: -5, y: 4)
                             .id(recent[1].id)
                     }
-                    if let front = recent.first {
-                        miniPolaroid(image: front.image, packName: front.packName)
+                    if let front = recent.first, let img = front.image {
+                        miniPolaroid(image: img, packName: front.packName)
                             .rotationEffect(.degrees(5))
                             .id(front.id)
                             .transition(.asymmetric(
@@ -744,7 +761,7 @@ struct ContentView: View {
     private var captionInputCard: some View {
         VStack(spacing: 12) {
             TextField("Add a note...", text: $pendingCaption)
-                .font(.custom("Bradley Hand", size: 17))
+                .font(.headline)
                 .padding(10)
                 .background(Color(.systemGray5))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -767,9 +784,9 @@ struct ContentView: View {
     }
 
     private func commitCaption() {
-        if let id = pendingEntryID, let idx = store.entries.firstIndex(where: { $0.id == id }) {
-            store.entries[idx].caption = pendingCaption
-            store.persistMetadata()
+        if let id = pendingEntryID,
+           let entry = allEntries.first(where: { $0.id == id }) {
+            entry.caption = pendingCaption
         }
         pendingCaption = ""
         pendingEntryID = nil

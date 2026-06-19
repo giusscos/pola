@@ -14,10 +14,85 @@ enum FilmFilterEffect {
 
     func apply(to image: UIImage) -> UIImage {
         guard let ciImage = CIImage(image: image),
-              let output  = colorGraded(ciImage),
-              let cgImage = Self.context.createCGImage(output, from: output.extent)
+              let graded  = colorGraded(ciImage)
         else { return image }
+        var result = graded
+        result = fadeFilm(result) ?? result
+        result = addFilmGrain(result) ?? result
+        result = addVignette(result) ?? result
+        guard let cgImage = Self.context.createCGImage(result, from: result.extent) else { return image }
         return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
+    }
+
+    // How much to lift the black point (faded-film look). Noir keeps deep blacks.
+    private var shadowLift: CGFloat {
+        switch self {
+        case .chrome: return 0.04
+        case .warm:   return 0.04
+        case .sepia:  return 0.07
+        case .cool:   return 0.03
+        case .noir:   return 0.0
+        }
+    }
+
+    // Contrast value fed to CIColorControls on the noise: lower = subtler grain.
+    private var grainContrast: CGFloat {
+        switch self {
+        case .chrome: return 0.75
+        case .warm:   return 0.65
+        case .sepia:  return 0.80
+        case .cool:   return 0.72
+        case .noir:   return 1.10
+        }
+    }
+
+    private var vignetteStrength: CGFloat {
+        switch self {
+        case .chrome: return 1.2
+        case .warm:   return 0.9
+        case .sepia:  return 1.4
+        case .cool:   return 1.2
+        case .noir:   return 1.8
+        }
+    }
+
+    // Lift blacks to simulate faded / aged film stock.
+    private func fadeFilm(_ input: CIImage) -> CIImage? {
+        let lift = shadowLift
+        guard lift > 0,
+              let matrix = CIFilter(name: "CIColorMatrix") else { return input }
+        let scale = 1.0 - lift
+        matrix.setValue(input, forKey: kCIInputImageKey)
+        matrix.setValue(CIVector(x: scale, y: 0, z: 0, w: 0), forKey: "inputRVector")
+        matrix.setValue(CIVector(x: 0, y: scale, z: 0, w: 0), forKey: "inputGVector")
+        matrix.setValue(CIVector(x: 0, y: 0, z: scale, w: 0), forKey: "inputBVector")
+        matrix.setValue(CIVector(x: 0, y: 0, z: 0,     w: 1), forKey: "inputAVector")
+        matrix.setValue(CIVector(x: lift, y: lift, z: lift, w: 0), forKey: "inputBiasVector")
+        return matrix.outputImage
+    }
+
+    // Overlay random grayscale noise via soft-light blend for a film-grain look.
+    private func addFilmGrain(_ input: CIImage) -> CIImage? {
+        guard let noiseFilter = CIFilter(name: "CIRandomGenerator"),
+              let rawNoise = noiseFilter.outputImage else { return input }
+        let cropped = rawNoise.cropped(to: input.extent)
+        guard let controls = CIFilter(name: "CIColorControls") else { return input }
+        controls.setValue(cropped, forKey: kCIInputImageKey)
+        controls.setValue(0.0,         forKey: kCIInputSaturationKey)
+        controls.setValue(grainContrast, forKey: kCIInputContrastKey)
+        guard let grain = controls.outputImage else { return input }
+        guard let blend = CIFilter(name: "CISoftLightBlendMode") else { return input }
+        blend.setValue(grain, forKey: kCIInputImageKey)
+        blend.setValue(input, forKey: kCIInputBackgroundImageKey)
+        return blend.outputImage
+    }
+
+    private func addVignette(_ input: CIImage) -> CIImage? {
+        guard let vignette = CIFilter(name: "CIVignette") else { return input }
+        vignette.setValue(input,            forKey: kCIInputImageKey)
+        vignette.setValue(vignetteStrength, forKey: kCIInputIntensityKey)
+        vignette.setValue(1.75,             forKey: kCIInputRadiusKey)
+        return vignette.outputImage
     }
 
     private func colorGraded(_ input: CIImage) -> CIImage? {

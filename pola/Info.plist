@@ -14,5 +14,17 @@
 	<string>pola needs access to save your polaroids to your photo library.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>pola uses the microphone to record audio with video.</string>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.com.giusscos.pola</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<false/>
+			<key>NSUbiquitousContainerName</key>
+			<string>pola</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

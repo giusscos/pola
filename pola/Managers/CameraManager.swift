@@ -47,7 +47,7 @@ final class CameraManager: NSObject {
         await MainActor.run {
             isAuthorized = videoGranted
             locationManager.delegate = self
-            locationManager.desiredAccuracy = kCLLocationAccuracyBest
+            locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
             locationManager.requestWhenInUseAuthorization()
             locationManager.startUpdatingLocation()
         }
@@ -76,13 +76,23 @@ final class CameraManager: NSObject {
 
     private func select4to3Format(for device: AVCaptureDevice) {
         let target = 4.0 / 3.0
-        let best = device.formats
+        let maxPixels = 4032 * 3024  // ~12 MP cap — avoids 48 MP modes on Pro sensors
+        let candidates = device.formats.filter { format in
+            let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
+            guard dims.height > 0 else { return false }
+            return abs(Double(dims.width) / Double(dims.height) - target) < 0.05
+        }
+        let best = candidates
             .filter { format in
                 let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
-                guard dims.height > 0 else { return false }
-                return abs(Double(dims.width) / Double(dims.height) - target) < 0.05
+                return Int(dims.width) * Int(dims.height) <= maxPixels
             }
             .max { a, b in
+                let da = CMVideoFormatDescriptionGetDimensions(a.formatDescription)
+                let db = CMVideoFormatDescriptionGetDimensions(b.formatDescription)
+                return Int(da.width) * Int(da.height) < Int(db.width) * Int(db.height)
+            }
+            ?? candidates.max { a, b in
                 let da = CMVideoFormatDescriptionGetDimensions(a.formatDescription)
                 let db = CMVideoFormatDescriptionGetDimensions(b.formatDescription)
                 return Int(da.width) * Int(da.height) < Int(db.width) * Int(db.height)
@@ -164,6 +174,13 @@ final class CameraManager: NSObject {
     func stop() {
         sessionQueue.async { [weak self] in
             self?.session.stopRunning()
+        }
+    }
+
+    func resume() {
+        sessionQueue.async { [weak self] in
+            guard let self, !session.isRunning else { return }
+            session.startRunning()
         }
     }
 
@@ -256,7 +273,10 @@ final class CameraManager: NSObject {
             let tempURL = FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString + ".mov")
             movieOutput.startRecording(to: tempURL, recordingDelegate: self)
-            DispatchQueue.main.async { self.isRecording = true }
+            DispatchQueue.main.async {
+                self.isRecording = true
+                UIApplication.shared.isIdleTimerDisabled = true
+            }
         }
     }
 
@@ -270,6 +290,7 @@ final class CameraManager: NSObject {
     func startTimelapse(interval: Double, duration: Double, saveAsVideo: Bool) {
         guard !isTimelapsing else { return }
         isTimelapsing = true
+        UIApplication.shared.isIdleTimerDisabled = true
         timeLapseSaveAsVideo = saveAsVideo
         timelapseFrames = []
         timelapseMaxPhotos = max(1, Int(duration / interval))
@@ -306,6 +327,7 @@ final class CameraManager: NSObject {
 
     private func finalizeTimelapse() {
         isTimelapsing = false
+        UIApplication.shared.isIdleTimerDisabled = false
         if timeLapseSaveAsVideo && !timelapseFrames.isEmpty {
             timelapseVideoFrames = timelapseFrames
         }
@@ -357,6 +379,7 @@ extension CameraManager: AVCaptureFileOutputRecordingDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             isRecording = false
+            UIApplication.shared.isIdleTimerDisabled = false
             if finished {
                 capturedVideoURL = outputFileURL
             }

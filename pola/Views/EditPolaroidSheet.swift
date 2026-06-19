@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct EditPolaroidSheet: View {
-    @Binding var entry: PolaroidEntry
+    @Bindable var entry: PolaroidEntry
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {

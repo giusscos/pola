@@ -1,11 +1,11 @@
-# pola - iOS Polaroid Camera App Landing Page Prompt
+# poly - iOS Polaroid Camera App Landing Page Prompt
 
 ## Overview
 
-Create a modern, minimalist, and visually appealing landing page for **pola** — an iOS-only vintage polaroid camera app.
+Create a modern, minimalist, and visually appealing landing page for **poly** — an iOS-only vintage polaroid camera app.
 
 ### App Description
-**pola** is a native iOS application that brings the nostalgic charm of vintage Polaroid cameras to your iPhone. Users can capture photos and videos with authentic film filters, add retro effects, save location metadata on the back of each polaroid, and create time-lapse sequences. The app features a sleek dark mode interface, 3D interactive model cards for filters, and seamless sharing capabilities.
+**poly** is a native iOS application that brings the nostalgic charm of vintage Polaroid cameras to your iPhone. Users can capture photos and videos with authentic film filters, add retro effects, save location metadata on the back of each polaroid, and create time-lapse sequences. The app features a sleek dark mode interface, 3D interactive model cards for filters, and seamless sharing capabilities.
 
 ---
 
@@ -22,7 +22,7 @@ Create a modern, minimalist, and visually appealing landing page for **pola** �
 
 ### 1. Hero Section
 - **Headline**: "Capture Moments, Relive Memories"
-- **Subheadline**: "pola brings the magic of vintage Polaroid photography to your iPhone"
+- **Subheadline**: "poly brings the magic of vintage Polaroid photography to your iPhone"
 - **Primary CTA**: "Download on the App Store" (linking to App Store page)
 - **Visual**: High-quality iPhone mockup showing the app's camera interface with a retro filter applied
 - **Background**: Dark gradient or subtle grain texture to match the app's dark mode aesthetic
@@ -53,7 +53,7 @@ Present these features with icons and brief descriptions:
 3. **Save & Share** — Your polaroid develops with location metadata, ready to share
 
 ### 5. Testimonials / Social Proof
-- "pola makes every photo feel like a piece of history" — [User Testimonial]
+- "poly makes every photo feel like a piece of history" — [User Testimonial]
 - "Finally, a camera app that nails the vintage look" — [User Testimonial]
 - Feature badges: "New & Noteworthy" (if applicable), "Designed for iPhone"
 
@@ -62,7 +62,7 @@ Present these features with icons and brief descriptions:
 - QR code that links directly to the App Store page
 
 ### 7. Footer
-- App name: pola
+- App name: poly
 - Tagline: "Vintage Photography, Modern Convenience"
 - Copyright: (c) 2026
 - Contact/feedback link
@@ -125,7 +125,7 @@ Present these features with icons and brief descriptions:
 - Structured data (Schema.org for SoftwareApplication)
 
 ### App Store Integration
-- "Download on the App Store" button links to: `https://apps.apple.com/app/pola/idYOUR_APP_ID`
+- "Download on the App Store" button links to: `https://apps.apple.com/app/poly/idYOUR_APP_ID`
 - QR code generates dynamically or uses pre-rendered image
 - Deep linking support for universal links
 
@@ -179,7 +179,7 @@ Present these features with icons and brief descriptions:
 > Transform your photos with authentic film emulations. Each filter is carefully crafted to replicate the unique color shifts, grain, and light leaks of classic Polaroid films. From warm vintage tones to cool retro blues, find your perfect look.
 
 **Location Stamps**
-> Never forget where a memory was made. pola automatically saves the GPS coordinates of each shot and displays it elegantly on the back of your digital polaroid — just like writing on the white border of a real Polaroid.
+> Never forget where a memory was made. poly automatically saves the GPS coordinates of each shot and displays it elegantly on the back of your digital polaroid — just like writing on the white border of a real Polaroid.
 
 **3D Interactive Cards**
 > Browse filters in style. Our beautiful 3D model cards let you spin, rotate, and preview each filter effect before applying it. It's not just functional — it's a delightful experience.
@@ -247,7 +247,7 @@ Use official Apple asset or style to match
 ## File Structure (Recommended)
 
 ```
-pola-landing-page/
+poly-landing-page/
 ├── index.html
 ├── styles/
 │   ├── main.css
@@ -316,4 +316,4 @@ pola-landing-page/
 
 ---
 
-*Created for pola iOS App | Last Updated: June 2026*
+*Created for poly iOS App | Last Updated: June 2026*

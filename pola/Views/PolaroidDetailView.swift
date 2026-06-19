@@ -1,116 +1,179 @@
-import SwiftUI
 import Photos
+import SwiftData
+import SwiftUI
 
 struct PolaroidDetailView: View {
-    var store: PhotoStore
     let startIndex: Int
-    var onDismiss: () -> Void
+    @Binding var currentEntryID: UUID?
 
-    @State private var currentIndex: Int
-    @State private var dragOffset: CGFloat = 0
-    @State private var dragRotation: Double = 0
-    @State private var isTransitioning = false
-    @State private var appeared = false
-    @State private var cardSettleProgress: Double = 0
+    @Environment(PhotoStore.self) private var store
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @Query(sort: \PolaroidEntry.timestamp, order: .reverse) private var entries: [PolaroidEntry]
+
+    @State private var scrollPosition: Int?
+    @State private var pendingScrollTarget: Int? = nil
+    @State private var isVideoPlaying = true
+    @AppStorage("videoLooping") private var isVideoLooping = true
     @State private var shareItems: [Any] = []
     @State private var showShareSheet = false
     @State private var showDeleteConfirm = false
     @State private var isSaving = false
     @State private var saveDidSucceed = false
+    @State private var editingEntry: PolaroidEntry?
 
-    // Natural stack positions for back cards (rotation, x offset, y offset, scale)
-    private let backOffsets: [(rotation: Double, x: CGFloat, y: CGFloat, scale: Double)] = [
-        (-6.0, -22, 8,  0.97),
-        ( 9.0,  20, 14, 0.94),
-    ]
-
-    private let cardWidth: CGFloat = 270
-    private let cardHeight: CGFloat = 360
-
-    init(store: PhotoStore, startIndex: Int, onDismiss: @escaping () -> Void) {
-        self.store = store
+    init(startIndex: Int, currentEntryID: Binding<UUID?>) {
         self.startIndex = startIndex
-        self.onDismiss = onDismiss
-        self._currentIndex = State(initialValue: startIndex)
+        self._currentEntryID = currentEntryID
+        self._scrollPosition = State(initialValue: startIndex)
+    }
+
+    private var currentIndex: Int { scrollPosition ?? startIndex }
+
+    private var currentEntry: PolaroidEntry? {
+        guard currentIndex < entries.count else { return nil }
+        return entries[currentIndex]
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .opacity(appeared ? 1 : 0)
-                    .ignoresSafeArea()
-
-                Color.black
-                    .opacity(appeared ? 0.25 : 0)
-                    .ignoresSafeArea()
-                    .onTapGesture { handleDismiss() }
-
-                if !store.entries.isEmpty {
-                    VStack(spacing: 24) {
-                        Spacer()
-                        cardStack
-                        counterLabel
-                        Spacer()
-                    }
-                    .offset(y: appeared ? 0 : 300)
-                    .opacity(appeared ? 1 : 0)
-                }
-            }
-            .onAppear {
-                withAnimation(.spring(response: 0.55, dampingFraction: 0.75)) {
-                    appeared = true
-                }
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { handleDismiss() } label: {
-                        Image(systemName: "xmark")
-                    }
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        guard currentIndex < store.entries.count else { return }
-                        let entry = store.entries[currentIndex]
-                        Task {
-                            shareItems = await prepareShareItems(for: [entry])
-                            showShareSheet = true
+        VStack(spacing: 12) {
+            if !entries.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 0) {
+                        ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
+                            PolaroidPhotoCell(
+                                image: entry.image,
+                                videoURL: entry.videoURL(in: store.videoDirectory),
+                                isTimelapse: entry.isTimelapse,
+                                playVideo: true,
+                                isVideoPlaying: idx == currentIndex ? isVideoPlaying : false,
+                                isVideoLooping: isVideoLooping,
+                                developmentProgress: entry.developmentProgress,
+                                caption: entry.caption,
+                                backText: entry.backText,
+                                showMap: entry.showMap,
+                                coordinate: entry.coordinate,
+                                timestamp: entry.timestamp,
+                                filterName: entry.filterName,
+                                packName: entry.packName,
+                                fontScale: 1.7,
+                                onDeveloped: {
+                                    guard idx < entries.count else { return }
+                                    entries[idx].developmentProgress = 1.0
+                                }
+                            )
+                            .aspectRatio(270.0 / 360.0, contentMode: .fit)
+                            .shadow(color: .black.opacity(0.2), radius: 24, x: 0, y: 6)
+                            .padding(.horizontal)
+                            .containerRelativeFrame([.horizontal, .vertical], alignment: .center)
+                            .id(idx)
                         }
-                    } label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
                     }
+                    .scrollTargetLayout()
                 }
-                
+                .scrollTargetBehavior(.viewAligned)
+                .scrollPosition(id: $scrollPosition)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                titleView
+            }
+
+            if currentEntry?.videoFilename != nil {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        guard !isSaving, !saveDidSucceed else { return }
-                        Task { await saveCurrentPhoto() }
-                    } label: {
-                        if isSaving {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                        } else {
-                            Label("Save to Photos", systemImage: saveDidSucceed ? "checkmark" : "square.and.arrow.down")
+                    HStack(spacing: 16) {
+                        Menu {
+                            Button {
+                                isVideoLooping = true
+                            } label: {
+                                Label("Loop", systemImage: isVideoLooping ? "checkmark" : "repeat")
+                            }
+                            Button {
+                                isVideoLooping = false
+                            } label: {
+                                Label("Play Once", systemImage: !isVideoLooping ? "checkmark" : "1.circle")
+                            }
+                        } label: {
+                            Image(systemName: isVideoLooping ? "repeat" : "1.circle")
+                        }
+
+                        Button {
+                            isVideoPlaying.toggle()
+                        } label: {
+                            Image(systemName: isVideoPlaying ? "pause.fill" : "play.fill")
                                 .contentTransition(.symbolEffect(.replace))
                         }
                     }
-                    .disabled(isSaving || saveDidSucceed)
-                }
-                
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button (role: .destructive) {
-                        showDeleteConfirm = true
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                    .tint(.red)
-                    .buttonStyle(.glassProminent)
                 }
             }
+            
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    guard let entry = currentEntry else { return }
+                    Task {
+                        shareItems = await prepareShareItems(for: [entry], videoDirectory: store.videoDirectory)
+                        showShareSheet = true
+                    }
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+            }
+
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    guard !isSaving, !saveDidSucceed else { return }
+                    Task { await saveCurrentPhoto() }
+                } label: {
+                    Group {
+                        if isSaving {
+                            ProgressView().scaleEffect(0.8)
+                        } else {
+                            Image(systemName: saveDidSucceed ? "checkmark" : "square.and.arrow.down")
+                                .contentTransition(.symbolEffect(.replace))
+                        }
+                    }
+                }
+                .disabled(isSaving || saveDidSucceed)
+            }
+
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    guard let entry = currentEntry else { return }
+                    editingEntry = entry
+                } label: {
+                    Image(systemName: "pencil")
+                }
+            }
+
+            ToolbarItem(placement: .bottomBar) {
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.glassProminent)
+                .tint(.red)
+            }
+        }
+        .sheet(item: $editingEntry) { item in
+            EditPolaroidSheet(entry: item)
         }
         .background(ActivitySheet(items: shareItems, isPresented: $showShareSheet))
+        .onChange(of: scrollPosition) { _, newPosition in
+            guard let idx = newPosition, idx < entries.count else { return }
+            currentEntryID = entries[idx].id
+            isVideoPlaying = true
+        }
+        .onChange(of: entries.count) { _, _ in
+            if let target = pendingScrollTarget {
+                scrollPosition = target
+                pendingScrollTarget = nil
+            }
+        }
         .confirmationDialog("Delete this photo?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 deleteCurrentPhoto()
@@ -118,161 +181,102 @@ struct PolaroidDetailView: View {
         }
     }
 
-    // MARK: - Card stack
-
-    private var cardStack: some View {
-        ZStack {
-            ForEach(Array((1..<min(3, store.entries.count)).reversed()), id: \.self) { stackPos in
-                let idx = (currentIndex + stackPos) % store.entries.count
-                let entry = store.entries[idx]
-                let off = backOffsets[stackPos - 1]
-                let dragProgress = min(1.0, abs(dragOffset) / 150.0)
-                let prog = max(dragProgress, cardSettleProgress)
-
-                PolaroidPhotoCell(
-                    image: entry.image,
-                    videoURL: entry.videoURL,
-                    isTimelapse: entry.isTimelapse,
-                    playVideo: false,
-                    developmentProgress: entry.developmentProgress,
-                    caption: entry.caption,
-                    backText: entry.backText,
-                    showMap: entry.showMap,
-                    coordinate: entry.coordinate,
-                    timestamp: entry.timestamp,
-                    filterName: entry.filterName,
-                    packName: entry.packName,
-                    fontScale: 1.7
-                )
-                .frame(width: cardWidth, height: cardHeight)
-                .scaleEffect(off.scale + prog * (1.0 - off.scale))
-                .rotationEffect(.degrees(off.rotation * (1.0 - prog)))
-                .offset(
-                    x: off.x * CGFloat(1.0 - prog),
-                    y: off.y * CGFloat(1.0 - prog)
-                )
-                .allowsHitTesting(false)
-            }
-
-            let entry = store.entries[currentIndex]
-            PolaroidPhotoCell(
-                image: entry.image,
-                videoURL: entry.videoURL,
-                isTimelapse: entry.isTimelapse,
-                playVideo: true,
-                developmentProgress: entry.developmentProgress,
-                caption: entry.caption,
-                backText: entry.backText,
-                showMap: entry.showMap,
-                coordinate: entry.coordinate,
-                timestamp: entry.timestamp,
-                filterName: entry.filterName,
-                packName: entry.packName,
-                fontScale: 1.7,
-                onDeveloped: {
-                    guard currentIndex < store.entries.count else { return }
-                    store.entries[currentIndex].developmentProgress = 1.0
-                    store.persistMetadata()
-                }
-            )
-            .id(entry.id)
-            .frame(width: cardWidth, height: cardHeight)
-            .offset(x: dragOffset)
-            .rotationEffect(.degrees(dragRotation))
-            .simultaneousGesture(swipeGesture)
-        }
-        .padding(32)
-    }
-
     @ViewBuilder
-    private var counterLabel: some View {
-        if store.entries.count > 1 {
-            Text("\(currentIndex + 1) / \(store.entries.count)")
-                .font(.caption.monospaced())
-                .foregroundStyle(.white.opacity(0.6))
+    private var titleView: some View {
+        if let entry = currentEntry {
+            VStack(spacing: 1) {
+                Text(entry.timestamp, format: .dateTime.weekday(.wide))
+                    .font(.headline)
+                Text(entry.timestamp, format: .dateTime.hour().minute())
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .id(currentIndex)
         }
     }
 
-    // MARK: - Swipe gesture
+    // MARK: - Thumbnail strip
 
-    private var swipeGesture: some Gesture {
-        DragGesture(minimumDistance: 10)
-            .onChanged { value in
-                guard !isTransitioning else { return }
-                dragOffset = value.translation.width
-                dragRotation = Double(value.translation.width) / 20.0
-            }
-            .onEnded { value in
-                guard !isTransitioning else { return }
-                let threshold: CGFloat = 80
-                let predictedVelocity = abs(value.predictedEndLocation.x - value.location.x)
-                if abs(value.translation.width) > threshold || predictedVelocity > 100 {
-                    let direction: CGFloat = value.translation.width >= 0 ? 1 : -1
-                    navigateCard(flyDirection: direction)
-                } else {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                        dragOffset = 0
-                        dragRotation = 0
+    private var thumbnailStrip: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 12) {
+                    ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
+                        PolaroidPhotoCell(
+                            image: entry.image,
+                            videoURL: entry.videoURL(in: store.videoDirectory),
+                            isTimelapse: entry.isTimelapse,
+                            playVideo: false,
+                            developmentProgress: entry.developmentProgress,
+                            caption: entry.caption,
+                            backText: entry.backText,
+                            showMap: entry.showMap,
+                            coordinate: entry.coordinate,
+                            timestamp: entry.timestamp,
+                            filterName: entry.filterName,
+                            packName: entry.packName,
+                            fontScale: 0.7,
+                            onSingleTap: {
+                                withAnimation(.snappy) {
+                                    scrollPosition = idx
+                                }
+                            }
+                        )
+                        .shadow(color: .black.opacity(0.15), radius: 34, x: 0, y: 6)
+                        .frame(width: idx == currentIndex ? 52 : 48, height: 64)
+                        .overlay {
+                            Rectangle()
+                                .stroke(
+                                    idx == currentIndex ? Color.accentColor : Color.clear,
+                                    lineWidth: 1
+                                )
+                        }
+                        .scaleEffect(idx == currentIndex ? 1.3 : 1.0)
+                        .animation(.snappy, value: currentIndex)
+                        .id(idx)
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
             }
-    }
-
-    // MARK: - Navigation
-
-    private func navigateCard(flyDirection: CGFloat) {
-        guard store.entries.count > 1 else {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                dragOffset = 0
-                dragRotation = 0
+            .onChange(of: currentIndex) { _, newIdx in
+                withAnimation {
+                    proxy.scrollTo(newIdx, anchor: .center)
+                }
             }
-            return
-        }
-
-        isTransitioning = true
-        withAnimation(.easeOut(duration: 0.28)) {
-            dragOffset = flyDirection * 650
-            dragRotation = Double(flyDirection) * 22
-        }
-
-        Task {
-            try? await Task.sleep(for: .seconds(0.28))
-            cardSettleProgress = 1.0
-            currentIndex = (currentIndex + 1) % store.entries.count
-            dragOffset = 0
-            dragRotation = 0
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) {
-                cardSettleProgress = 0
-            }
-            try? await Task.sleep(for: .seconds(0.5))
-            isTransitioning = false
         }
     }
 
     // MARK: - Delete
 
     private func deleteCurrentPhoto() {
-        guard currentIndex < store.entries.count else { return }
-        let id = store.entries[currentIndex].id
-        store.delete(ids: [id])
-        if store.entries.isEmpty {
-            handleDismiss()
-        } else {
-            currentIndex = min(currentIndex, store.entries.count - 1)
+        guard currentIndex < entries.count else { return }
+        let entry = entries[currentIndex]
+        if let filename = entry.videoFilename {
+            store.deleteVideo(filename: filename)
         }
+        // Calculate target before deletion (entries.count is still the old count here)
+        let target = currentIndex >= entries.count - 1 ? max(0, currentIndex - 1) : currentIndex
+        modelContext.delete(entry)
+        guard entries.count > 1 else {
+            dismiss()
+            return
+        }
+        // Defer scroll navigation until @Query updates (onChange(of: entries.count))
+        pendingScrollTarget = target
     }
 
     // MARK: - Save
 
     @MainActor
     private func saveCurrentPhoto() async {
-        guard currentIndex < store.entries.count else { return }
-        let entry = store.entries[currentIndex]
+        guard let entry = currentEntry else { return }
         let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         guard status == .authorized || status == .limited else { return }
         isSaving = true
-        if entry.videoURL != nil {
-            let url = await compositePolaroidVideo(entry) ?? entry.videoURL!
+        if let filename = entry.videoFilename {
+            let srcURL = store.videoDirectory.appendingPathComponent(filename)
+            let url = await compositePolaroidVideo(entry, sourceURL: srcURL) ?? srcURL
             try? await PHPhotoLibrary.shared().performChanges {
                 PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
             }
@@ -289,18 +293,6 @@ struct PolaroidDetailView: View {
         try? await Task.sleep(for: .seconds(2))
         withAnimation {
             saveDidSucceed = false
-        }
-    }
-
-    // MARK: - Dismiss
-
-    private func handleDismiss() {
-        withAnimation(.easeOut(duration: 0.25)) {
-            appeared = false
-        }
-        Task {
-            try? await Task.sleep(for: .seconds(0.25))
-            onDismiss()
         }
     }
 }

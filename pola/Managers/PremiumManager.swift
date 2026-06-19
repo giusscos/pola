@@ -34,7 +34,11 @@ final class PremiumManager {
             for await result in Transaction.updates {
                 guard case .verified(let tx) = result else { continue }
                 if Self.productIDs.contains(tx.productID) {
-                    isPremium = true
+                    if tx.revocationDate != nil {
+                        await refreshPurchaseStatus()
+                    } else {
+                        isPremium = true
+                    }
                     await tx.finish()
                 }
             }
@@ -83,13 +87,15 @@ final class PremiumManager {
 
     @MainActor
     func refreshPurchaseStatus() async {
+        var hasActive = false
         for await result in Transaction.currentEntitlements {
             guard case .verified(let tx) = result else { continue }
             if Self.productIDs.contains(tx.productID) {
-                isPremium = true
-                return
+                hasActive = true
+                break
             }
         }
+        isPremium = hasActive
     }
 
     private static let productIDs: Set<String> = [monthlyID, yearlyID, lifetimeID]

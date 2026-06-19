@@ -1,8 +1,10 @@
+import StoreKit
 import SwiftUI
 
 struct SettingsView: View {
     @Environment(PremiumManager.self) private var premium
     @Environment(LanguageManager.self) private var languageManager
+    @Environment(\.requestReview) private var requestReview
     @Environment(\.openURL) private var openURL
     @State private var showPaywall = false
     @State private var showOnboarding = false
@@ -13,7 +15,6 @@ struct SettingsView: View {
     @AppStorage("captionPromptEnabled") private var captionPromptEnabled: Bool = true
     @AppStorage("polaroidFont") private var polaroidFontRaw: String = PolaroidFont.handwriting.rawValue
     @AppStorage("polaroidFontWeight") private var polaroidFontWeightRaw: String = PolaroidFontWeight.regular.rawValue
-    @AppStorage("iCloudSyncEnabled") private var iCloudSyncEnabled: Bool = false
     @AppStorage("libraryColumnCount") private var libraryColumnCount: Int = 3
     @AppStorage("videoAudioEnabled") private var videoAudioEnabled: Bool = true
     @AppStorage("timelapseInterval") private var timelapseInterval: Double = 5
@@ -182,13 +183,12 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle(isOn: $iCloudSyncEnabled) {
-                        Label("Sync with iCloud", systemImage: "icloud")
-                    }
+                    Label("Sync with iCloud", systemImage: "icloud")
+                        .foregroundStyle(.secondary)
                 } header: {
                     Text("iCloud")
                 } footer: {
-                    Text("Store your polaroids in iCloud so they're available across your devices. Changes take effect immediately.")
+                    Text("Your polaroids sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud.")
                 }
 
                 Section("Privacy") {
@@ -211,6 +211,10 @@ struct SettingsView: View {
                         openURL(URL(string: "mailto:hello@giusscos.com")!)
                     } label: {
                         Label("Feedback", systemImage: "envelope")
+                            .foregroundStyle(.primary)
+                    }
+                    Button { requestReview() } label: {
+                        Label("Rate the App", systemImage: "star.fill")
                             .foregroundStyle(.primary)
                     }
                     Button { showOnboarding = true } label: {
@@ -246,7 +250,7 @@ struct SettingsView: View {
             }
         }
         .sheet(isPresented: $showPaywall) {
-            PaywallView()
+            PaywallView(onClose: { showPaywall = false })
                 .environment(PremiumManager.shared)
         }
         .fullScreenCover(isPresented: $showOnboarding) {

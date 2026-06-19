@@ -1,4 +1,4 @@
-# pola. — App Store Content
+# poly. — App Store Content
 
 All copy organised by language. Each section maps to an App Store Connect field or a screenshot overlay.
 
@@ -8,7 +8,7 @@ All copy organised by language. Each section maps to an App Store Connect field 
 
 ### App Name
 ```
-pola.
+poly.
 ```
 
 ### Subtitle *(30 chars max)*
@@ -23,7 +23,7 @@ Turn every photo into an authentic polaroid. Film filters, colored packs, video 
 
 ### Description *(4 000 chars max)*
 ```
-pola. transforms your iPhone camera into an instant film camera.
+poly. transforms your iPhone camera into an instant film camera.
 
 Shoot in Photo, Video or Time Lapse mode and watch your shot develop into a classic polaroid frame — complete with film grain, light leaks and a caption strip that's uniquely yours.
 
@@ -45,7 +45,7 @@ Each polaroid quietly records where it was taken. Flip it over to see a live map
 ICLOUD SYNC
 Keep every polaroid safe and available across all your devices with iCloud.
 
-POLA. PREMIUM
+POLY. PREMIUM
 Unlock all 5 film emulations, 5 frame packs, all fonts and watermark-free exports in a single purchase or flexible subscription.
 ```
 
@@ -68,7 +68,7 @@ polaroid,instant,camera,film,filter,photo,vintage,analog,frames,timelapse
 #### Screenshot 1 — Welcome
 | Element | Text |
 |---------|------|
-| App name | `pola.` |
+| App name | `poly.` |
 | Tagline | `Authentic polaroids, direct from your camera.` |
 | CTA | `Get Started` |
 
@@ -105,7 +105,7 @@ polaroid,instant,camera,film,filter,photo,vintage,analog,frames,timelapse
 
 ### App Name
 ```
-pola.
+poly.
 ```
 
 ### Subtitle
@@ -120,7 +120,7 @@ Verwandle jedes Foto in ein authentisches Polaroid. Filmfilter, bunte Packs, Vid
 
 ### Description
 ```
-pola. verwandelt deine iPhone-Kamera in eine Sofortbildkamera.
+poly. verwandelt deine iPhone-Kamera in eine Sofortbildkamera.
 
 Schieß Fotos, Videos oder Zeitraffer und sieh zu, wie dein Schnappschuss zu einem klassischen Polaroid-Rahmen wird – mit Filmkorn, Lichtlecks und einem Bildunterschrift-Streifen, der einzigartig ist.
 
@@ -142,7 +142,7 @@ Jedes Polaroid speichert still den Aufnahmeort. Drehe es um, um eine Karte zu se
 ICLOUD-SYNC
 Halte jedes Polaroid sicher und auf all deinen Geräten verfügbar mit iCloud.
 
-POLA. PREMIUM
+POLY. PREMIUM
 Schalte alle 5 Filmemulationen, 5 Rahmen-Packs, alle Schriften und den Export ohne Wasserzeichen frei – als Einmalzahlung oder flexibles Abonnement.
 ```
 
@@ -165,7 +165,7 @@ polaroid,sofortbild,kamera,film,filter,foto,vintage,analog,rahmen,zeitraffer
 #### Screenshot 1 — Willkommen
 | Element | Text |
 |---------|------|
-| App-Name | `pola.` |
+| App-Name | `poly.` |
 | Tagline | `Authentische Polaroids, direkt von deiner Kamera.` |
 | CTA | `Loslegen` |
 
@@ -202,7 +202,7 @@ polaroid,sofortbild,kamera,film,filter,foto,vintage,analog,rahmen,zeitraffer
 
 ### App Name
 ```
-pola.
+poly.
 ```
 
 ### Subtitle
@@ -217,7 +217,7 @@ Convierte cada foto en un polaroid auténtico. Filtros de película, packs de co
 
 ### Description
 ```
-pola. transforma la cámara de tu iPhone en una cámara de película instantánea.
+poly. transforma la cámara de tu iPhone en una cámara de película instantánea.
 
 Dispara en modo Foto, Vídeo o Lapso de tiempo y observa cómo tu toma se convierte en un clásico marco polaroid — con grano de película, fugas de luz y una tira de leyenda que es únicamente tuya.
 
@@ -239,7 +239,7 @@ Cada polaroid registra silenciosamente dónde fue tomado. Dale la vuelta para ve
 ICLOUD
 Mantén cada polaroid seguro y disponible en todos tus dispositivos con iCloud.
 
-POLA. PREMIUM
+POLY. PREMIUM
 Desbloquea las 5 emulaciones de película, 5 packs de marcos, todas las fuentes y exportaciones sin marca de agua — en una compra única o suscripción flexible.
 ```
 
@@ -262,7 +262,7 @@ polaroid,instantánea,cámara,película,filtro,foto,vintage,analógico,marcos,ti
 #### Screenshot 1 — Bienvenida
 | Elemento | Texto |
 |----------|-------|
-| Nombre app | `pola.` |
+| Nombre app | `poly.` |
 | Eslogan | `Polaroids auténticos, directamente desde tu cámara.` |
 | CTA | `Empezar` |
 
@@ -299,7 +299,7 @@ polaroid,instantánea,cámara,película,filtro,foto,vintage,analógico,marcos,ti
 
 ### App Name
 ```
-pola.
+poly.
 ```
 
 ### Subtitle
@@ -314,7 +314,7 @@ Transformez chaque photo en vrai polaroid. Filtres film, packs colorés, vidéo 
 
 ### Description
 ```
-pola. transforme l'appareil photo de votre iPhone en caméra à développement instantané.
+poly. transforme l'appareil photo de votre iPhone en caméra à développement instantané.
 
 Prenez des photos, vidéos ou accélérés et regardez votre cliché se révéler dans un cadre polaroid classique — avec grain de film, fuites de lumière et une bande de légende qui vous ressemble.
 
@@ -336,7 +336,7 @@ Chaque polaroid enregistre discrètement l'endroit où il a été pris. Retourne
 ICLOUD
 Gardez chaque polaroid en sécurité et disponible sur tous vos appareils avec iCloud.
 
-POLA. PREMIUM
+POLY. PREMIUM
 Débloquez les 5 émulations de film, 5 packs de cadres, toutes les polices et les exports sans filigrane — en achat unique ou abonnement flexible.
 ```
 
@@ -359,7 +359,7 @@ polaroid,instantané,appareil,film,filtre,photo,vintage,analogique,cadres,accél
 #### Screenshot 1 — Bienvenue
 | Élément | Texte |
 |---------|-------|
-| Nom app | `pola.` |
+| Nom app | `poly.` |
 | Accroche | `Polaroids authentiques, directement depuis votre appareil photo.` |
 | CTA | `Commencer` |
 
@@ -396,7 +396,7 @@ polaroid,instantané,appareil,film,filtre,photo,vintage,analogique,cadres,accél
 
 ### App Name
 ```
-pola.
+poly.
 ```
 
 ### Subtitle
@@ -411,7 +411,7 @@ Trasforma ogni foto in un polaroid autentico. Filtri pellicola, pack colorati, v
 
 ### Description
 ```
-pola. trasforma la fotocamera del tuo iPhone in una fotocamera a sviluppo istantaneo.
+poly. trasforma la fotocamera del tuo iPhone in una fotocamera a sviluppo istantaneo.
 
 Scatta in modalità Foto, Video o Time Lapse e guarda il tuo scatto trasformarsi in una classica cornice polaroid — con grana della pellicola, aloni di luce e una striscia didascalia tutta tua.
 
@@ -433,7 +433,7 @@ Ogni polaroid registra silenziosamente dove è stato scattato. Giralo per vedere
 ICLOUD
 Tieni ogni polaroid al sicuro e disponibile su tutti i tuoi dispositivi con iCloud.
 
-POLA. PREMIUM
+POLY. PREMIUM
 Sblocca tutte le 5 emulazioni di pellicola, 5 pack di cornici, tutti i caratteri ed esportazioni senza filigrana — con acquisto unico o abbonamento flessibile.
 ```
 
@@ -456,7 +456,7 @@ polaroid,istantanea,fotocamera,pellicola,filtro,foto,vintage,analogico,cornici,t
 #### Screenshot 1 — Benvenuto
 | Elemento | Testo |
 |----------|-------|
-| Nome app | `pola.` |
+| Nome app | `poly.` |
 | Tagline | `Polaroid autentici, direttamente dalla tua fotocamera.` |
 | CTA | `Inizia` |
 
@@ -497,7 +497,7 @@ The tables below list every localised string across all five languages for quick
 
 | Key (en) | de | es | fr | it |
 |----------|----|----|----|----|
-| pola. Premium | pola. Premium | pola. Premium | pola. Premium | pola. Premium |
+| poly. Premium | poly. Premium | poly. Premium | poly. Premium | poly. Premium |
 | Unlock the full experience | Erlebe das volle Erlebnis | Desbloquea la experiencia completa | Débloquez l'expérience complète | Sblocca l'esperienza completa |
 | Film Filters & Packs | Filmfilter & Packs | Filtros Film & Packs | Filtres Film & Packs | Filtri Film & Pack |
 | 5 film emulations + colored frames | 5 Filmemulationen + bunte Rahmen | 5 emulaciones film + marcos de colores | 5 émulations film + cadres colorés | 5 emulazioni film + cornici colorate |
