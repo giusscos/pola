@@ -33,6 +33,7 @@ struct OnboardingView: View {
     @State private var page = 0
     @State private var appeared = false
     @State private var locationHelper = LocationAuthorizationHelper()
+    @State private var filterPreviews: [String: UIImage] = [:]
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -94,6 +95,9 @@ struct OnboardingView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             withAnimation(.easeOut(duration: 0.6).delay(0.1)) { appeared = true }
+        }
+        .task {
+            await generateFilterPreviews()
         }
         .onChange(of: premium.isPremium) { _, newValue in
             if newValue { dismiss() }
@@ -287,20 +291,28 @@ struct OnboardingView: View {
         let arcOffsets: [CGFloat] = [-18, -6, 4, -6, -18]
 
         return VStack(spacing: 16) {
-            // Film canister row
+            // Film filter row — shows reference photo with each effect applied
             HStack(spacing: 10) {
                 ForEach(Array(filmFilters.enumerated()), id: \.offset) { i, filter in
                     VStack(spacing: 6) {
                         ZStack {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(filter.color.opacity(0.15))
-                            if let usdzName = filter.usdzName {
-                                ModelSceneView(
-                                    assetName: usdzName,
-                                    gestureEnabled: false,
-                                    autoRotate: true,
-                                    modelScale: 0.85
-                                )
+                            if let preview = filterPreviews[filter.name] {
+                                Image(uiImage: preview)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .clipped()
+                            } else if let imageName = filter.imageName {
+                                Image(imageName)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .clipped()
+                            } else {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(filter.color.opacity(0.15))
+                                Circle()
+                                    .fill(filter.color)
+                                    .frame(width: 26, height: 26)
                             }
                         }
                         .frame(width: 54, height: 54)
@@ -322,12 +334,10 @@ struct OnboardingView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 10)
                             .fill(pack.color.opacity(0.15))
-                        ModelSceneView(
-                            assetName: pack.usdzName,
-                            gestureEnabled: false,
-                            autoRotate: true,
-                            modelScale: 0.85
-                        )
+                        Circle()
+                            .fill(pack.color)
+                            .frame(width: 22, height: 22)
+                            .shadow(color: pack.color.opacity(0.5), radius: 4, x: 0, y: 2)
                     }
                     .frame(width: 44, height: 44)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -429,6 +439,18 @@ struct OnboardingView: View {
     }
 
     // MARK: - Helpers
+
+    private func generateFilterPreviews() async {
+        guard let ref = UIImage(named: "filter_reference") else { return }
+        let size = CGSize(width: 120, height: 120)
+        let small = ref.preparingThumbnail(of: size) ?? ref
+        var previews: [String: UIImage] = [:]
+        for filter in filmFilters {
+            guard let effect = filter.effect else { continue }
+            previews[filter.name] = effect.apply(to: small)
+        }
+        filterPreviews = previews
+    }
 
     private func background(topColor: Color, bottomColor: Color) -> some View {
         LinearGradient(colors: [topColor, bottomColor], startPoint: .top, endPoint: .bottom)

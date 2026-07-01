@@ -2,18 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>pola uses the camera to capture photos with vintage film filters.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>pola saves your photo location so you can see where each shot was taken on the back of the polaroid.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>pola needs access to save your polaroids to your photo library.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>pola uses the microphone to record audio with video.</string>
 	<key>NSUbiquitousContainers</key>
 	<dict>
 		<key>iCloud.com.giusscos.pola</key>
@@ -26,5 +14,9 @@
 			<string>Any</string>
 		</dict>
 	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

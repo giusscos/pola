@@ -107,6 +107,7 @@ struct PolaroidPhotoCell: View {
     var timestamp: Date? = nil
     var filterName: String? = nil
     var packName: String? = nil
+    var packColorHex: String? = nil
     var fontScale: CGFloat = 1.0
     var onDeveloped: (() -> Void)? = nil
     var onSingleTap: (() -> Void)? = nil
@@ -136,6 +137,7 @@ struct PolaroidPhotoCell: View {
         timestamp: Date? = nil,
         filterName: String? = nil,
         packName: String? = nil,
+        packColorHex: String? = nil,
         fontScale: CGFloat = 1.0,
         onDeveloped: (() -> Void)? = nil,
         onSingleTap: (() -> Void)? = nil
@@ -155,6 +157,7 @@ struct PolaroidPhotoCell: View {
         self.timestamp = timestamp
         self.filterName = filterName
         self.packName = packName
+        self.packColorHex = packColorHex
         self.fontScale = fontScale
         self.onDeveloped = onDeveloped
         self.onSingleTap = onSingleTap
@@ -177,6 +180,7 @@ struct PolaroidPhotoCell: View {
     }
 
     private var borderColor: Color {
+        if let hex = packColorHex, let c = Color(hex: hex) { return c }
         guard let packName else { return .white }
         return polaPackColors.first(where: { $0.name == packName })?.color ?? .white
     }
@@ -498,7 +502,10 @@ func compositePolaroidVideo(_ entry: PolaroidEntry, sourceURL: URL) async -> URL
     // In UIKit coords: top-padding | image area | caption (bottom)
     let imageHole = CGRect(x: pad, y: pad, width: imgW, height: imgH)
     let captionRect = CGRect(x: 0, y: pad + imgH, width: frameW, height: captionH)
-    let packColor = UIColor(polaPackColors.first(where: { $0.name == entry.packName })?.color ?? .white)
+    let packColor: UIColor = {
+        if let hex = entry.packColorHex, let c = Color(hex: hex) { return UIColor(c) }
+        return UIColor(polaPackColors.first(where: { $0.name == entry.packName })?.color ?? .white)
+    }()
     let storedFontName = UserDefaults.standard.string(forKey: "polaroidFont") ?? PolaroidFont.handwriting.rawValue
     let storedWeightName = UserDefaults.standard.string(forKey: "polaroidFontWeight") ?? PolaroidFontWeight.regular.rawValue
     let captionFont = (PolaroidFont(rawValue: storedFontName) ?? .handwriting)
@@ -646,6 +653,7 @@ func renderPolaroidFrame(_ entry: PolaroidEntry) -> UIImage {
         timestamp: entry.timestamp,
         filterName: entry.filterName,
         packName: entry.packName,
+        packColorHex: entry.packColorHex,
         fontScale: 1.7
     )
     .frame(width: 270, height: 360)
@@ -661,6 +669,29 @@ func renderPolaroidFrame(_ entry: PolaroidEntry) -> UIImage {
     return wmRenderer.image { ctx in
         rendered.draw(in: CGRect(origin: .zero, size: rendered.size))
         drawPolaroidWatermark(in: ctx.cgContext, imageRect: imageAreaRect, scale: 1)
+    }
+}
+
+// MARK: - Color hex helpers
+
+extension Color {
+    init?(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        guard hex.count == 6 else { return nil }
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        self.init(
+            .sRGB,
+            red: Double((int >> 16) & 0xFF) / 255,
+            green: Double((int >> 8) & 0xFF) / 255,
+            blue: Double(int & 0xFF) / 255
+        )
+    }
+
+    var hexString: String {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a)
+        return String(format: "%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
     }
 }
 

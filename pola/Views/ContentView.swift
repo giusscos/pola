@@ -1,5 +1,4 @@
 import AVFoundation
-import SceneKit
 import StoreKit
 import SwiftData
 import SwiftUI
@@ -27,14 +26,14 @@ struct ContentView: View {
     @State private var pendingCaption: String = ""
     @State private var showCaptionInput = false
     @State private var showLibrary = false
+    @State private var libraryDetailOpen = false
+    @State private var librarySelectMode = false
     @State private var showSettings = false
     @State private var selectedFilterName: String? = nil
     @State private var selectedPackName: String? = nil
     @State private var activeStrip: ActiveStrip = .none
     @State private var cameraMode: CameraMode = .photo
     @State private var cameraBlurRadius: CGFloat = 0
-    @State private var isModePickerExpanded = false
-    @State private var expandedDragBaseIdx = 0
     @AppStorage("timelapseInterval") private var timelapsInterval: Double = 5
     @AppStorage("timelapseDuration") private var timelapseDuration: Double = 60
     @AppStorage("timelapseSaveAsVideo") private var timelapseSaveAsVideo: Bool = false
@@ -50,6 +49,7 @@ struct ContentView: View {
     @Environment(\.requestReview) private var requestReview
     @AppStorage("totalPhotosCount") private var totalPhotosCount: Int = 0
     @State private var showPaywall = false
+    @State private var showFiltersSheet = false
 
     private var activeFilter: FilmFilter? {
         filmFilters.first { $0.name == selectedFilterName }
@@ -158,14 +158,7 @@ struct ContentView: View {
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
 
-                    if activeStrip == .filters {
-                        filterStrip
-                            .padding(.bottom, 12)
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .bottom).combined(with: .opacity),
-                                removal: .move(edge: .bottom).combined(with: .opacity)
-                            ))
-                    } else if activeStrip == .colors {
+                    if activeStrip == .colors {
                         colorStrip
                             .padding(.bottom, 12)
                             .transition(.asymmetric(
@@ -211,12 +204,19 @@ struct ContentView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     modeToolbarButton
                 }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { flipCameraWithAnimation() } label: {
+                        Image(systemName: "arrow.triangle.2.circlepath.camera")
+                    }
+                }
             }
         }
         .fullScreenCover(isPresented: $showLibrary) {
-            LibraryView()
+            LibraryView(isDetailOpen: $libraryDetailOpen, isSelectMode: $librarySelectMode)
                 .environment(PremiumManager.shared)
                 .navigationTransition(.zoom(sourceID: "library", in: sheetZoom))
+                .interactiveDismissDisabled(libraryDetailOpen || librarySelectMode)
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -227,6 +227,14 @@ struct ContentView: View {
         .sheet(isPresented: $showPaywall) {
             PaywallView(onClose: { showPaywall = false })
                 .environment(PremiumManager.shared)
+        }
+        .sheet(isPresented: $showFiltersSheet) {
+            FiltersView(selectedFilterName: $selectedFilterName, onPaywallRequested: {
+                showFiltersSheet = false
+                showPaywall = true
+            })
+            .environment(PremiumManager.shared)
+            .navigationTransition(.zoom(sourceID: "filtersSheet", in: sheetZoom))
         }
         .sheet(isPresented: $showTimeLapseSettings) {
             TimeLapseSettingsView(interval: $timelapsInterval, duration: $timelapseDuration, saveAsVideo: $timelapseSaveAsVideo)
@@ -369,13 +377,10 @@ struct ContentView: View {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(isSelected ? pack.color.opacity(0.3) : Color.white.opacity(0.12))
 
-                ModelSceneView(
-                    assetName: pack.usdzName,
-                    gestureEnabled: false,
-                    autoRotate: true,
-                    modelScale: 0.85,
-                    antialiasingMode: .none
-                )
+                Circle()
+                    .fill(pack.color)
+                    .frame(width: 30, height: 30)
+                    .shadow(color: pack.color.opacity(0.5), radius: 4, x: 0, y: 2)
 
                 if locked {
                     RoundedRectangle(cornerRadius: 12)
@@ -407,14 +412,10 @@ struct ContentView: View {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(isSelected ? filter.color.opacity(0.3) : Color.white.opacity(0.12))
 
-                if let usdzName = filter.usdzName {
-                    ModelSceneView(
-                        assetName: usdzName,
-                        gestureEnabled: false,
-                        autoRotate: true,
-                        modelScale: 0.85,
-                        antialiasingMode: .none
-                    )
+                if let imageName = filter.imageName {
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFill()
                 } else {
                     Circle()
                         .fill(filter.color)
@@ -447,18 +448,7 @@ struct ContentView: View {
     // MARK: - Shutter row
 
     private var shutterRow: some View {
-        HStack {
-            stripToggleButton(icon: "camera.filters", label: "FILM", strip: .filters)
-
-            Spacer()
-
-            shutterButton
-
-            Spacer()
-
-            stripToggleButton(icon: "paintpalette.fill", label: "PACK", strip: .colors)
-        }
-        .padding(.horizontal, 40)
+        shutterButton
     }
 
     private var shutterButton: some View {
@@ -515,6 +505,28 @@ struct ContentView: View {
             }
         }
         .glassEffect(.regular, in: .circle)
+    }
+
+    private var filmButton: some View {
+        let isActive = selectedFilterName != nil
+        return VStack(spacing: 4) {
+            ZStack {
+                Circle()
+                    .fill(isActive ? Color.white.opacity(0.28) : Color.white.opacity(0.12))
+                    .frame(width: 52, height: 52)
+                Image(systemName: "camera.filters")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(isActive ? .white : .white.opacity(0.65))
+                    .scaleEffect(isActive ? 1.08 : 1.0)
+            }
+            Text("FILM")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(isActive ? .white : .white.opacity(0.55))
+        }
+        .matchedTransitionSource(id: "filtersSheet", in: sheetZoom)
+        .onTapGesture {
+            showFiltersSheet = true
+        }
     }
 
     @ViewBuilder
@@ -590,7 +602,7 @@ struct ContentView: View {
                             }
                     }
                     if recent.count >= 2, let img = recent[1].image {
-                        miniPolaroid(image: img, packName: recent[1].packName)
+                        miniPolaroid(image: img, packName: recent[1].packName, packColorHex: recent[1].packColorHex)
                             .rotationEffect(.degrees(-9))
                             .scaleEffect(0.85)
                             .opacity(0.85)
@@ -598,7 +610,7 @@ struct ContentView: View {
                             .id(recent[1].id)
                     }
                     if let front = recent.first, let img = front.image {
-                        miniPolaroid(image: img, packName: front.packName)
+                        miniPolaroid(image: img, packName: front.packName, packColorHex: front.packColorHex)
                             .rotationEffect(.degrees(5))
                             .id(front.id)
                             .transition(.asymmetric(
@@ -611,139 +623,36 @@ struct ContentView: View {
                 .frame(width: 44, height: 44)
             }
             .matchedTransitionSource(id: "library", in: sheetZoom)
-            .frame(width: isModePickerExpanded ? 0 : 72, alignment: .leading)
-            .opacity(isModePickerExpanded ? 0 : 1)
-            .clipped()
+            .frame(width: 72, alignment: .leading)
 
             modePicker
                 .frame(maxWidth: .infinity)
 
-            Button { flipCameraWithAnimation() } label: {
-                Circle()
-                    .fill(.white.opacity(0.15))
-                    .frame(width: 44, height: 44)
-                    .overlay {
-                        Image(systemName: "arrow.triangle.2.circlepath.camera")
-                            .font(.system(size: 18))
-                            .foregroundStyle(.white)
-                    }
-            }
-            .frame(width: isModePickerExpanded ? 0 : 72, alignment: .trailing)
-            .opacity(isModePickerExpanded ? 0 : 1)
-            .clipped()
+            filmButton
+                .frame(width: 72, alignment: .trailing)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
         .background(.black)
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
-        .animation(.spring(duration: 0.3, bounce: 0.1), value: isModePickerExpanded)
     }
 
     // MARK: - Mode picker
 
-    private let modeItemWidth: CGFloat = 90
-
     private var modePicker: some View {
-        GeometryReader { proxy in
-            let allModes = CameraMode.allCases
-            let selectedIdx = CGFloat(allModes.firstIndex(of: cameraMode) ?? 0)
-            let centerOffset = proxy.size.width / 2 - (selectedIdx + 0.5) * modeItemWidth
-
-            HStack(spacing: 0) {
-                ForEach(allModes, id: \.self) { mode in
-                    modeLabel(for: mode)
-                        .frame(width: modeItemWidth)
-                        .simultaneousGesture(TapGesture().onEnded {
-                            UISelectionFeedbackGenerator().selectionChanged()
-                            withAnimation(.spring(duration: 0.3, bounce: 0.1)) {
-                                cameraMode = mode
-                            }
-                        })
-                }
-            }
-            .offset(x: centerOffset)
-            .animation(.spring(duration: 0.3, bounce: 0.1), value: cameraMode)
-        }
-        .frame(height: 34)
-        .mask {
-            LinearGradient(
-                stops: [
-                    .init(color: .clear, location: 0),
-                    .init(color: .black, location: 0.18),
-                    .init(color: .black, location: 0.82),
-                    .init(color: .clear, location: 1),
-                ],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        }
-        .onLongPressGesture(
-            minimumDuration: 0.35,
-            maximumDistance: 500,
-            perform: {
-                withAnimation(.spring(duration: 0.3, bounce: 0.1)) { isModePickerExpanded = true }
-                expandedDragBaseIdx = CameraMode.allCases.firstIndex(of: cameraMode) ?? 0
-            },
-            onPressingChanged: { pressing in
-                if !pressing, isModePickerExpanded {
-                    withAnimation(.spring(duration: 0.3, bounce: 0.1)) { isModePickerExpanded = false }
-                }
-            }
-        )
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 10)
-                .onChanged { value in
-                    guard isModePickerExpanded else { return }
-                    let steps = Int(round(-value.translation.width / modeItemWidth))
-                    let modes = CameraMode.allCases
-                    let newIdx = max(0, min(modes.count - 1, expandedDragBaseIdx + steps))
-                    guard cameraMode != modes[newIdx] else { return }
-                    UISelectionFeedbackGenerator().selectionChanged()
-                    withAnimation(.spring(duration: 0.15, bounce: 0)) { cameraMode = modes[newIdx] }
-                }
-                .onEnded { value in
-                    guard !isModePickerExpanded else { return }
-                    guard abs(value.translation.width) > abs(value.translation.height),
-                          abs(value.translation.width) > 15 else { return }
-                    let modes = CameraMode.allCases
-                    guard let idx = modes.firstIndex(of: cameraMode) else { return }
-                    var changed = false
-                    withAnimation(.spring(duration: 0.3)) {
-                        if value.translation.width < 0, idx < modes.count - 1 {
-                            cameraMode = modes[idx + 1]; changed = true
-                        } else if value.translation.width > 0, idx > 0 {
-                            cameraMode = modes[idx - 1]; changed = true
-                        }
-                    }
-                    if changed { UISelectionFeedbackGenerator().selectionChanged() }
-                }
-        )
-    }
-
-    private func modeLabel(for mode: CameraMode) -> some View {
-        let isSelected = cameraMode == mode
-        return Text(LocalizedStringKey(mode.rawValue))
-            .font(.system(size: 12, weight: .semibold))
-            .tracking(0.3)
-            .lineLimit(1)
-            .foregroundStyle(isSelected ? Color.yellow : Color.white.opacity(0.55))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .fixedSize(horizontal: true, vertical: false)
-            .background {
-                if isSelected {
-                    Color.clear.glassEffect(.regular, in: .capsule)
-                }
-            }
-            .scaleEffect(isSelected ? 1.0 : 0.82)
+        CameraModeSelectorView(cameraMode: $cameraMode)
+            .frame(height: 44)
     }
 
     // MARK: - Mini polaroid thumbnail
 
     @ViewBuilder
-    private func miniPolaroid(image: UIImage, packName: String?) -> some View {
-        let borderColor = polaPackColors.first(where: { $0.name == packName })?.color ?? .white
+    private func miniPolaroid(image: UIImage, packName: String?, packColorHex: String? = nil) -> some View {
+        let borderColor: Color = {
+            if let hex = packColorHex, let c = Color(hex: hex) { return c }
+            return polaPackColors.first(where: { $0.name == packName })?.color ?? .white
+        }()
         Image(uiImage: image)
             .resizable()
             .scaledToFill()

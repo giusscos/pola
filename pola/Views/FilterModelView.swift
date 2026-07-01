@@ -1,4 +1,3 @@
-import SceneKit
 import SwiftUI
 
 struct FilterModelView: View {
@@ -9,14 +8,11 @@ struct FilterModelView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if let usdzName = filter.usdzName {
-                ModelSceneView(
-                    assetName: usdzName,
-                    gestureEnabled: true,
-                    spinOnAppear: true,
-                    modelScale: 0.65
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if let imageName = filter.imageName {
+                Image(imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
             overlayUI

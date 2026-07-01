@@ -136,29 +136,33 @@ final class CameraManager: NSObject {
         }
     }
 
-    // Snap points = [minFactor] + switchFactors, names from constituent device types.
-    // On iPhone 15 Pro: [(1.0,"ultra wide"),(2.0,"normal"),(6.0,"telephoto")]
+    // Snap points: lens-switch factors + secondary native resolution factors (e.g. 2x crop on 14 Pro+).
+    // Labels are formatted display multipliers: "0.5x", "1x", "2x", "3x".
     private func buildZoomOptions(for device: AVCaptureDevice) -> [ZoomOption] {
         let multiplier = device.displayVideoZoomFactorMultiplier
         let minFactor = device.minAvailableVideoZoomFactor
         let switchFactors = device.virtualDeviceSwitchOverVideoZoomFactors.map { CGFloat($0.doubleValue) }
-        let allFactors = [minFactor] + switchFactors
 
-        let constituentTypes = device.constituentDevices.map { $0.deviceType }
-        let names: [String]
-        if constituentTypes.isEmpty {
-            names = Array(repeating: "normal", count: allFactors.count)
-        } else {
-            names = constituentTypes.map { type in
-                switch type {
-                case .builtInUltraWideCamera: return "wide"
-                case .builtInTelephotoCamera: return "tele"
-                default:                      return "normal"
-                }
+        var allFactors = Set<CGFloat>([minFactor] + switchFactors)
+        // iOS 16+: 48 MP main sensor exposes a 2x native-resolution crop (and possibly others)
+        if #available(iOS 16.0, *) {
+            for f in device.activeFormat.secondaryNativeResolutionZoomFactors {
+                allFactors.insert(f)
             }
         }
 
-        return zip(allFactors, names).map { ZoomOption(factor: $0, displayMultiplier: multiplier, name: $1) }
+        return allFactors.sorted().map { factor in
+            let display = factor * multiplier
+            return ZoomOption(factor: factor, displayMultiplier: multiplier, name: formatDisplayZoom(display))
+        }
+    }
+
+    private func formatDisplayZoom(_ value: CGFloat) -> String {
+        let tenth = (value * 10).rounded() / 10
+        if abs(tenth - tenth.rounded()) < 0.05 {
+            return "\(Int(tenth.rounded()))x"
+        }
+        return String(format: "%.1fx", tenth)
     }
 
     // Wide-angle is at the first switchOver factor when an ultra-wide is present;

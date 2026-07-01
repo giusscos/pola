@@ -4,9 +4,26 @@ struct EditPolaroidSheet: View {
     @Bindable var entry: PolaroidEntry
     @Environment(\.dismiss) private var dismiss
 
+    private var colorPickerBinding: Binding<Color> {
+        Binding(
+            get: {
+                if let hex = entry.packColorHex, let c = Color(hex: hex) { return c }
+                if let preset = polaPackColors.first(where: { $0.name == entry.packName }) { return preset.color }
+                return .white
+            },
+            set: { entry.packColorHex = $0.hexString }
+        )
+    }
+
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    ColorPicker("Border color", selection: colorPickerBinding, supportsOpacity: false)
+                } header: {
+                    Text("Color")
+                }
+
                 Section {
                     TextField("Short note...", text: $entry.caption)
                 } header: {

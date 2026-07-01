@@ -18,6 +18,7 @@ final class PolaroidEntry: Identifiable {
     var timestamp: Date = Date()
     var filterName: String? = nil
     var packName: String? = nil
+    var packColorHex: String? = nil
 
     init(
         image: UIImage,

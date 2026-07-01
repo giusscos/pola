@@ -3,17 +3,38 @@ import SwiftUI
 struct FilterItemCell: View {
     let filter: FilmFilter
     var isSelected: Bool = false
+    var locked: Bool = false
+    var previewImage: UIImage? = nil
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             ZStack {
-                if let usdzName = filter.usdzName {
-                    ModelSceneView(assetName: usdzName, gestureEnabled: false, autoRotate: true)
+                if let preview = previewImage {
+                    Image(uiImage: preview)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
+                } else if let imageName = filter.imageName {
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .clipped()
                 } else {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(filter.color.opacity(0.25))
                     Circle()
                         .fill(filter.color)
-                        .frame(width: 40, height: 40)
+                        .frame(width: 30, height: 30)
                 }
+
+                if locked {
+                    Color.black.opacity(0.45)
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+
                 if isSelected {
                     VStack {
                         HStack {
@@ -28,9 +49,9 @@ struct FilterItemCell: View {
                 }
             }
             .aspectRatio(1, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 12)
                     .strokeBorder(isSelected ? filter.color : .clear, lineWidth: 3)
             )
 
@@ -41,7 +62,7 @@ struct FilterItemCell: View {
 
                 Text(filter.name)
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(locked ? .secondary : .primary)
                     .lineLimit(1)
             }
         }

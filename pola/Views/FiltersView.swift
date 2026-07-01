@@ -160,7 +160,7 @@ struct FilmFilter: Identifiable {
     let id = UUID()
     let name: String
     let color: Color
-    let usdzName: String?
+    let imageName: String?
     let effect: FilmFilterEffect?
 
     var previewSaturation: Double {
@@ -177,11 +177,11 @@ struct FilmFilter: Identifiable {
 }
 
 let filmFilters: [FilmFilter] = [
-    FilmFilter(name: "FLÄRN", color: Color(red: 0.95, green: 0.78, blue: 0.12), usdzName: "FLARN_film35", effect: .chrome),
-    FilmFilter(name: "SOLVA", color: Color(red: 0.96, green: 0.72, blue: 0.54), usdzName: "SOLVA_film35", effect: .warm),
-    FilmFilter(name: "BRÖKK", color: Color(red: 0.78, green: 0.43, blue: 0.22), usdzName: "BROKK_film35", effect: .sepia),
-    FilmFilter(name: "VYLUR", color: Color(red: 0.68, green: 0.27, blue: 0.82), usdzName: "VYLUR_film35", effect: .cool),
-    FilmFilter(name: "GRÅLT", color: Color(red: 0.28, green: 0.28, blue: 0.28), usdzName: "GRALT_film35", effect: .noir),
+    FilmFilter(name: "FLÄRN", color: Color(red: 0.95, green: 0.78, blue: 0.12), imageName: "filter_flarn", effect: .chrome),
+    FilmFilter(name: "SOLVA", color: Color(red: 0.96, green: 0.72, blue: 0.54), imageName: "filter_solva", effect: .warm),
+    FilmFilter(name: "BRÖKK", color: Color(red: 0.78, green: 0.43, blue: 0.22), imageName: "filter_brokk", effect: .sepia),
+    FilmFilter(name: "VYLUR", color: Color(red: 0.68, green: 0.27, blue: 0.82), imageName: "filter_vylur", effect: .cool),
+    FilmFilter(name: "GRÅLT", color: Color(red: 0.28, green: 0.28, blue: 0.28), imageName: "filter_gralt", effect: .noir),
 ]
 
 // MARK: - Pack Model
@@ -190,59 +190,143 @@ struct PolaPackColor: Identifiable {
     let id = UUID()
     let name: String
     let color: Color
-    let usdzName: String
 }
 
 let polaPackColors: [PolaPackColor] = [
-    PolaPackColor(name: "FLÄRN", color: Color(red: 0.95, green: 0.78, blue: 0.12), usdzName: "FLARN_instant_pack"),
-    PolaPackColor(name: "SOLVA", color: Color(red: 0.96, green: 0.72, blue: 0.54), usdzName: "SOLVA_instant_pack"),
-    PolaPackColor(name: "BRÖKK", color: Color(red: 0.78, green: 0.43, blue: 0.22), usdzName: "BROKK_instant_pack"),
-    PolaPackColor(name: "VYLUR", color: Color(red: 0.68, green: 0.27, blue: 0.82), usdzName: "VYLUR_instant_pack"),
-    PolaPackColor(name: "GRÅLT", color: Color(red: 0.28, green: 0.28, blue: 0.28), usdzName: "GRALT_instant_pack"),
+    PolaPackColor(name: "FLÄRN", color: Color(red: 0.95, green: 0.78, blue: 0.12)),
+    PolaPackColor(name: "SOLVA", color: Color(red: 0.96, green: 0.72, blue: 0.54)),
+    PolaPackColor(name: "BRÖKK", color: Color(red: 0.78, green: 0.43, blue: 0.22)),
+    PolaPackColor(name: "VYLUR", color: Color(red: 0.68, green: 0.27, blue: 0.82)),
+    PolaPackColor(name: "GRÅLT", color: Color(red: 0.28, green: 0.28, blue: 0.28)),
 ]
 
 // MARK: - FiltersView
 
 struct FiltersView: View {
     @Binding var selectedFilterName: String?
-    @Environment(\.dismiss) private var dismiss
+    var onPaywallRequested: (() -> Void)? = nil
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 20), count: 2)
+    @Environment(\.dismiss) private var dismiss
+    @Environment(PremiumManager.self) private var premium
+
+    private let referenceImage: UIImage? = UIImage(named: "filter_reference")
+    @State private var filterPreviews: [String: UIImage] = [:]
+
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 3)
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 24) {
-                    ForEach(filmFilters) { filter in
-                        let isSelected = selectedFilterName == filter.name
-                        Button {
-                            selectedFilterName = isSelected ? nil : filter.name
-                            dismiss()
-                        } label: {
-                            FilterItemCell(filter: filter, isSelected: isSelected)
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("Pick a stock to give your polaroids an analog film look.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
+
+                    LazyVGrid(columns: columns, spacing: 16) {
+                        originalCell
+
+                        ForEach(filmFilters) { filter in
+                            let isSelected = selectedFilterName == filter.name
+                            let locked = !premium.isPremium
+                            Button {
+                                if locked {
+                                    onPaywallRequested?()
+                                } else {
+                                    selectedFilterName = isSelected ? nil : filter.name
+                                    dismiss()
+                                }
+                            } label: {
+                                FilterItemCell(
+                                    filter: filter,
+                                    isSelected: isSelected,
+                                    locked: locked,
+                                    previewImage: filterPreviews[filter.name]
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
+                    .padding(.horizontal, 16)
                 }
-                .padding(20)
+                .padding(.bottom, 24)
             }
-            .navigationTitle("Filters")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    VStack(alignment: .center, spacing: 0) {
-                        Text("Filters")
-                            .font(.largeTitle.width(.expanded).weight(.bold))
-                        Text("\(filmFilters.count) filters")
-                            .font(.caption)
+            .navigationTitle("Film")
+            .navigationBarTitleDisplayMode(.large)
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .task {
+            await generatePreviews()
+        }
+    }
+
+    private var originalCell: some View {
+        let isSelected = selectedFilterName == nil
+        return Button {
+            selectedFilterName = nil
+            dismiss()
+        } label: {
+            VStack(spacing: 8) {
+                ZStack {
+                    if let ref = referenceImage {
+                        Image(uiImage: ref)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .clipped()
+                    } else {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(.systemGray5))
+                        Image(systemName: "photo")
+                            .font(.title2)
                             .foregroundStyle(.secondary)
                     }
+
+                    if isSelected {
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.blue)
+                                    .background(.white, in: .circle)
+                                    .padding(6)
+                            }
+                            Spacer()
+                        }
+                    }
                 }
+                .aspectRatio(1, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(isSelected ? Color.blue : .clear, lineWidth: 3)
+                )
+
+                Text("Original")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
             }
         }
+        .buttonStyle(.plain)
+    }
+
+    private func generatePreviews() async {
+        guard let ref = referenceImage else { return }
+        let size = CGSize(width: 240, height: 240)
+        let small = ref.preparingThumbnail(of: size) ?? ref
+        var previews: [String: UIImage] = [:]
+        for filter in filmFilters {
+            guard let effect = filter.effect else { continue }
+            previews[filter.name] = effect.apply(to: small)
+        }
+        filterPreviews = previews
     }
 }
 
 #Preview {
     FiltersView(selectedFilterName: .constant(nil))
+        .environment(PremiumManager.shared)
 }
