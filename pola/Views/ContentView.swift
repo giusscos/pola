@@ -214,6 +214,7 @@ struct ContentView: View {
         }
         .fullScreenCover(isPresented: $showLibrary) {
             LibraryView(isDetailOpen: $libraryDetailOpen, isSelectMode: $librarySelectMode)
+                .ignoresSafeArea()
                 .environment(PremiumManager.shared)
                 .navigationTransition(.zoom(sourceID: "library", in: sheetZoom))
                 .interactiveDismissDisabled(libraryDetailOpen || librarySelectMode)

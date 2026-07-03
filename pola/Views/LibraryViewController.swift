@@ -56,7 +56,7 @@ final class LibraryViewController: UICollectionViewController {
     }
 
     private var cellFontScale: CGFloat {
-        switch columnCount { case 1: return 1.7; case 2: return 1.3; default: return 1.0 }
+        switch columnCount { case 1: return 1.3; case 2: return 1; default: return 0.6 }
     }
 
     private let categoryNames = ["All", "FL\u{00C4}RN", "SOLVA", "BR\u{00D6}KK", "VYLUR", "GR\u{00C5}LT"]

@@ -76,9 +76,19 @@ final class PolaroidDetailViewController: UIViewController {
     private var isSaving = false
     private var saveDidSucceed = false
 
+    private var titleStackView: UIStackView?
+    private var weekdayLabel: UILabel?
+    private var timeLabel: UILabel?
+    private var titleNeedsSettleAnimation = false
+    private var contentOffsetObservation: NSKeyValueObservation?
+
     private var currentEntry: PolaroidEntry? {
         guard currentIndex < entries.count else { return nil }
         return entries[currentIndex]
+    }
+
+    deinit {
+        contentOffsetObservation?.invalidate()
     }
 
     // MARK: - Lifecycle
@@ -86,6 +96,7 @@ final class PolaroidDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        setupTitleView()
         currentIndex = startIndex
         setupPageViewController()
         updateNavigationTitle()
@@ -122,6 +133,24 @@ final class PolaroidDetailViewController: UIViewController {
 
         guard !entries.isEmpty else { return }
         pageVC.setViewControllers([makePage(for: currentIndex)], direction: .forward, animated: false)
+        observePageScroll()
+    }
+
+    private func observePageScroll() {
+        guard let sv = pageVC.view.subviews.compactMap({ $0 as? UIScrollView }).first else { return }
+        contentOffsetObservation = sv.observe(\.contentOffset, options: .new) { [weak self] scrollView, _ in
+            self?.applyTitleParallax(offsetX: scrollView.contentOffset.x, width: scrollView.bounds.width)
+        }
+    }
+
+    private func applyTitleParallax(offsetX: CGFloat, width: CGFloat) {
+        guard width > 0, let stack = titleStackView else { return }
+        let fraction = (offsetX - width) / width   // –1 (prev) … 0 (rest) … +1 (next)
+        let magnitude = min(1, abs(fraction))
+        guard magnitude > 0.001 else { return }    // skip when scroll view snaps back to center
+        let scale = 1 - magnitude * 0.08
+        stack.transform = CGAffineTransform(scaleX: scale, y: scale)
+        stack.alpha = 1 - magnitude * 0.72
     }
 
     private func makePage(for index: Int) -> UIHostingController<AnyView> {
@@ -136,9 +165,7 @@ final class PolaroidDetailViewController: UIViewController {
 
     // MARK: - Navigation title
 
-    private func updateNavigationTitle() {
-        guard let entry = currentEntry else { navigationItem.titleView = nil; return }
-
+    private func setupTitleView() {
         let stack = UIStackView()
         stack.axis = .vertical
         stack.alignment = .center
@@ -146,20 +173,46 @@ final class PolaroidDetailViewController: UIViewController {
 
         let weekday = UILabel()
         weekday.font = .preferredFont(forTextStyle: .headline)
-        let df = DateFormatter()
-        df.dateFormat = "EEEE"
-        weekday.text = df.string(from: entry.timestamp)
 
         let time = UILabel()
         time.font = .preferredFont(forTextStyle: .caption1)
         time.textColor = .secondaryLabel
-        let tf = DateFormatter()
-        tf.dateStyle = .none; tf.timeStyle = .short
-        time.text = tf.string(from: entry.timestamp)
 
         stack.addArrangedSubview(weekday)
         stack.addArrangedSubview(time)
+        weekdayLabel = weekday
+        timeLabel = time
+        titleStackView = stack
         navigationItem.titleView = stack
+    }
+
+    private func updateNavigationTitle() {
+        guard let entry = currentEntry else { return }
+
+        let df = DateFormatter()
+        df.dateFormat = "EEEE"
+        let weekdayText = df.string(from: entry.timestamp)
+
+        let tf = DateFormatter()
+        tf.dateStyle = .none; tf.timeStyle = .short
+        let timeText = tf.string(from: entry.timestamp)
+
+        let hadDirection = titleNeedsSettleAnimation
+        titleNeedsSettleAnimation = false
+
+        weekdayLabel?.text = weekdayText
+        timeLabel?.text = timeText
+
+        if hadDirection {
+            UIView.animate(withDuration: 0.4, delay: 0,
+                           usingSpringWithDamping: 0.72, initialSpringVelocity: 0.4) {
+                self.titleStackView?.transform = .identity
+                self.titleStackView?.alpha = 1
+            }
+        } else {
+            titleStackView?.transform = .identity
+            titleStackView?.alpha = 1
+        }
     }
 
     // MARK: - Toolbar
@@ -310,6 +363,7 @@ extension PolaroidDetailViewController: UIPageViewControllerDelegate {
     func pageViewController(_ pvc: UIPageViewController, didFinishAnimating finished: Bool,
                              previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
         guard completed, let current = pvc.viewControllers?.first else { return }
+        titleNeedsSettleAnimation = true
         currentIndex = current.view.tag
         videoState.isPlaying = true
     }

@@ -224,6 +224,29 @@ struct PolaroidPhotoCell: View {
         }
     }
 
+    // MARK: - Watermark
+
+    private var showWatermark: Bool {
+        !(PremiumManager.shared.isPremium && PremiumManager.shared.watermarkDisabled)
+    }
+
+    private var watermarkOverlay: some View {
+        HStack(spacing: 3 * fontScale) {
+            if let icon = UIImage(named: "AppIcon") {
+                Image(uiImage: icon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 8 * fontScale, height: 8 * fontScale)
+                    .clipShape(RoundedRectangle(cornerRadius: 8 * fontScale * 0.22))
+            }
+            Text("Poly")
+                .font(.system(size: 8 * fontScale, weight: .semibold).width(.expanded))
+                .foregroundStyle(.white.opacity(0.8))
+        }
+        .shadow(color: .black.opacity(0.6), radius: 2 * fontScale, x: 0, y: 0.5 * fontScale)
+        .padding(5 * fontScale)
+    }
+
     // MARK: - Front face
 
     private var frontFace: some View {
@@ -257,6 +280,11 @@ struct PolaroidPhotoCell: View {
                             .padding(4)
                             .background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 4))
                             .padding(4)
+                    }
+                }
+                .overlay(alignment: .bottomLeading) {
+                    if showWatermark && revealProgress >= 1.0 {
+                        watermarkOverlay
                     }
                 }
                 .padding(.horizontal, 8)
