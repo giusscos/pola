@@ -437,6 +437,7 @@ struct LoopingVideoView: UIViewRepresentable {
                     p?.seek(to: .zero)
                     p?.play()
                 } else {
+                    p?.pause()
                     p?.seek(to: .zero)
                 }
             }

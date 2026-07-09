@@ -104,6 +104,14 @@ final class CameraManager: NSObject {
     }
 
     private func setupSession(position: AVCaptureDevice.Position) {
+        // Stop AVCaptureSession from overriding our audio session — without this it ignores mixWithOthers.
+        session.automaticallyConfiguresApplicationAudioSession = false
+
+        // Allow background audio (e.g. music from another app) to keep playing.
+        let audioSession = AVAudioSession.sharedInstance()
+        try? audioSession.setCategory(.playAndRecord, mode: .default, options: [.mixWithOthers, .defaultToSpeaker, .allowBluetoothHFP])
+        try? audioSession.setActive(true)
+
         session.beginConfiguration()
         defer { session.commitConfiguration() }
         session.sessionPreset = .inputPriority
