@@ -50,6 +50,12 @@ struct ContentView: View {
     @AppStorage("totalPhotosCount") private var totalPhotosCount: Int = 0
     @State private var showPaywall = false
     @State private var showFiltersSheet = false
+    @State private var printingEntry: PolaroidEntry? = nil
+    @State private var printingEntries: [PolaroidEntry] = []
+    @State private var timelapsePendingEntries: [PolaroidEntry] = []
+    @State private var isInTimelapse = false
+    @State private var isProcessingTimelapse = false
+    @AppStorage("printAnimationEnabled") private var printAnimationEnabled: Bool = true
 
     private var activeFilter: FilmFilter? {
         filmFilters.first { $0.name == selectedFilterName }
@@ -151,7 +157,7 @@ struct ContentView: View {
 
                 VStack(spacing: 0) {
                     Spacer()
-                    if showCaptionInput {
+                    if showCaptionInput && printingEntry == nil {
                         captionInputCard
                             .padding(.horizontal, 20)
                             .padding(.bottom, 12)
@@ -171,9 +177,6 @@ struct ContentView: View {
                         zoomControlRow
                             .padding(.bottom, 8)
                     }
-
-                    shutterRow
-                        .padding(.bottom, 20)
                 }
                 .animation(.spring(duration: 0.45, bounce: 0.2), value: activeStrip)
                 .animation(.spring(duration: 0.4, bounce: 0.1), value: showCaptionInput)
@@ -241,6 +244,37 @@ struct ContentView: View {
             TimeLapseSettingsView(interval: $timelapsInterval, duration: $timelapseDuration, saveAsVideo: $timelapseSaveAsVideo)
                 .navigationTransition(.zoom(sourceID: "timelapse", in: sheetZoom))
         }
+        .overlay {
+            if let entry = printingEntry {
+                PolaroidPrintAnimationView(
+                    entry: entry,
+                    captionEnabled: captionPromptEnabled,
+                    onComplete: { printingEntry = nil }
+                )
+                .ignoresSafeArea()
+                .transition(.opacity)
+            }
+        }
+        .overlay {
+            if !printingEntries.isEmpty {
+                MultiPolaroidPrintAnimationView(
+                    entries: printingEntries,
+                    onComplete: { printingEntries = [] }
+                )
+                .ignoresSafeArea()
+                .transition(.opacity)
+            }
+        }
+        .overlay {
+            if isProcessingTimelapse {
+                ProcessingTimeLapseOverlay()
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeIn(duration: 0.15), value: printingEntry == nil)
+        .animation(.easeIn(duration: 0.15), value: printingEntries.isEmpty)
+        .animation(.easeInOut(duration: 0.25), value: isProcessingTimelapse)
         .task {
             if hasSeenOnboarding {
                 await cameraManager.configure()
@@ -272,11 +306,17 @@ struct ContentView: View {
             )
             modelContext.insert(entry)
             pendingEntryID = entry.id
-            if !cameraManager.isTimelapsing {
+            if isInTimelapse {
+                timelapsePendingEntries.append(entry)
+            } else {
                 totalPhotosCount += 1
                 if totalPhotosCount == 7 { requestReview() }
+                if printAnimationEnabled {
+                    printingEntry = entry
+                } else if captionPromptEnabled {
+                    showCaptionInput = true
+                }
             }
-            if captionPromptEnabled && !cameraManager.isTimelapsing { showCaptionInput = true }
         }
         .onChange(of: cameraManager.capturedVideoURL) { _, url in
             guard let url else { return }
@@ -295,7 +335,11 @@ struct ContentView: View {
             pendingEntryID = entry.id
             totalPhotosCount += 1
             if totalPhotosCount == 7 { requestReview() }
-            if captionPromptEnabled { showCaptionInput = true }
+            if printAnimationEnabled {
+                printingEntry = entry
+            } else if captionPromptEnabled {
+                showCaptionInput = true
+            }
         }
         .onChange(of: cameraManager.timelapseVideoFrames) { _, frames in
             guard let frames else { return }
@@ -303,10 +347,15 @@ struct ContentView: View {
             let effect = activeFilter?.effect
             let processed = frames.map { effect?.apply(to: $0) ?? $0 }
             let coord = cameraManager.lastCoordinate
+            isProcessingTimelapse = true
             Task {
-                guard let videoURL = await composeVideo(from: processed) else { return }
+                guard let videoURL = await composeVideo(from: processed) else {
+                    await MainActor.run { isProcessingTimelapse = false }
+                    return
+                }
                 let thumbnail = processed.first ?? UIImage()
                 await MainActor.run {
+                    isProcessingTimelapse = false
                     let entry = PolaroidEntry(
                         image: thumbnail,
                         isTimelapse: true,
@@ -317,7 +366,31 @@ struct ContentView: View {
                     entry.videoFilename = store.saveVideo(from: videoURL, id: entry.id)
                     modelContext.insert(entry)
                     pendingEntryID = entry.id
-                    if captionPromptEnabled { showCaptionInput = true }
+                    if printAnimationEnabled {
+                        printingEntry = entry
+                    } else if captionPromptEnabled {
+                        showCaptionInput = true
+                    }
+                }
+            }
+        }
+        .onChange(of: cameraManager.isTimelapsing) { _, isActive in
+            if isActive {
+                isInTimelapse = true
+                timelapsePendingEntries = []
+            } else {
+                // Flip the local flag inside a Task so that the capturedImage onChange
+                // for the final frame (batched in the same SwiftUI update) still sees
+                // isInTimelapse = true and appends to the stack before we collect it.
+                Task { @MainActor in
+                    isInTimelapse = false
+                    guard !timelapsePendingEntries.isEmpty else { return }
+                    totalPhotosCount += timelapsePendingEntries.count
+                    if totalPhotosCount >= 7 { requestReview() }
+                    if printAnimationEnabled {
+                        printingEntries = timelapsePendingEntries
+                    }
+                    timelapsePendingEntries = []
                 }
             }
         }
@@ -494,6 +567,7 @@ struct ContentView: View {
                     }
                 }
             }
+            .frame(width: 82, height: 82)
             .animation(.spring(duration: 0.4, bounce: 0.35), value: cameraMode)
         }
         .scaleEffect(shutterScaleTrigger ? 0.88 : 1.0)
@@ -587,53 +661,62 @@ struct ContentView: View {
     // MARK: - Bottom row
 
     private var bottomRow: some View {
-        HStack(spacing: 0) {
-            Button { showLibrary = true } label: {
-                let recent = Array(allEntries.prefix(2))
+        VStack(spacing: 0) {
+            shutterRow
+                .padding(.top, 14)
+                .padding(.bottom, 14)
 
-                ZStack {
-                    if recent.isEmpty {
-                        Circle()
-                            .fill(.white.opacity(0.15))
-                            .frame(width: 44, height: 44)
-                            .overlay {
-                                Image(systemName: "photo.on.rectangle")
-                                    .font(.system(size: 18))
-                                    .foregroundStyle(.white)
-                            }
+            HStack(spacing: 0) {
+            Button { showLibrary = true } label: {
+                let excludeID = printingEntry?.id
+                let recent = Array(allEntries.filter { $0.id != excludeID }.prefix(2))
+
+                TimelineView(.periodic(from: .now, by: 1.0)) { _ in
+                    ZStack {
+                        if recent.isEmpty {
+                            Circle()
+                                .fill(.white.opacity(0.15))
+                                .frame(width: 44, height: 44)
+                                .overlay {
+                                    Image(systemName: "photo.on.rectangle")
+                                        .font(.system(size: 18))
+                                        .foregroundStyle(.white)
+                                }
+                        }
+                        if recent.count >= 2, let img = recent[1].image {
+                            miniPolaroid(image: img, entry: recent[1])
+                                .rotationEffect(.degrees(-9))
+                                .scaleEffect(0.85)
+                                .opacity(0.85)
+                                .offset(x: -5, y: 4)
+                                .id(recent[1].id)
+                        }
+                        if let front = recent.first, let img = front.image {
+                            miniPolaroid(image: img, entry: front)
+                                .rotationEffect(.degrees(5))
+                                .id(front.id)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                                    removal: .identity
+                                ))
+                        }
                     }
-                    if recent.count >= 2, let img = recent[1].image {
-                        miniPolaroid(image: img, packName: recent[1].packName, packColorHex: recent[1].packColorHex)
-                            .rotationEffect(.degrees(-9))
-                            .scaleEffect(0.85)
-                            .opacity(0.85)
-                            .offset(x: -5, y: 4)
-                            .id(recent[1].id)
-                    }
-                    if let front = recent.first, let img = front.image {
-                        miniPolaroid(image: img, packName: front.packName, packColorHex: front.packColorHex)
-                            .rotationEffect(.degrees(5))
-                            .id(front.id)
-                            .transition(.asymmetric(
-                                insertion: .scale(scale: 0.3).combined(with: .opacity),
-                                removal: .identity
-                            ))
-                    }
+                    .animation(.spring(duration: 0.5, bounce: 0.4), value: recent.first?.id)
+                    .frame(width: 44, height: 44)
                 }
-                .animation(.spring(duration: 0.5, bounce: 0.4), value: recent.first?.id)
-                .frame(width: 44, height: 44)
             }
             .matchedTransitionSource(id: "library", in: sheetZoom)
             .frame(width: 72, alignment: .leading)
 
-            modePicker
-                .frame(maxWidth: .infinity)
+                modePicker
+                    .frame(maxWidth: .infinity)
 
-            filmButton
-                .frame(width: 72, alignment: .trailing)
+                filmButton
+                    .frame(width: 72, alignment: .trailing)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 10)
         .background(.black)
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
@@ -649,16 +732,25 @@ struct ContentView: View {
     // MARK: - Mini polaroid thumbnail
 
     @ViewBuilder
-    private func miniPolaroid(image: UIImage, packName: String?, packColorHex: String? = nil) -> some View {
+    private func miniPolaroid(image: UIImage, entry: PolaroidEntry) -> some View {
         let borderColor: Color = {
-            if let hex = packColorHex, let c = Color(hex: hex) { return c }
-            return polaPackColors.first(where: { $0.name == packName })?.color ?? .white
+            if let hex = entry.packColorHex, let c = Color(hex: hex) { return c }
+            return polaPackColors.first(where: { $0.name == entry.packName })?.color ?? .white
+        }()
+        let devProgress: Double = {
+            guard entry.developmentProgress < 1.0 else { return 1.0 }
+            return min(1.0, Date().timeIntervalSince(entry.timestamp) / 30.0)
         }()
         Image(uiImage: image)
             .resizable()
             .scaledToFill()
             .frame(width: 28, height: 28)
             .clipped()
+            .overlay {
+                if devProgress < 1.0 {
+                    Color.black.opacity(max(0, 0.93 * (1.0 - devProgress)))
+                }
+            }
             .padding(.horizontal, 3)
             .padding(.top, 3)
             .padding(.bottom, 10)
@@ -858,6 +950,25 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+}
+
+private struct ProcessingTimeLapseOverlay: View {
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.55).ignoresSafeArea()
+            VStack(spacing: 16) {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(.white)
+                    .scaleEffect(1.4)
+                Text("Processing time lapse…")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+            .padding(28)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20))
+        }
+    }
 }
 
 private struct TimeLapseSettingsView: View {

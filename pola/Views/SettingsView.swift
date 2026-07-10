@@ -17,6 +17,7 @@ struct SettingsView: View {
     @AppStorage("polaroidFontWeight") private var polaroidFontWeightRaw: String = PolaroidFontWeight.regular.rawValue
     @AppStorage("libraryColumnCount") private var libraryColumnCount: Int = 3
     @AppStorage("videoAudioEnabled") private var videoAudioEnabled: Bool = true
+    @AppStorage("printAnimationEnabled") private var printAnimationEnabled: Bool = true
     @AppStorage("timelapseInterval") private var timelapseInterval: Double = 5
     @AppStorage("timelapseDuration") private var timelapseDuration: Double = 60
     @AppStorage("timelapseSaveAsVideo") private var timelapseSaveAsVideo: Bool = false
@@ -176,6 +177,9 @@ struct SettingsView: View {
                                     .font(.caption)
                             }
                         }
+                    }
+                    Toggle(isOn: $printAnimationEnabled) {
+                        Label("Print animation", systemImage: "sparkles")
                     }
                     Toggle(isOn: $captionPromptEnabled) {
                         Label("Caption prompt after photo", systemImage: "text.bubble")

@@ -1,3 +1,4 @@
+import CoreMotion
 import Photos
 import SwiftData
 import SwiftUI
@@ -32,6 +33,7 @@ private struct DetailPageView: View {
             isVideoPlaying: videoState.isPlaying,
             isVideoLooping: videoState.isLooping,
             developmentProgress: entry.developmentProgress,
+            animatedExternally: entry.developmentProgress < 1.0,
             caption: entry.caption,
             backText: entry.backText,
             showMap: entry.showMap,
@@ -67,6 +69,7 @@ final class PolaroidDetailViewController: UIViewController {
         didSet {
             updateNavigationTitle()
             updateToolbar()
+            manageDevelopment()
             if let id = currentEntryID { onCurrentIndexChange?(id) }
         }
     }
@@ -81,14 +84,73 @@ final class PolaroidDetailViewController: UIViewController {
     private var timeLabel: UILabel?
     private var titleNeedsSettleAnimation = false
     private var contentOffsetObservation: NSKeyValueObservation?
+    private let shakeManager = CMMotionManager()
+    private var developmentLink: CADisplayLink?
+    private var shakeBonus: TimeInterval = 0
 
     private var currentEntry: PolaroidEntry? {
         guard currentIndex < entries.count else { return nil }
         return entries[currentIndex]
     }
 
+    // MARK: - Development & shake
+
+    private func manageDevelopment() {
+        developmentLink?.invalidate()
+        developmentLink = nil
+        shakeManager.stopAccelerometerUpdates()
+        shakeBonus = 0
+
+        guard let entry = currentEntry else { return }
+        let elapsed = Date().timeIntervalSince(entry.timestamp)
+
+        // Already fully developed — mark it and bail
+        if elapsed >= 30 || entry.developmentProgress >= 1.0 {
+            entry.developmentProgress = 1.0
+            return
+        }
+
+        // Seed progress from elapsed time so the veil reflects real time
+        entry.developmentProgress = min(1.0, elapsed / 30.0)
+
+        developmentLink = CADisplayLink(target: self, selector: #selector(tickDevelopment))
+        developmentLink?.add(to: .main, forMode: .common)
+
+        guard shakeManager.isAccelerometerAvailable else { return }
+        shakeManager.accelerometerUpdateInterval = 0.1
+        shakeManager.startAccelerometerUpdates(to: .main) { [weak self] data, _ in
+            guard let data, let self else { return }
+            let a = data.acceleration
+            if sqrt(a.x*a.x + a.y*a.y + a.z*a.z) > 2.5 {
+                self.shakeBonus += 6          // each shake jumps 6 s of development
+                let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                impactFeedback.impactOccurred()
+            }
+        }
+    }
+
+    @objc private func tickDevelopment() {
+        guard let entry = currentEntry else {
+            developmentLink?.invalidate(); developmentLink = nil; return
+        }
+        let elapsed = Date().timeIntervalSince(entry.timestamp) + shakeBonus
+        let progress = min(1.0, elapsed / 30.0)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        entry.developmentProgress = progress
+        CATransaction.commit()
+        if progress >= 1.0 {
+            entry.developmentProgress = 1.0
+            developmentLink?.invalidate()
+            developmentLink = nil
+            shakeManager.stopAccelerometerUpdates()
+        }
+    }
+
     deinit {
         contentOffsetObservation?.invalidate()
+        developmentLink?.invalidate()
+        shakeManager.stopAccelerometerUpdates()
     }
 
     // MARK: - Lifecycle
@@ -111,6 +173,9 @@ final class PolaroidDetailViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.setToolbarHidden(true, animated: animated)
+        developmentLink?.invalidate()
+        developmentLink = nil
+        shakeManager.stopAccelerometerUpdates()
     }
 
     // MARK: - Page view controller

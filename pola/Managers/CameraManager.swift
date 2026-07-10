@@ -361,7 +361,7 @@ extension CameraManager: CLLocationManagerDelegate {
 }
 
 extension CameraManager: AVCapturePhotoCaptureDelegate {
-    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+    nonisolated func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         guard error == nil,
               let data = photo.fileDataRepresentation(),
               let image = UIImage(data: data) else { return }
@@ -386,7 +386,7 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
 }
 
 extension CameraManager: AVCaptureFileOutputRecordingDelegate {
-    func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+    nonisolated func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         let finished = error == nil || (error as NSError?)?.userInfo[AVErrorRecordingSuccessfullyFinishedKey] as? Bool == true
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
