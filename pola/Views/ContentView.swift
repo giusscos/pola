@@ -739,7 +739,8 @@ struct ContentView: View {
         }()
         let devProgress: Double = {
             guard entry.developmentProgress < 1.0 else { return 1.0 }
-            return min(1.0, Date().timeIntervalSince(entry.timestamp) / 30.0)
+            let timeBased = min(1.0, Date().timeIntervalSince(entry.timestamp) / 30.0)
+            return max(entry.developmentProgress, timeBased)
         }()
         Image(uiImage: image)
             .resizable()

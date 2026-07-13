@@ -338,6 +338,8 @@ final class PolaroidPrintAnimationVC: UIViewController {
             }
         }
 
+        let elapsed = CACurrentMediaTime() - developStart
+        entry.developmentProgress = max(entry.developmentProgress, min(1.0, elapsed / developDuration))
         displayLink?.invalidate()
         displayLink = nil
         motionManager.stopAccelerometerUpdates()
@@ -389,6 +391,7 @@ final class PolaroidPrintAnimationVC: UIViewController {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         developOverlay.alpha = CGFloat(max(0, 0.93 * (1.0 - progress)))
+        entry.developmentProgress = max(entry.developmentProgress, progress)
         CATransaction.commit()
         if progress >= 1.0 {
             displayLink?.invalidate()

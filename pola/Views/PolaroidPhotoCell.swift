@@ -162,11 +162,14 @@ struct PolaroidPhotoCell: View {
         self.onDeveloped = onDeveloped
         self.onSingleTap = onSingleTap
 
-        if developmentProgress >= 1.0 || animatedExternally {
+        if developmentProgress >= 1.0 {
             self._localReveal = State(initialValue: 1.0)
+        } else if animatedExternally {
+            self._localReveal = State(initialValue: developmentProgress)
         } else if let ts = timestamp {
             let elapsed = Date().timeIntervalSince(ts)
-            self._localReveal = State(initialValue: min(1.0, elapsed / 30.0))
+            let timeBased = min(1.0, elapsed / 30.0)
+            self._localReveal = State(initialValue: max(developmentProgress, timeBased))
         } else {
             self._localReveal = State(initialValue: 0.0)
         }
@@ -205,10 +208,17 @@ struct PolaroidPhotoCell: View {
                     onSingleTap?()
                 })
         )
+        .onChange(of: developmentProgress) { _, newValue in
+            guard !animatedExternally else { return }
+            if newValue >= 1.0 {
+                localReveal = 1.0
+            } else if newValue > localReveal {
+                localReveal = newValue
+            }
+        }
         .onAppear {
-            guard !animatedExternally, localReveal < 1.0, let ts = timestamp else { return }
-            let elapsed = Date().timeIntervalSince(ts)
-            let remaining = max(0, 30.0 - elapsed)
+            guard !animatedExternally, localReveal < 1.0 else { return }
+            let remaining = 30.0 * (1.0 - localReveal)
             guard remaining > 0 else {
                 localReveal = 1.0
                 onDeveloped?()

@@ -20,7 +20,7 @@ private final class DetailVideoState {
 }
 
 private struct DetailPageView: View {
-    let entry: PolaroidEntry
+    @Bindable var entry: PolaroidEntry
     let store: PhotoStore
     let videoState: DetailVideoState
 
@@ -110,8 +110,11 @@ final class PolaroidDetailViewController: UIViewController {
             return
         }
 
-        // Seed progress from elapsed time so the veil reflects real time
-        entry.developmentProgress = min(1.0, elapsed / 30.0)
+        // Seed shakeBonus from stored progress so we never go backwards.
+        // Stored progress may be ahead of real time (due to prior shaking).
+        let storedProgress = entry.developmentProgress
+        shakeBonus = max(0, storedProgress * 30.0 - elapsed)
+        entry.developmentProgress = max(storedProgress, min(1.0, elapsed / 30.0))
 
         developmentLink = CADisplayLink(target: self, selector: #selector(tickDevelopment))
         developmentLink?.add(to: .main, forMode: .common)
@@ -137,10 +140,11 @@ final class PolaroidDetailViewController: UIViewController {
         let progress = min(1.0, elapsed / 30.0)
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        entry.developmentProgress = progress
+        entry.developmentProgress = max(entry.developmentProgress, progress)
         CATransaction.commit()
         if progress >= 1.0 {
             entry.developmentProgress = 1.0
+            try? modelContext.save()
             developmentLink?.invalidate()
             developmentLink = nil
             shakeManager.stopAccelerometerUpdates()
@@ -176,6 +180,7 @@ final class PolaroidDetailViewController: UIViewController {
         developmentLink?.invalidate()
         developmentLink = nil
         shakeManager.stopAccelerometerUpdates()
+        try? modelContext.save()
     }
 
     // MARK: - Page view controller

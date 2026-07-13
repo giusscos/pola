@@ -176,6 +176,7 @@ final class LibraryViewController: UICollectionViewController {
                     }
                 }
             )
+            .id("\(id.uuidString)-\(Int(entry.developmentProgress * 100))")
             .aspectRatio(0.75, contentMode: .fit)
             .overlay(alignment: .topLeading) {
                 if selectMode {
@@ -676,5 +677,8 @@ extension LibraryViewController: UINavigationControllerDelegate {
         let isDeep = navigationController.viewControllers.count > 1
         // Notify SwiftUI so interactiveDismissDisabled can block the zoom-transition dismiss gesture.
         onDetailStateChange?(isDeep)
+        if !isDeep {
+            reconfigureVisible()
+        }
     }
 }
