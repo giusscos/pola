@@ -15,7 +15,6 @@ struct SearchView: View {
                     VStack (alignment: .leading, spacing: 0) {
                         Text("Search")
                             .font(.largeTitle.width(.expanded).weight(.bold))
-                            .lineHeight(.normal)
                     }
                 }
             }

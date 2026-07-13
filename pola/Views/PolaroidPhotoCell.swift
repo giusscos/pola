@@ -554,43 +554,70 @@ func compositePolaroidVideo(_ entry: PolaroidEntry, sourceURL: URL) async -> URL
 
     let animationTool = AVVideoCompositionCoreAnimationTool(postProcessingAsVideoLayer: videoLayer, in: parentLayer)
 
-    // Build video composition using iOS 26 Configuration API
-    var layerConfig = AVVideoCompositionLayerInstruction.Configuration(assetTrack: compTrack)
-    layerConfig.setTransform(finalTransform, at: .zero)
-    let layerInstruction = AVVideoCompositionLayerInstruction(configuration: layerConfig)
+    let videoComposition: AVVideoComposition
+    if #available(iOS 26, *) {
+        var layerConfig = AVVideoCompositionLayerInstruction.Configuration(assetTrack: compTrack)
+        layerConfig.setTransform(finalTransform, at: .zero)
+        let layerInstruction = AVVideoCompositionLayerInstruction(configuration: layerConfig)
 
-    let instructionConfig = AVVideoCompositionInstruction.Configuration(
-        backgroundColor: nil,
-        enablePostProcessing: true,
-        layerInstructions: [layerInstruction],
-        requiredSourceSampleDataTrackIDs: [],
-        timeRange: CMTimeRange(start: .zero, duration: duration)
-    )
-    let instruction = AVVideoCompositionInstruction(configuration: instructionConfig)
+        let instructionConfig = AVVideoCompositionInstruction.Configuration(
+            backgroundColor: nil,
+            enablePostProcessing: true,
+            layerInstructions: [layerInstruction],
+            requiredSourceSampleDataTrackIDs: [],
+            timeRange: CMTimeRange(start: .zero, duration: duration)
+        )
+        let instruction = AVVideoCompositionInstruction(configuration: instructionConfig)
 
-    let vcConfig = AVVideoComposition.Configuration(
-        animationTool: animationTool,
-        colorPrimaries: nil, colorTransferFunction: nil, colorYCbCrMatrix: nil,
-        customVideoCompositorClass: nil,
-        frameDuration: CMTime(value: 1, timescale: 30),
-        instructions: [instruction],
-        outputBufferDescription: nil,
-        renderScale: 1.0,
-        renderSize: renderSize,
-        sourceSampleDataTrackIDs: [],
-        sourceTrackIDForFrameTiming: kCMPersistentTrackID_Invalid,
-        spatialVideoConfigurations: []
-    )
-    let videoComposition = AVVideoComposition(configuration: vcConfig)
+        let vcConfig = AVVideoComposition.Configuration(
+            animationTool: animationTool,
+            colorPrimaries: nil, colorTransferFunction: nil, colorYCbCrMatrix: nil,
+            customVideoCompositorClass: nil,
+            frameDuration: CMTime(value: 1, timescale: 30),
+            instructions: [instruction],
+            outputBufferDescription: nil,
+            renderScale: 1.0,
+            renderSize: renderSize,
+            sourceSampleDataTrackIDs: [],
+            sourceTrackIDForFrameTiming: kCMPersistentTrackID_Invalid,
+            spatialVideoConfigurations: []
+        )
+        videoComposition = AVVideoComposition(configuration: vcConfig)
+    } else {
+        let mutableComposition = AVMutableVideoComposition()
+        mutableComposition.renderSize = renderSize
+        mutableComposition.frameDuration = CMTime(value: 1, timescale: 30)
+        mutableComposition.animationTool = animationTool
+
+        let instruction = AVMutableVideoCompositionInstruction()
+        instruction.timeRange = CMTimeRange(start: .zero, duration: duration)
+
+        let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: compTrack)
+        layerInstruction.setTransform(finalTransform, at: .zero)
+        instruction.layerInstructions = [layerInstruction]
+        mutableComposition.instructions = [instruction]
+        videoComposition = mutableComposition
+    }
 
     // Export
     let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
     guard let export = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else { return nil }
     export.videoComposition = videoComposition
-    do {
-        try await export.export(to: outputURL, as: .mp4)
-    } catch {
-        return nil
+    if #available(iOS 26, *) {
+        do {
+            try await export.export(to: outputURL, as: .mp4)
+        } catch {
+            return nil
+        }
+    } else {
+        export.outputURL = outputURL
+        export.outputFileType = .mp4
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            export.exportAsynchronously {
+                continuation.resume()
+            }
+        }
+        guard export.status == .completed else { return nil }
     }
     return outputURL
 }

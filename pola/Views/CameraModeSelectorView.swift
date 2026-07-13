@@ -47,8 +47,11 @@ final class CameraModeSelectorUIView: UIView {
         addSubview(contentStrip)
 
         // Liquid Glass capsule — inside the strip, behind the labels
-        let effect = UIGlassEffect(style: .regular)
-        capsule = UIVisualEffectView(effect: effect)
+        if #available(iOS 26, *) {
+            capsule = UIVisualEffectView(effect: UIGlassEffect(style: .regular))
+        } else {
+            capsule = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialDark))
+        }
         capsule.clipsToBounds = true
         contentStrip.addSubview(capsule)
 

@@ -152,11 +152,9 @@ final class CameraManager: NSObject {
         let switchFactors = device.virtualDeviceSwitchOverVideoZoomFactors.map { CGFloat($0.doubleValue) }
 
         var allFactors = Set<CGFloat>([minFactor] + switchFactors)
-        // iOS 16+: 48 MP main sensor exposes a 2x native-resolution crop (and possibly others)
-        if #available(iOS 16.0, *) {
-            for f in device.activeFormat.secondaryNativeResolutionZoomFactors {
-                allFactors.insert(f)
-            }
+        // 48 MP main sensor exposes a 2x native-resolution crop (and possibly others)
+        for f in device.activeFormat.secondaryNativeResolutionZoomFactors {
+            allFactors.insert(f)
         }
 
         return allFactors.sorted().map { factor in

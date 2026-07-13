@@ -579,7 +579,7 @@ struct ContentView: View {
                 shutterScaleTrigger = false
             }
         }
-        .glassEffect(.regular, in: .circle)
+        .modifier(PolaGlassEffectModifier())
     }
 
     private var filmButton: some View {
@@ -1023,6 +1023,16 @@ private struct TimeLapseSettingsView: View {
                         .fontWeight(.semibold)
                 }
             }
+        }
+    }
+}
+
+private struct PolaGlassEffectModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.glassEffect(.regular, in: .circle)
+        } else {
+            content.background(.ultraThinMaterial, in: Circle())
         }
     }
 }
