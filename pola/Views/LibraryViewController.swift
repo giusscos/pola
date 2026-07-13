@@ -611,33 +611,37 @@ final class LibraryViewController: UICollectionViewController {
               let id = dataSource.itemIdentifier(for: indexPath),
               let entry = entriesByID[id] else { return nil }
 
-        return UIContextMenuConfiguration { [weak self] _ in
-            guard let self else { return UIMenu() }
-            return UIMenu(children: [
-                UIAction(title: NSLocalizedString("Edit Caption & Notes", comment: ""),
-                         image: UIImage(systemName: "pencil.and.outline")) { [weak self] _ in
-                    self?.editEntry(entry)
-                },
-                UIAction(title: NSLocalizedString("Save to Photos", comment: ""),
-                         image: UIImage(systemName: "square.and.arrow.down")) { [weak self] _ in
-                    Task { await self?.saveToPhotosApp([entry]) }
-                },
-                UIAction(title: NSLocalizedString("Share", comment: ""),
-                         image: UIImage(systemName: "square.and.arrow.up")) { [weak self] _ in
-                    guard let self else { return }
-                    Task {
-                        let items = await prepareShareItems(for: [entry], videoDirectory: self.store.videoDirectory)
-                        await MainActor.run {
-                            self.present(UIActivityViewController(activityItems: items, applicationActivities: nil), animated: true)
+        return UIContextMenuConfiguration(
+            identifier: nil,
+            previewProvider: nil,
+            actionProvider: { [weak self] _ in
+                guard let self else { return UIMenu() }
+                return UIMenu(children: [
+                    UIAction(title: NSLocalizedString("Edit Caption & Notes", comment: ""),
+                             image: UIImage(systemName: "pencil.and.outline")) { [weak self] _ in
+                        self?.editEntry(entry)
+                    },
+                    UIAction(title: NSLocalizedString("Save to Photos", comment: ""),
+                             image: UIImage(systemName: "square.and.arrow.down")) { [weak self] _ in
+                        Task { await self?.saveToPhotosApp([entry]) }
+                    },
+                    UIAction(title: NSLocalizedString("Share", comment: ""),
+                             image: UIImage(systemName: "square.and.arrow.up")) { [weak self] _ in
+                        guard let self else { return }
+                        Task {
+                            let items = await prepareShareItems(for: [entry], videoDirectory: self.store.videoDirectory)
+                            await MainActor.run {
+                                self.present(UIActivityViewController(activityItems: items, applicationActivities: nil), animated: true)
+                            }
                         }
+                    },
+                    UIAction(title: NSLocalizedString("Delete", comment: ""),
+                             image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+                        self?.deleteEntries(ids: [entry.id])
                     }
-                },
-                UIAction(title: NSLocalizedString("Delete", comment: ""),
-                         image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-                    self?.deleteEntries(ids: [entry.id])
-                }
-            ])
-        }
+                ])
+            }
+        )
     }
 
     private func editEntry(_ entry: PolaroidEntry) {

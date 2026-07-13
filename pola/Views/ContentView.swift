@@ -56,9 +56,10 @@ struct ContentView: View {
     @State private var isInTimelapse = false
     @State private var isProcessingTimelapse = false
     @AppStorage("printAnimationEnabled") private var printAnimationEnabled: Bool = true
+    @AppStorage("frontCameraMirrored") private var frontCameraMirrored: Bool = true
 
     private var activeFilter: FilmFilter? {
-        filmFilters.first { $0.name == selectedFilterName }
+        filmFilter(named: selectedFilterName)
     }
 
     @ViewBuilder
@@ -106,7 +107,11 @@ struct ContentView: View {
 
                 if cameraManager.isAuthorized {
                     VStack(spacing: 0) {
-                        CameraPreviewView(session: cameraManager.session)
+                        CameraPreviewView(
+                            session: cameraManager.session,
+                            mirrorFrontCamera: frontCameraMirrored,
+                            isFrontCamera: cameraManager.currentPosition == .front
+                        )
                             .aspectRatio(3.0 / 4.0, contentMode: .fit)
                             .frame(maxWidth: .infinity)
                             .clipped()
@@ -293,6 +298,9 @@ struct ContentView: View {
                 cameraManager.resume()
             }
         }
+        .onChange(of: frontCameraMirrored) { _, mirrored in
+            cameraManager.setFrontCameraMirrored(mirrored)
+        }
         .onChange(of: cameraManager.capturedImage) { _, image in
             guard let image else { return }
             cameraManager.capturedImage = nil
@@ -321,24 +329,26 @@ struct ContentView: View {
         .onChange(of: cameraManager.capturedVideoURL) { _, url in
             guard let url else { return }
             cameraManager.capturedVideoURL = nil
-            let thumbnail = videoThumbnail(from: url) ?? UIImage()
-            let effect = activeFilter?.effect
-            let processed = effect?.apply(to: thumbnail) ?? thumbnail
-            let entry = PolaroidEntry(
-                image: processed,
-                filterName: selectedFilterName,
-                packName: selectedPackName,
-                coordinate: cameraManager.lastCoordinate
-            )
-            entry.videoFilename = store.saveVideo(from: url, id: entry.id)
-            modelContext.insert(entry)
-            pendingEntryID = entry.id
-            totalPhotosCount += 1
-            if totalPhotosCount == 7 { requestReview() }
-            if printAnimationEnabled {
-                printingEntry = entry
-            } else if captionPromptEnabled {
-                showCaptionInput = true
+            Task {
+                let thumbnail = await videoThumbnail(from: url) ?? UIImage()
+                let effect = activeFilter?.effect
+                let processed = effect?.apply(to: thumbnail) ?? thumbnail
+                let entry = PolaroidEntry(
+                    image: processed,
+                    filterName: selectedFilterName,
+                    packName: selectedPackName,
+                    coordinate: cameraManager.lastCoordinate
+                )
+                entry.videoFilename = store.saveVideo(from: url, id: entry.id)
+                modelContext.insert(entry)
+                pendingEntryID = entry.id
+                totalPhotosCount += 1
+                if totalPhotosCount == 7 { requestReview() }
+                if printAnimationEnabled {
+                    printingEntry = entry
+                } else if captionPromptEnabled {
+                    showCaptionInput = true
+                }
             }
         }
         .onChange(of: cameraManager.timelapseVideoFrames) { _, frames in
@@ -401,7 +411,7 @@ struct ContentView: View {
     private var filterStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
-                ForEach(filmFilters) { filter in
+                ForEach(allFilters) { filter in
                     let isSelected = selectedFilterName == filter.name
                     let locked = !premium.isPremium
                     filterCard(filter: filter, isSelected: isSelected, locked: locked) {
@@ -798,13 +808,19 @@ struct ContentView: View {
 
     // MARK: - Video helpers
 
-    private func videoThumbnail(from url: URL) -> UIImage? {
+    private func videoThumbnail(from url: URL) async -> UIImage? {
         let asset = AVURLAsset(url: url)
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
-        var time = CMTime.zero
-        guard let cgImage = try? generator.copyCGImage(at: time, actualTime: &time) else { return nil }
-        return UIImage(cgImage: cgImage)
+        return await withCheckedContinuation { continuation in
+            generator.generateCGImageAsynchronously(for: .zero) { cgImage, _, _ in
+                if let cgImage {
+                    continuation.resume(returning: UIImage(cgImage: cgImage))
+                } else {
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
     }
 
     private func composeVideo(from frames: [UIImage]) async -> URL? {

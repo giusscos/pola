@@ -17,6 +17,7 @@ struct SettingsView: View {
     @AppStorage("polaroidFontWeight") private var polaroidFontWeightRaw: String = PolaroidFontWeight.regular.rawValue
     @AppStorage("libraryColumnCount") private var libraryColumnCount: Int = 3
     @AppStorage("videoAudioEnabled") private var videoAudioEnabled: Bool = true
+    @AppStorage("frontCameraMirrored") private var frontCameraMirrored: Bool = true
     @AppStorage("printAnimationEnabled") private var printAnimationEnabled: Bool = true
     @AppStorage("timelapseInterval") private var timelapseInterval: Double = 5
     @AppStorage("timelapseDuration") private var timelapseDuration: Double = 60
@@ -81,15 +82,22 @@ struct SettingsView: View {
                     Text("Premium")
                 }
 
-                Section("Camera") {
+                Section {
                     Picker(selection: $defaultFilter) {
                         Text("None").tag("None")
-                        ForEach(filmFilters) { filter in
+                        ForEach(allFilters) { filter in
                             Text(filter.name).tag(filter.name)
                         }
                     } label: {
                         Label("Default Filter", systemImage: "camera.filters")
                     }
+                    Toggle(isOn: $frontCameraMirrored) {
+                        Label("Mirror front camera", systemImage: "person.fill.viewfinder")
+                    }
+                } header: {
+                    Text("Camera")
+                } footer: {
+                    Text("When enabled, the selfie camera preview and captures appear like a mirror.")
                 }
 
                 Section("Video") {

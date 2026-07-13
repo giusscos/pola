@@ -9,56 +9,105 @@ enum FilmFilterEffect {
     case sepia    // BRÖKK — old Polaroid SX-70, heavy fade
     case cool     // VYLUR — cross-processed, cyan/purple cast
     case noir     // GRÅLT — silver-gelatin B&W, heavy grain
+    case lomur    // LÖMUR — false-color thermal imaging
+    case dreki    // DREKI — infrared film
+    case skrim    // SKRÍM — horror VHS
+    case frosinn  // FROSINN — cyanotype / blueprint
+    case nott     // NÓTT — lo-fi night vision
 
     private static let context = CIContext()
+
+    private static let thermalKernel: CIColorKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIColorKernel(functionName: "thermalKernel", fromMetalLibraryData: data)
+    }()
+
+    private static let cyanotypeKernel: CIColorKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIColorKernel(functionName: "cyanotypeKernel", fromMetalLibraryData: data)
+    }()
+
+    private static let nightVisionKernel: CIColorKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIColorKernel(functionName: "nightVisionKernel", fromMetalLibraryData: data)
+    }()
+
+    private static let vhsKernel: CIKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIKernel(functionName: "vhsKernel", fromMetalLibraryData: data)
+    }()
 
     func apply(to image: UIImage) -> UIImage {
         guard let ciImage = CIImage(image: image),
               let graded  = colorGraded(ciImage)
         else { return image }
         var result = graded
-        result = fadeFilm(result) ?? result
-        result = addFilmGrain(result) ?? result
-        result = addVignette(result) ?? result
+        if let lift = shadowLift {
+            result = fadeFilm(result, lift: lift) ?? result
+        }
+        if let grain = grainContrast {
+            result = addFilmGrain(result, contrast: grain) ?? result
+        }
+        if let strength = vignetteStrength {
+            result = addVignette(result, strength: strength, radius: vignetteRadius) ?? result
+        }
+        if appliesGloom {
+            result = addGloom(result) ?? result
+        }
         guard let cgImage = Self.context.createCGImage(result, from: result.extent) else { return image }
         return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
     }
 
-    // How much to lift the black point (faded-film look). Noir keeps deep blacks.
-    private var shadowLift: CGFloat {
+    private var shadowLift: CGFloat? {
         switch self {
         case .chrome: return 0.04
         case .warm:   return 0.04
         case .sepia:  return 0.07
         case .cool:   return 0.03
         case .noir:   return 0.0
+        case .lomur, .dreki, .skrim, .frosinn, .nott: return nil
         }
     }
 
-    // Contrast value fed to CIColorControls on the noise: lower = subtler grain.
-    private var grainContrast: CGFloat {
+    private var grainContrast: CGFloat? {
         switch self {
-        case .chrome: return 0.75
-        case .warm:   return 0.65
-        case .sepia:  return 0.80
-        case .cool:   return 0.72
-        case .noir:   return 1.10
+        case .chrome:  return 0.75
+        case .warm:    return 0.65
+        case .sepia:   return 0.80
+        case .cool:    return 0.72
+        case .noir:    return 1.10
+        case .skrim:   return 1.40
+        case .nott:    return 1.60
+        case .lomur, .dreki, .frosinn: return nil
         }
     }
 
-    private var vignetteStrength: CGFloat {
+    private var vignetteStrength: CGFloat? {
         switch self {
-        case .chrome: return 1.2
-        case .warm:   return 0.9
-        case .sepia:  return 1.4
-        case .cool:   return 1.2
-        case .noir:   return 1.8
+        case .chrome:  return 1.2
+        case .warm:    return 0.9
+        case .sepia:   return 1.4
+        case .cool:    return 1.2
+        case .noir:    return 1.8
+        case .lomur:   return 0.8
+        case .nott:    return 2.0
+        case .dreki, .skrim, .frosinn: return nil
         }
     }
 
-    // Lift blacks to simulate faded / aged film stock.
-    private func fadeFilm(_ input: CIImage) -> CIImage? {
-        let lift = shadowLift
+    private var vignetteRadius: CGFloat {
+        switch self {
+        case .nott: return 1.5
+        default:    return 1.75
+        }
+    }
+
+    private var appliesGloom: Bool {
+        if case .skrim = self { return true }
+        return false
+    }
+
+    private func fadeFilm(_ input: CIImage, lift: CGFloat) -> CIImage? {
         guard lift > 0,
               let matrix = CIFilter(name: "CIColorMatrix") else { return input }
         let scale = 1.0 - lift
@@ -71,15 +120,14 @@ enum FilmFilterEffect {
         return matrix.outputImage
     }
 
-    // Overlay random grayscale noise via soft-light blend for a film-grain look.
-    private func addFilmGrain(_ input: CIImage) -> CIImage? {
+    private func addFilmGrain(_ input: CIImage, contrast: CGFloat) -> CIImage? {
         guard let noiseFilter = CIFilter(name: "CIRandomGenerator"),
               let rawNoise = noiseFilter.outputImage else { return input }
         let cropped = rawNoise.cropped(to: input.extent)
         guard let controls = CIFilter(name: "CIColorControls") else { return input }
         controls.setValue(cropped, forKey: kCIInputImageKey)
-        controls.setValue(0.0,         forKey: kCIInputSaturationKey)
-        controls.setValue(grainContrast, forKey: kCIInputContrastKey)
+        controls.setValue(0.0,      forKey: kCIInputSaturationKey)
+        controls.setValue(contrast, forKey: kCIInputContrastKey)
         guard let grain = controls.outputImage else { return input }
         guard let blend = CIFilter(name: "CISoftLightBlendMode") else { return input }
         blend.setValue(grain, forKey: kCIInputImageKey)
@@ -87,12 +135,47 @@ enum FilmFilterEffect {
         return blend.outputImage
     }
 
-    private func addVignette(_ input: CIImage) -> CIImage? {
+    private func addVignette(_ input: CIImage, strength: CGFloat, radius: CGFloat) -> CIImage? {
         guard let vignette = CIFilter(name: "CIVignette") else { return input }
-        vignette.setValue(input,            forKey: kCIInputImageKey)
-        vignette.setValue(vignetteStrength, forKey: kCIInputIntensityKey)
-        vignette.setValue(1.75,             forKey: kCIInputRadiusKey)
+        vignette.setValue(input,    forKey: kCIInputImageKey)
+        vignette.setValue(strength, forKey: kCIInputIntensityKey)
+        vignette.setValue(radius,   forKey: kCIInputRadiusKey)
         return vignette.outputImage
+    }
+
+    private func addGloom(_ input: CIImage) -> CIImage? {
+        guard let gloom = CIFilter(name: "CIGloom") else { return input }
+        gloom.setValue(input, forKey: kCIInputImageKey)
+        gloom.setValue(5.0,   forKey: kCIInputRadiusKey)
+        gloom.setValue(0.4,   forKey: kCIInputIntensityKey)
+        return gloom.outputImage
+    }
+
+    private func applyColorKernel(_ kernel: CIColorKernel?, to input: CIImage) -> CIImage {
+        guard let kernel else { return input }
+        return kernel.apply(extent: input.extent, roiCallback: { _, rect in rect }, arguments: [input]) ?? input
+    }
+
+    private func applyGeneralKernel(_ kernel: CIKernel?, to input: CIImage) -> CIImage {
+        guard let kernel else { return input }
+        let bleed: CGFloat = 4
+        return kernel.apply(
+            extent: input.extent,
+            roiCallback: { _, rect in rect.insetBy(dx: -bleed, dy: 0) },
+            arguments: [input, 0.0 as Any]
+        ) ?? input
+    }
+
+    private func liftBlacks(_ input: CIImage, by lift: CGFloat) -> CIImage? {
+        guard let matrix = CIFilter(name: "CIColorMatrix") else { return input }
+        let scale = 1.0 - lift
+        matrix.setValue(input, forKey: kCIInputImageKey)
+        matrix.setValue(CIVector(x: scale, y: 0, z: 0, w: 0), forKey: "inputRVector")
+        matrix.setValue(CIVector(x: 0, y: scale, z: 0, w: 0), forKey: "inputGVector")
+        matrix.setValue(CIVector(x: 0, y: 0, z: scale, w: 0), forKey: "inputBVector")
+        matrix.setValue(CIVector(x: 0, y: 0, z: 0,     w: 1), forKey: "inputAVector")
+        matrix.setValue(CIVector(x: lift, y: lift, z: lift, w: 0), forKey: "inputBiasVector")
+        return matrix.outputImage
     }
 
     private func colorGraded(_ input: CIImage) -> CIImage? {
@@ -150,6 +233,73 @@ enum FilmFilterEffect {
             controls.setValue(out, forKey: kCIInputImageKey)
             controls.setValue(1.18, forKey: kCIInputContrastKey)
             return controls.outputImage ?? out
+
+        case .lomur:
+            guard let mono = CIFilter(name: "CIPhotoEffectMono") else { return input }
+            mono.setValue(input, forKey: kCIInputImageKey)
+            guard let monoOut = mono.outputImage else { return input }
+            return applyColorKernel(Self.thermalKernel, to: monoOut)
+
+        case .dreki:
+            guard let matrix = CIFilter(name: "CIColorMatrix") else { return input }
+            matrix.setValue(input, forKey: kCIInputImageKey)
+            matrix.setValue(CIVector(x: 0.1, y: 1.2, z: 0.3, w: 0), forKey: "inputRVector")
+            matrix.setValue(CIVector(x: 0,   y: 0.4, z: 0,   w: 0), forKey: "inputGVector")
+            matrix.setValue(CIVector(x: 0,   y: 0,   z: 0.5, w: 0), forKey: "inputBVector")
+            matrix.setValue(CIVector(x: 0, y: 0, z: 0, w: 1), forKey: "inputAVector")
+            guard let matrixOut = matrix.outputImage else { return input }
+
+            guard let controls = CIFilter(name: "CIColorControls") else { return matrixOut }
+            controls.setValue(matrixOut, forKey: kCIInputImageKey)
+            controls.setValue(0.3,   forKey: kCIInputSaturationKey)
+            controls.setValue(1.15, forKey: kCIInputContrastKey)
+            guard let controlsOut = controls.outputImage else { return matrixOut }
+
+            guard let fade = CIFilter(name: "CIPhotoEffectFade") else { return controlsOut }
+            fade.setValue(controlsOut, forKey: kCIInputImageKey)
+            guard let faded = fade.outputImage else { return controlsOut }
+
+            guard let dissolve = CIFilter(name: "CIDissolveTransition") else { return controlsOut }
+            dissolve.setValue(controlsOut, forKey: kCIInputImageKey)
+            dissolve.setValue(faded,       forKey: kCIInputTargetImageKey)
+            dissolve.setValue(0.5,         forKey: kCIInputTimeKey)
+            guard let blended = dissolve.outputImage else { return controlsOut }
+
+            guard let vignette = CIFilter(name: "CIVignette") else { return blended }
+            vignette.setValue(blended, forKey: kCIInputImageKey)
+            vignette.setValue(1.1,     forKey: kCIInputIntensityKey)
+            vignette.setValue(2.0,     forKey: kCIInputRadiusKey)
+            guard let vignetted = vignette.outputImage else { return blended }
+
+            return liftBlacks(vignetted, by: 0.05) ?? vignetted
+
+        case .skrim:
+            guard let temp     = CIFilter(name: "CITemperatureAndTint"),
+                  let controls = CIFilter(name: "CIColorControls") else { return input }
+            temp.setValue(input, forKey: kCIInputImageKey)
+            temp.setValue(CIVector(x: 6500, y: 0),    forKey: "inputNeutral")
+            temp.setValue(CIVector(x: 6500, y: -80),  forKey: "inputTargetNeutral")
+            guard let tempOut = temp.outputImage else { return input }
+            controls.setValue(tempOut, forKey: kCIInputImageKey)
+            controls.setValue(1.3,    forKey: kCIInputSaturationKey)
+            controls.setValue(0.95,   forKey: kCIInputContrastKey)
+            controls.setValue(-0.05,  forKey: kCIInputBrightnessKey)
+            guard let graded = controls.outputImage else { return tempOut }
+            return applyGeneralKernel(Self.vhsKernel, to: graded)
+
+        case .frosinn:
+            guard let mono = CIFilter(name: "CIPhotoEffectMono") else { return input }
+            mono.setValue(input, forKey: kCIInputImageKey)
+            guard let monoOut = mono.outputImage else { return input }
+            var result = applyColorKernel(Self.cyanotypeKernel, to: monoOut)
+            guard let controls = CIFilter(name: "CIColorControls") else { return result }
+            controls.setValue(result, forKey: kCIInputImageKey)
+            controls.setValue(1.05, forKey: kCIInputContrastKey)
+            result = controls.outputImage ?? result
+            return result
+
+        case .nott:
+            return applyColorKernel(Self.nightVisionKernel, to: input)
         }
     }
 }
@@ -165,9 +315,14 @@ struct FilmFilter: Identifiable {
 
     var previewSaturation: Double {
         guard let effect else { return 1.0 }
-        if case .noir = effect { return 0.2 }
-        if case .cool = effect { return 1.1 }
-        return 1.0
+        switch effect {
+        case .noir:    return 0.2
+        case .cool:    return 1.1
+        case .frosinn: return 0.4
+        case .nott:    return 0.3
+        case .lomur:   return 1.2
+        default:       return 1.0
+        }
     }
 
     var previewTintColor: Color? {
@@ -183,6 +338,21 @@ let filmFilters: [FilmFilter] = [
     FilmFilter(name: "VYLUR", color: Color(red: 0.68, green: 0.27, blue: 0.82), imageName: "filter_vylur", effect: .cool),
     FilmFilter(name: "GRÅLT", color: Color(red: 0.28, green: 0.28, blue: 0.28), imageName: "filter_gralt", effect: .noir),
 ]
+
+let weirdFilters: [FilmFilter] = [
+    FilmFilter(name: "LÖMUR",  color: Color(red: 1.0,  green: 0.45, blue: 0.0),  imageName: nil, effect: .lomur),
+    FilmFilter(name: "DREKI",  color: Color(red: 0.95, green: 0.85, blue: 0.90), imageName: nil, effect: .dreki),
+    FilmFilter(name: "SKRÍM",  color: Color(red: 0.15, green: 0.75, blue: 0.35), imageName: nil, effect: .skrim),
+    FilmFilter(name: "FROSINN", color: Color(red: 0.1, green: 0.35, blue: 0.75),  imageName: nil, effect: .frosinn),
+    FilmFilter(name: "NÓTT",   color: Color(red: 0.18, green: 0.88, blue: 0.42), imageName: nil, effect: .nott),
+]
+
+let allFilters: [FilmFilter] = filmFilters + weirdFilters
+
+func filmFilter(named name: String?) -> FilmFilter? {
+    guard let name else { return nil }
+    return allFilters.first { $0.name == name }
+}
 
 // MARK: - Pack Model
 
@@ -224,35 +394,21 @@ struct FiltersView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 4)
 
-                    LazyVGrid(columns: columns, spacing: 16) {
-                        originalCell
+                    Text("Film")
+                        .font(.headline)
+                        .padding(.horizontal, 20)
 
-                        ForEach(filmFilters) { filter in
-                            let isSelected = selectedFilterName == filter.name
-                            let locked = !premium.isPremium
-                            Button {
-                                if locked {
-                                    onPaywallRequested?()
-                                } else {
-                                    selectedFilterName = isSelected ? nil : filter.name
-                                    dismiss()
-                                }
-                            } label: {
-                                FilterItemCell(
-                                    filter: filter,
-                                    isSelected: isSelected,
-                                    locked: locked,
-                                    previewImage: filterPreviews[filter.name]
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 16)
+                    filterGrid(for: filmFilters, includeOriginal: true)
+
+                    Text("Weird Film")
+                        .font(.headline)
+                        .padding(.horizontal, 20)
+
+                    filterGrid(for: weirdFilters, includeOriginal: false)
                 }
                 .padding(.bottom, 24)
             }
-            .navigationTitle("Film")
+            .navigationTitle("Filters")
             .navigationBarTitleDisplayMode(.large)
         }
         .presentationDetents([.medium, .large])
@@ -260,6 +416,36 @@ struct FiltersView: View {
         .task {
             await generatePreviews()
         }
+    }
+
+    private func filterGrid(for filters: [FilmFilter], includeOriginal: Bool) -> some View {
+        LazyVGrid(columns: columns, spacing: 16) {
+            if includeOriginal {
+                originalCell
+            }
+
+            ForEach(filters) { filter in
+                let isSelected = selectedFilterName == filter.name
+                let locked = !premium.isPremium
+                Button {
+                    if locked {
+                        onPaywallRequested?()
+                    } else {
+                        selectedFilterName = isSelected ? nil : filter.name
+                        dismiss()
+                    }
+                } label: {
+                    FilterItemCell(
+                        filter: filter,
+                        isSelected: isSelected,
+                        locked: locked,
+                        previewImage: filterPreviews[filter.name]
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 16)
     }
 
     private var originalCell: some View {
@@ -318,7 +504,7 @@ struct FiltersView: View {
         let size = CGSize(width: 240, height: 240)
         let small = ref.preparingThumbnail(of: size) ?? ref
         var previews: [String: UIImage] = [:]
-        for filter in filmFilters {
+        for filter in allFilters {
             guard let effect = filter.effect else { continue }
             previews[filter.name] = effect.apply(to: small)
         }

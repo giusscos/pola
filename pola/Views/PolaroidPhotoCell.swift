@@ -613,23 +613,17 @@ func compositePolaroidVideo(_ entry: PolaroidEntry, sourceURL: URL) async -> URL
     let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mp4")
     guard let export = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else { return nil }
     export.videoComposition = videoComposition
-    if #available(iOS 26, *) {
-        do {
-            try await export.export(to: outputURL, as: .mp4)
-        } catch {
-            return nil
-        }
-    } else {
-        export.outputURL = outputURL
-        export.outputFileType = .mp4
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            export.exportAsynchronously {
-                continuation.resume()
-            }
-        }
-        guard export.status == .completed else { return nil }
-    }
+    guard await exportPolaroidVideo(export, to: outputURL) else { return nil }
     return outputURL
+}
+
+private func exportPolaroidVideo(_ export: AVAssetExportSession, to outputURL: URL) async -> Bool {
+    do {
+        try await export.export(to: outputURL, as: .mp4)
+        return true
+    } catch {
+        return false
+    }
 }
 
 private func drawPolaroidWatermark(in ctx: CGContext, imageRect: CGRect, scale: CGFloat) {
@@ -726,16 +720,7 @@ func renderPolaroidFrame(_ entry: PolaroidEntry) -> UIImage {
 
     let renderer = ImageRenderer(content: cell)
     renderer.scale = 3.0
-    let rendered = renderer.uiImage ?? entry.image ?? UIImage()
-    // Image area within the polaroid frame (270x360 at fontScale 1.7): 8pt pad top/sides, 32*1.7pt caption bottom
-    let imageAreaRect = CGRect(x: 8, y: 8, width: 254, height: 360 - 32 * 1.7 - 8)
-    let format = UIGraphicsImageRendererFormat()
-    format.scale = rendered.scale
-    let wmRenderer = UIGraphicsImageRenderer(size: rendered.size, format: format)
-    return wmRenderer.image { ctx in
-        rendered.draw(in: CGRect(origin: .zero, size: rendered.size))
-        drawPolaroidWatermark(in: ctx.cgContext, imageRect: imageAreaRect, scale: 1)
-    }
+    return renderer.uiImage ?? entry.image ?? UIImage()
 }
 
 // MARK: - Color hex helpers

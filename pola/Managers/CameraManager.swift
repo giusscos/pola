@@ -19,6 +19,7 @@ final class CameraManager: NSObject {
     private(set) var isRecording = false
     private(set) var isTimelapsing = false
     private(set) var isAudioEnabled: Bool = UserDefaults.standard.object(forKey: "videoAudioEnabled") as? Bool ?? true
+    private(set) var frontCameraMirrored: Bool = UserDefaults.standard.object(forKey: "frontCameraMirrored") as? Bool ?? true
     private(set) var availableZoomOptions: [ZoomOption] = [ZoomOption(factor: 1.0, displayMultiplier: 1.0, name: "normal")]
     private(set) var currentZoomFactor: CGFloat = 1.0
     private(set) var timelapsePhaseStart: Date = .distantPast
@@ -216,6 +217,14 @@ final class CameraManager: NSObject {
         }
     }
 
+    func setFrontCameraMirrored(_ mirrored: Bool) {
+        frontCameraMirrored = mirrored
+        UserDefaults.standard.set(mirrored, forKey: "frontCameraMirrored")
+        sessionQueue.async { [weak self] in
+            self?.applyOutputMirroring()
+        }
+    }
+
     func flipCamera() {
         sessionQueue.async { [weak self] in
             guard let self else { return }
@@ -244,11 +253,22 @@ final class CameraManager: NSObject {
             try? device.lockForConfiguration()
             device.videoZoomFactor = min(max(initialFactor, device.minAvailableVideoZoomFactor), device.maxAvailableVideoZoomFactor)
             device.unlockForConfiguration()
+            applyOutputMirroring()
             DispatchQueue.main.async { [weak self] in
                 self?.currentPosition = newPosition
                 self?.availableZoomOptions = newZoomOpts
                 self?.currentZoomFactor = initialFactor
             }
+        }
+    }
+
+    private func applyOutputMirroring() {
+        let shouldMirror = currentPosition == .front && frontCameraMirrored
+        for output in [photoOutput as AVCaptureOutput, movieOutput as AVCaptureOutput] {
+            guard let connection = output.connection(with: .video),
+                  connection.isVideoMirroringSupported else { continue }
+            connection.automaticallyAdjustsVideoMirroring = false
+            connection.isVideoMirrored = shouldMirror
         }
     }
 
