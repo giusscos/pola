@@ -4,9 +4,9 @@
 "Premium" = "Premium";
 "Premium Active" = "Premium Aktiv";
 "All features unlocked" = "Alle Funktionen freigeschaltet";
-"Hide watermark on exports" = "Wasserzeichen bei Exporten ausblenden";
+"Hide app logo on exports" = "App-Logo bei Exporten ausblenden";
 "Unlock poly Premium" = "poly Premium freischalten";
-"Filters, fonts & watermark-free exports" = "Filter, Schriften und Export ohne Wasserzeichen";
+"Filters, fonts & clean exports" = "Filter, Schriften & saubere Exporte";
 "Camera" = "Kamera";
 "Default Filter" = "Standardfilter";
 "None" = "Keiner";
@@ -86,7 +86,7 @@
 "Choose from 5 authentic film emulations and colorful Polaroid frames that make every shot uniquely yours." = "Wähle aus 5 authentischen Filmemulationen und bunten Polaroid-Rahmen, die jeden Schnappschuss einzigartig machen.";
 "Your Caption\nStyle" = "Dein Bildunterschrift-\nStil";
 "Personalize every polaroid with 6 fonts and 4 weight options — a signature that's uniquely yours." = "Personalisiere jeden Polaroid mit 6 Schriften und 4 Stärkeoptionen — eine Signatur, die einzigartig ist.";
-"Watermark-\nFree" = "Ohne\nWasserzeichen";
+"Clean\nExports" = "Saubere\nExporte";
 "Share and save your memories without any branding. Pure, clean polaroids every time." = "Teile und speichere deine Erinnerungen ohne Branding. Reine, klare Polaroids jedes Mal.";
 "Poly." = "Poly.";
 "Authentic polaroids,\ndirect from your camera." = "Authentische Polaroids,\ndirekt von deiner Kamera.";
@@ -96,14 +96,13 @@
 "Allow microphone access so Pola can record audio when capturing videos and time-lapses." = "Erlaube den Mikrofonzugriff, damit Pola Audio bei Videos und Zeitraffern aufnehmen kann.";
 "Location\nAccess" = "Standort\nZugriff";
 "Optionally tag your memories with a location to remember exactly where each shot was taken." = "Verknüpfe deine Erinnerungen optional mit einem Standort, um zu wissen, wo jedes Foto aufgenommen wurde.";
-"Allow Access" = "Zugriff erlauben";
 
 /* Paywall */
 "Film Filters & Packs" = "Filmfilter & Packs";
 "5 film emulations + colored frames" = "5 Filmemulationen + bunte Rahmen";
 "Caption Style" = "Bildunterschrift-Stil";
 "6 fonts × 4 weights" = "6 Schriften × 4 Stärken";
-"Watermark-Free" = "Ohne Wasserzeichen";
+"Clean Exports" = "Saubere Exporte";
 "Pure, clean exports" = "Reine, saubere Exporte";
 "poly Premium" = "poly Premium";
 "Unlock the full experience" = "Erlebe das volle Erlebnis";

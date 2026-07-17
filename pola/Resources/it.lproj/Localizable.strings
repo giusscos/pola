@@ -4,9 +4,9 @@
 "Premium" = "Premium";
 "Premium Active" = "Premium Attivo";
 "All features unlocked" = "Tutte le funzioni sbloccate";
-"Hide watermark on exports" = "Nascondi filigrana nelle esportazioni";
+"Hide app logo on exports" = "Nascondi logo app nelle esportazioni";
 "Unlock poly Premium" = "Sblocca poly Premium";
-"Filters, fonts & watermark-free exports" = "Filtri, caratteri ed esportazioni senza filigrana";
+"Filters, fonts & clean exports" = "Filtri, caratteri ed esportazioni pulite";
 "Camera" = "Fotocamera";
 "Default Filter" = "Filtro predefinito";
 "None" = "Nessuno";
@@ -86,7 +86,7 @@
 "Choose from 5 authentic film emulations and colorful Polaroid frames that make every shot uniquely yours." = "Scegli tra 5 emulazioni di pellicola autentiche e colorate cornici Polaroid che rendono ogni scatto unico.";
 "Your Caption\nStyle" = "Il tuo Stile\ndi Didascalia";
 "Personalize every polaroid with 6 fonts and 4 weight options — a signature that's uniquely yours." = "Personalizza ogni polaroid con 6 caratteri e 4 spessori — una firma che è tua.";
-"Watermark-\nFree" = "Senza\nFiligrana";
+"Clean\nExports" = "Esportazioni\nPulite";
 "Share and save your memories without any branding. Pure, clean polaroids every time." = "Condividi e salva i ricordi senza marchi. Polaroid puri e puliti ogni volta.";
 "Poly." = "Poly.";
 "Authentic polaroids,\ndirect from your camera." = "Polaroid autentici,\ndirettamente dalla tua fotocamera.";
@@ -96,14 +96,13 @@
 "Allow microphone access so Pola can record audio when capturing videos and time-lapses." = "Consenti l'accesso al microfono per registrare audio nei video e nei time-lapse.";
 "Location\nAccess" = "Posizione\nAccesso";
 "Optionally tag your memories with a location to remember exactly where each shot was taken." = "Aggiungi facoltativamente una posizione ai ricordi per sapere dove è stata scattata ogni foto.";
-"Allow Access" = "Consenti accesso";
 
 /* Paywall */
 "Film Filters & Packs" = "Filtri Film & Pack";
 "5 film emulations + colored frames" = "5 emulazioni film + cornici colorate";
 "Caption Style" = "Stile didascalia";
 "6 fonts × 4 weights" = "6 caratteri × 4 spessori";
-"Watermark-Free" = "Senza filigrana";
+"Clean Exports" = "Esportazioni pulite";
 "Pure, clean exports" = "Esportazioni pure e pulite";
 "poly Premium" = "poly Premium";
 "Unlock the full experience" = "Sblocca l'esperienza completa";

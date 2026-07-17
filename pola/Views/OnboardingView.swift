@@ -59,7 +59,7 @@ struct OnboardingView: View {
                     pageIndex: 3,
                     color: Color(red: 0.2, green: 0.85, blue: 0.6),
                     badge: "PREMIUM",
-                    title: "Watermark-\nFree",
+                    title: "Clean\nExports",
                     description: "Share and save your memories without any branding. Pure, clean polaroids every time.",
                     visual: AnyView(watermarkVisual)
                 ).tag(3)
@@ -132,7 +132,7 @@ struct OnboardingView: View {
                     handleContinue()
                 } label: {
                     HStack(spacing: 6) {
-                        Text(page == 0 ? "Get Started" : (4...6).contains(page) ? "Allow Access" : "Continue")
+                        Text(page == 0 ? "Get Started" : "Continue")
                             .font(.system(size: 17, weight: .semibold))
                         Image(systemName: "arrow.right")
                             .font(.system(size: 14, weight: .semibold))

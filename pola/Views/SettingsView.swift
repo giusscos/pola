@@ -51,7 +51,7 @@ struct SettingsView: View {
                             get: { premium.watermarkDisabled },
                             set: { premium.watermarkDisabled = $0 }
                         )) {
-                            Label("Hide watermark on exports", systemImage: "photo")
+                            Label("Hide app logo on exports", systemImage: "photo")
                         }
                     } else {
                         Button { showPaywall = true } label: {
@@ -67,7 +67,7 @@ struct SettingsView: View {
                                     Text("Unlock poly Premium")
                                         .font(.headline)
                                         .foregroundStyle(.primary)
-                                    Text("Filters, fonts & watermark-free exports")
+                                    Text("Filters, fonts & clean exports")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }

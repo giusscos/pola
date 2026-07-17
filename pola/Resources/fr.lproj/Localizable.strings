@@ -4,9 +4,9 @@
 "Premium" = "Premium";
 "Premium Active" = "Premium Actif";
 "All features unlocked" = "Toutes les fonctionnalités débloquées";
-"Hide watermark on exports" = "Masquer le filigrane sur les exportations";
+"Hide app logo on exports" = "Masquer le logo de l'app dans les exports";
 "Unlock poly Premium" = "Débloquer poly Premium";
-"Filters, fonts & watermark-free exports" = "Filtres, polices et exports sans filigrane";
+"Filters, fonts & clean exports" = "Filtres, polices et exports propres";
 "Camera" = "Appareil photo";
 "Default Filter" = "Filtre par défaut";
 "None" = "Aucun";
@@ -86,7 +86,7 @@
 "Choose from 5 authentic film emulations and colorful Polaroid frames that make every shot uniquely yours." = "Choisissez parmi 5 émulations de film authentiques et des cadres Polaroid colorés qui rendent chaque photo unique.";
 "Your Caption\nStyle" = "Votre Style\nde Légende";
 "Personalize every polaroid with 6 fonts and 4 weight options — a signature that's uniquely yours." = "Personnalisez chaque polaroid avec 6 polices et 4 options d'épaisseur — une signature qui vous ressemble.";
-"Watermark-\nFree" = "Sans\nFiligrane";
+"Clean\nExports" = "Exports\nPropres";
 "Share and save your memories without any branding. Pure, clean polaroids every time." = "Partagez et sauvegardez vos souvenirs sans aucune marque. Des polaroids purs et nets à chaque fois.";
 "Poly." = "Poly.";
 "Authentic polaroids,\ndirect from your camera." = "Polaroids authentiques,\ndirectement depuis votre appareil photo.";
@@ -96,14 +96,13 @@
 "Allow microphone access so Pola can record audio when capturing videos and time-lapses." = "Autorisez l'accès au microphone pour que Pola enregistre l'audio dans les vidéos et accélérés.";
 "Location\nAccess" = "Position\nAccès";
 "Optionally tag your memories with a location to remember exactly where each shot was taken." = "Géolocalisez vos souvenirs pour vous rappeler exactement où chaque photo a été prise.";
-"Allow Access" = "Autoriser l'accès";
 
 /* Paywall */
 "Film Filters & Packs" = "Filtres Film & Packs";
 "5 film emulations + colored frames" = "5 émulations film + cadres colorés";
 "Caption Style" = "Style de légende";
 "6 fonts × 4 weights" = "6 polices × 4 graisses";
-"Watermark-Free" = "Sans filigrane";
+"Clean Exports" = "Exports propres";
 "Pure, clean exports" = "Exports purs et nets";
 "poly Premium" = "poly Premium";
 "Unlock the full experience" = "Débloquez l'expérience complète";

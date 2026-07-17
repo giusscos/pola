@@ -10,7 +10,7 @@ struct PaywallView: View {
     private let features: [(icon: String, color: Color, title: String, subtitle: String)] = [
         ("camera.filters",      Color(red: 1.0, green: 0.78, blue: 0.2),  "Film Filters & Packs",  "5 film emulations + colored frames"),
         ("textformat",          Color(red: 0.7, green: 0.4,  blue: 1.0),  "Caption Style",         "6 fonts × 4 weights"),
-        ("checkmark.shield.fill", Color(red: 0.2, green: 0.85, blue: 0.6), "Watermark-Free",       "Pure, clean exports"),
+        ("checkmark.shield.fill", Color(red: 0.2, green: 0.85, blue: 0.6), "Clean Exports",        "Pure, clean exports"),
     ]
 
     var body: some View {

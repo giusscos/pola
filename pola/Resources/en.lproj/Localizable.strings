@@ -4,9 +4,9 @@
 "Premium" = "Premium";
 "Premium Active" = "Premium Active";
 "All features unlocked" = "All features unlocked";
-"Hide watermark on exports" = "Hide watermark on exports";
+"Hide app logo on exports" = "Hide app logo on exports";
 "Unlock poly Premium" = "Unlock poly Premium";
-"Filters, fonts & watermark-free exports" = "Filters, fonts & watermark-free exports";
+"Filters, fonts & clean exports" = "Filters, fonts & clean exports";
 "Camera" = "Camera";
 "Default Filter" = "Default Filter";
 "None" = "None";
@@ -86,7 +86,7 @@
 "Choose from 5 authentic film emulations and colorful Polaroid frames that make every shot uniquely yours." = "Choose from 5 authentic film emulations and colorful Polaroid frames that make every shot uniquely yours.";
 "Your Caption\nStyle" = "Your Caption\nStyle";
 "Personalize every polaroid with 6 fonts and 4 weight options — a signature that's uniquely yours." = "Personalize every polaroid with 6 fonts and 4 weight options — a signature that's uniquely yours.";
-"Watermark-\nFree" = "Watermark-\nFree";
+"Clean\nExports" = "Clean\nExports";
 "Share and save your memories without any branding. Pure, clean polaroids every time." = "Share and save your memories without any branding. Pure, clean polaroids every time.";
 "Poly." = "Poly.";
 "Authentic polaroids,\ndirect from your camera." = "Authentic polaroids,\ndirect from your camera.";
@@ -96,14 +96,13 @@
 "Allow microphone access so Pola can record audio when capturing videos and time-lapses." = "Allow microphone access so Pola can record audio when capturing videos and time-lapses.";
 "Location\nAccess" = "Location\nAccess";
 "Optionally tag your memories with a location to remember exactly where each shot was taken." = "Optionally tag your memories with a location to remember exactly where each shot was taken.";
-"Allow Access" = "Allow Access";
 
 /* Paywall */
 "Film Filters & Packs" = "Film Filters & Packs";
 "5 film emulations + colored frames" = "5 film emulations + colored frames";
 "Caption Style" = "Caption Style";
 "6 fonts × 4 weights" = "6 fonts × 4 weights";
-"Watermark-Free" = "Watermark-Free";
+"Clean Exports" = "Clean Exports";
 "Pure, clean exports" = "Pure, clean exports";
 "poly Premium" = "poly Premium";
 "Unlock the full experience" = "Unlock the full experience";
