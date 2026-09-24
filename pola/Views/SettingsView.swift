@@ -105,7 +105,7 @@ struct SettingsView: View {
                                     Text("Unlock poly Premium")
                                         .font(.headline)
                                         .foregroundStyle(.primary)
-                                    Text("Filters, fonts & clean exports")
+                                    Text("Film stocks, formats, widget & more")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }

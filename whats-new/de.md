@@ -1,9 +1,16 @@
 # What's New — German (de-DE)
 
-**Version 1.0.4**
+**Version 1.1.0**
 
 ```
-• Neues „Weird Film"-Pack — 5 experimentelle Filter: Thermal (LÖMUR), Infrarot (DREKI), VHS-Horror (SKRÍM), Cyanotyp (FROSINN) und Nachtsicht (NÓTT)
-• Frontkamera spiegeln — Schalter in den Einstellungen, um Selfie-Vorschau und Aufnahmen wie in einem Spiegel anzuzeigen
-• Flüssigere Polaroid-Entwicklungsanimation in Mediathek und Detailansicht
+poly. 1.1 ist unser bisher größtes Update.
+
+• Erst testen, dann kaufen: Sieh dir jeden Film live im Sucher an
+• Neue Sofortbild-Formate: Quadrat, Breit und Mini (Premium)
+• Erinnerungs-Widget: ein Foto von diesem Tag auf deinem Home-Bildschirm (Premium)
+• Retro-Datumsstempel und A4-Druckbögen (Premium)
+• Als Story teilen: ein 9:16-Bild, bereit zum Posten
+• Premium-Abzüge sind jetzt standardmäßig ohne Logo
+• Kürzere Einführung – Mikrofon und Standort werden nur abgefragt, wenn du sie brauchst
+• Vollständig übersetzt auf Deutsch, Englisch, Spanisch, Französisch und Italienisch, bessere VoiceOver-Unterstützung und viele kleine Verbesserungen
 ```

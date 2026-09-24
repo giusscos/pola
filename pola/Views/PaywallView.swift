@@ -54,7 +54,7 @@ enum PremiumFeature: CaseIterable {
 
     var subtitle: String {
         switch self {
-        case .filmStocks:   "Classic and Weird Film packs"
+        case .filmStocks:   "Classic Film and Weird Film packs"
         case .frameColors:  "Any border color, on any polaroid"
         case .frameFormats: "Square, Wide and Mini sizes"
         case .captionStyle: "6 fonts × 4 weights"
@@ -398,7 +398,7 @@ struct PaywallView: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
-                        Text(product.displayName)
+                        Text(verbatim: PremiumManager.planName(for: product.id) ?? product.displayName)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
                         if hasEligibleTrial(product), let trial = product.freeTrialText {

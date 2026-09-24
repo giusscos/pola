@@ -10,10 +10,10 @@ enum PolaroidFontWeight: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .thin: "Thin"
-        case .regular: "Normal"
-        case .semibold: "Semibold"
-        case .bold: "Bold"
+        case .thin: NSLocalizedString("Thin", comment: "Font weight")
+        case .regular: NSLocalizedString("Normal", comment: "Font weight")
+        case .semibold: NSLocalizedString("Semibold", comment: "Font weight")
+        case .bold: NSLocalizedString("Bold", comment: "Font weight")
         }
     }
 
@@ -46,12 +46,12 @@ enum PolaroidFont: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .handwriting: "Handwriting"
-        case .sansNormal: "Default"
-        case .sansExpanded: "Default Wide"
-        case .sansCondensed: "Default Narrow"
-        case .serif: "Serif"
-        case .rounded: "Rounded"
+        case .handwriting: NSLocalizedString("Handwriting", comment: "Caption font")
+        case .sansNormal: NSLocalizedString("Default", comment: "Caption font")
+        case .sansExpanded: NSLocalizedString("Default Wide", comment: "Caption font")
+        case .sansCondensed: NSLocalizedString("Default Narrow", comment: "Caption font")
+        case .serif: NSLocalizedString("Serif", comment: "Caption font")
+        case .rounded: NSLocalizedString("Rounded", comment: "Caption font")
         }
     }
 
@@ -263,7 +263,7 @@ struct PolaroidPhotoCell: View {
                     .frame(width: 8 * fontScale, height: 8 * fontScale)
                     .clipShape(RoundedRectangle(cornerRadius: 8 * fontScale * 0.22))
             }
-            Text("Poly")
+            Text(verbatim: "Poly")
                 .font(.system(size: 8 * fontScale, weight: .semibold).width(.expanded))
                 .foregroundStyle(.white.opacity(0.8))
         }

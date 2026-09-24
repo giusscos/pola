@@ -1,0 +1,5 @@
+/* Permission prompts (localized Info.plist values) */
+"NSCameraUsageDescription" = "Poly nutzt die Kamera für Fotos, Videos und Zeitraffer, die sich wie Sofortbildfilm entwickeln.";
+"NSMicrophoneUsageDescription" = "Poly nutzt das Mikrofon, um Ton für deine Video-Polaroids aufzunehmen. Du kannst den Ton jederzeit ausschalten.";
+"NSLocationWhenInUseUsageDescription" = "Poly speichert, wo jedes Foto entstanden ist, damit du das Polaroid umdrehen und den Ort auf einer Karte sehen kannst. Er wird nur in deiner Mediathek und deiner iCloud gespeichert.";
+"NSPhotoLibraryAddUsageDescription" = "Poly sichert deine fertigen Polaroids in deiner Fotomediathek, wenn du sie sichern möchtest.";
