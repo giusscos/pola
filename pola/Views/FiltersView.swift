@@ -312,6 +312,8 @@ struct FilmFilter: Identifiable {
     let color: Color
     let imageName: String?
     let effect: FilmFilterEffect?
+    var isFree: Bool = false
+    var isNew: Bool = false
 
     var previewSaturation: Double {
         guard let effect else { return 1.0 }
@@ -333,21 +335,33 @@ struct FilmFilter: Identifiable {
 
 let filmFilters: [FilmFilter] = [
     FilmFilter(name: "FLÄRN", color: Color(red: 0.95, green: 0.78, blue: 0.12), imageName: "filter_flarn", effect: .chrome),
-    FilmFilter(name: "SOLVA", color: Color(red: 0.96, green: 0.72, blue: 0.54), imageName: "filter_solva", effect: .warm),
+    FilmFilter(name: "SOLVA", color: Color(red: 0.96, green: 0.72, blue: 0.54), imageName: "filter_solva", effect: .warm, isFree: true),
     FilmFilter(name: "BRÖKK", color: Color(red: 0.78, green: 0.43, blue: 0.22), imageName: "filter_brokk", effect: .sepia),
     FilmFilter(name: "VYLUR", color: Color(red: 0.68, green: 0.27, blue: 0.82), imageName: "filter_vylur", effect: .cool),
     FilmFilter(name: "GRÅLT", color: Color(red: 0.28, green: 0.28, blue: 0.28), imageName: "filter_gralt", effect: .noir),
 ]
 
 let weirdFilters: [FilmFilter] = [
-    FilmFilter(name: "LÖMUR",  color: Color(red: 1.0,  green: 0.45, blue: 0.0),  imageName: nil, effect: .lomur),
-    FilmFilter(name: "DREKI",  color: Color(red: 0.95, green: 0.85, blue: 0.90), imageName: nil, effect: .dreki),
-    FilmFilter(name: "SKRÍM",  color: Color(red: 0.15, green: 0.75, blue: 0.35), imageName: nil, effect: .skrim),
-    FilmFilter(name: "FROSINN", color: Color(red: 0.1, green: 0.35, blue: 0.75),  imageName: nil, effect: .frosinn),
-    FilmFilter(name: "NÓTT",   color: Color(red: 0.18, green: 0.88, blue: 0.42), imageName: nil, effect: .nott),
+    FilmFilter(name: "LÖMUR",  color: Color(red: 1.0,  green: 0.45, blue: 0.0),  imageName: nil, effect: .lomur, isNew: true),
+    FilmFilter(name: "DREKI",  color: Color(red: 0.95, green: 0.85, blue: 0.90), imageName: nil, effect: .dreki, isNew: true),
+    FilmFilter(name: "SKRÍM",  color: Color(red: 0.15, green: 0.75, blue: 0.35), imageName: nil, effect: .skrim, isNew: true),
+    FilmFilter(name: "FROSINN", color: Color(red: 0.1, green: 0.35, blue: 0.75),  imageName: nil, effect: .frosinn, isNew: true),
+    FilmFilter(name: "NÓTT",   color: Color(red: 0.18, green: 0.88, blue: 0.42), imageName: nil, effect: .nott, isNew: true),
 ]
 
 let allFilters: [FilmFilter] = filmFilters + weirdFilters
+
+extension FilmFilter {
+    func isLocked(for premium: PremiumManager) -> Bool {
+        !isFree && !premium.isPremium
+    }
+}
+
+/// Bump `latestDropID` whenever a new filter pack ships so the NEW badges and the FILM dot reappear.
+enum FilmDrops {
+    static let latestDropID = 1
+    static let seenKey = "seenFilmDropID"
+}
 
 func filmFilter(named name: String?) -> FilmFilter? {
     guard let name else { return nil }
@@ -360,11 +374,16 @@ struct PolaPackColor: Identifiable {
     let id = UUID()
     let name: String
     let color: Color
+    var isFree: Bool = false
+
+    func isLocked(for premium: PremiumManager) -> Bool {
+        !isFree && !premium.isPremium
+    }
 }
 
 let polaPackColors: [PolaPackColor] = [
     PolaPackColor(name: "FLÄRN", color: Color(red: 0.95, green: 0.78, blue: 0.12)),
-    PolaPackColor(name: "SOLVA", color: Color(red: 0.96, green: 0.72, blue: 0.54)),
+    PolaPackColor(name: "SOLVA", color: Color(red: 0.96, green: 0.72, blue: 0.54), isFree: true),
     PolaPackColor(name: "BRÖKK", color: Color(red: 0.78, green: 0.43, blue: 0.22)),
     PolaPackColor(name: "VYLUR", color: Color(red: 0.68, green: 0.27, blue: 0.82)),
     PolaPackColor(name: "GRÅLT", color: Color(red: 0.28, green: 0.28, blue: 0.28)),
@@ -374,13 +393,17 @@ let polaPackColors: [PolaPackColor] = [
 
 struct FiltersView: View {
     @Binding var selectedFilterName: String?
-    var onPaywallRequested: (() -> Void)? = nil
+    @Binding var selectedPackName: String?
+    var onPaywallRequested: ((PaywallContext) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(PremiumManager.self) private var premium
+    @AppStorage(FilmDrops.seenKey) private var seenDropID = 0
 
     private let referenceImage: UIImage? = UIImage(named: "filter_reference")
     @State private var filterPreviews: [String: UIImage] = [:]
+    // Captured on open so NEW badges stay visible for this visit even though we mark the drop as seen.
+    @State private var showNewBadges = false
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 3)
 
@@ -388,7 +411,9 @@ struct FiltersView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Pick a stock to give your polaroids an analog film look.")
+                    Text(LocalizedStringKey(premium.isPremium
+                         ? "Pick a stock to give your polaroids an analog film look."
+                         : "Tap any stock to preview it in the viewfinder. SOLVA is on the house."))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 20)
@@ -400,11 +425,22 @@ struct FiltersView: View {
 
                     filterGrid(for: filmFilters, includeOriginal: true)
 
-                    Text("Weird Film")
+                    HStack(spacing: 8) {
+                        Text("Weird Film")
+                            .font(.headline)
+                        if showNewBadges {
+                            NewBadge()
+                        }
+                    }
+                    .padding(.horizontal, 20)
+
+                    filterGrid(for: weirdFilters, includeOriginal: false)
+
+                    Text("Frame")
                         .font(.headline)
                         .padding(.horizontal, 20)
 
-                    filterGrid(for: weirdFilters, includeOriginal: false)
+                    frameRow
                 }
                 .padding(.bottom, 24)
             }
@@ -413,6 +449,10 @@ struct FiltersView: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .onAppear {
+            showNewBadges = seenDropID < FilmDrops.latestDropID
+            seenDropID = FilmDrops.latestDropID
+        }
         .task {
             await generatePreviews()
         }
@@ -426,19 +466,22 @@ struct FiltersView: View {
 
             ForEach(filters) { filter in
                 let isSelected = selectedFilterName == filter.name
-                let locked = !premium.isPremium
+                let locked = filter.isLocked(for: premium)
                 Button {
-                    if locked {
-                        onPaywallRequested?()
-                    } else {
-                        selectedFilterName = isSelected ? nil : filter.name
-                        dismiss()
+                    // Locked stocks can still be picked: the viewfinder previews them and the
+                    // shutter asks to unlock, so people see the look before being asked to pay.
+                    if locked && !isSelected {
+                        Analytics.track(.lockedFilterPreviewed, ["filter": filter.name])
                     }
+                    selectedFilterName = isSelected ? nil : filter.name
+                    dismiss()
                 } label: {
                     FilterItemCell(
                         filter: filter,
                         isSelected: isSelected,
                         locked: locked,
+                        showNewBadge: showNewBadges && filter.isNew,
+                        showFreeBadge: filter.isFree && !premium.isPremium,
                         previewImage: filterPreviews[filter.name]
                     )
                 }
@@ -446,6 +489,65 @@ struct FiltersView: View {
             }
         }
         .padding(.horizontal, 16)
+    }
+
+    private var frameRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 14) {
+                frameSwatch(name: nil, color: .white, locked: false)
+                ForEach(polaPackColors) { pack in
+                    frameSwatch(name: pack.name, color: pack.color, locked: pack.isLocked(for: premium))
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 4)
+        }
+    }
+
+    private func frameSwatch(name: String?, color: Color, locked: Bool) -> some View {
+        let isSelected = selectedPackName == name
+        return Button {
+            if locked {
+                onPaywallRequested?(.feature(.frameColors))
+            } else {
+                selectedPackName = name
+            }
+        } label: {
+            VStack(spacing: 6) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(color)
+                        .frame(width: 44, height: 54)
+                        .overlay(alignment: .top) {
+                            Rectangle()
+                                .fill(Color(.systemGray4))
+                                .frame(width: 36, height: 36)
+                                .padding(.top, 4)
+                        }
+                        .shadow(color: .black.opacity(0.15), radius: 3, y: 2)
+                    if locked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(5)
+                            .background(.black.opacity(0.55), in: Circle())
+                            .offset(y: -6)
+                    }
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 2)
+                        .padding(-4)
+                )
+
+                Text(name ?? NSLocalizedString("Classic", comment: ""))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(locked ? .secondary : .primary)
+                    .lineLimit(1)
+            }
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: selectedPackName)
     }
 
     private var originalCell: some View {
@@ -512,7 +614,18 @@ struct FiltersView: View {
     }
 }
 
+struct NewBadge: View {
+    var body: some View {
+        Text("NEW")
+            .font(.system(size: 9, weight: .heavy).width(.expanded))
+            .foregroundStyle(.black)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Color(red: 1.0, green: 0.8, blue: 0.3), in: Capsule())
+    }
+}
+
 #Preview {
-    FiltersView(selectedFilterName: .constant(nil))
+    FiltersView(selectedFilterName: .constant(nil), selectedPackName: .constant(nil))
         .environment(PremiumManager.shared)
 }

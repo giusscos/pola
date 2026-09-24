@@ -25,6 +25,7 @@ final class CameraManager: NSObject {
     private(set) var timelapsePhaseStart: Date = .distantPast
     private(set) var timelapsePhotoCount = 0
     private(set) var timelapseMaxPhotos = 0
+    private(set) var locationStatus: CLAuthorizationStatus = .notDetermined
 
     let session = AVCaptureSession()
     private let sessionQueue = DispatchQueue(label: "com.pola.cameraSession", qos: .userInitiated)
@@ -42,15 +43,18 @@ final class CameraManager: NSObject {
     private var pendingTimelapsePhotos = 0
     private var timelapseStopped = false
 
+    // Microphone and location are requested in context (first video / after the first photo)
+    // instead of up front, so the first launch only asks for the camera.
     func configure() async {
         let videoGranted = await AVCaptureDevice.requestAccess(for: .video)
-        await AVCaptureDevice.requestAccess(for: .audio)
         await MainActor.run {
             isAuthorized = videoGranted
             locationManager.delegate = self
             locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-            locationManager.requestWhenInUseAuthorization()
-            locationManager.startUpdatingLocation()
+            locationStatus = locationManager.authorizationStatus
+            if locationStatus == .authorizedWhenInUse || locationStatus == .authorizedAlways {
+                locationManager.startUpdatingLocation()
+            }
         }
         guard videoGranted else { return }
         await withCheckedContinuation { continuation in
@@ -60,6 +64,32 @@ final class CameraManager: NSObject {
                 continuation.resume()
             }
         }
+    }
+
+    func prepareMicrophone() async {
+        guard AVCaptureDevice.authorizationStatus(for: .audio) == .notDetermined else { return }
+        guard await AVCaptureDevice.requestAccess(for: .audio) else { return }
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            session.beginConfiguration()
+            addAudioInput()
+            session.commitConfiguration()
+        }
+    }
+
+    func requestLocationAccess() {
+        locationManager.delegate = self
+        locationManager.requestWhenInUseAuthorization()
+    }
+
+    // Must run inside a session configuration block on sessionQueue.
+    private func addAudioInput() {
+        let hasAudio = session.inputs.contains { ($0 as? AVCaptureDeviceInput)?.device.hasMediaType(.audio) == true }
+        guard !hasAudio,
+              let audioDevice = AVCaptureDevice.default(for: .audio),
+              let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
+              session.canAddInput(audioInput) else { return }
+        session.addInput(audioInput)
     }
 
     // Returns the best available virtual device for the position, falling back to wide angle.
@@ -123,10 +153,8 @@ final class CameraManager: NSObject {
         else { return }
         session.addInput(input)
         select4to3Format(for: device)
-        if let audioDevice = AVCaptureDevice.default(for: .audio),
-           let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
-           session.canAddInput(audioInput) {
-            session.addInput(audioInput)
+        if AVCaptureDevice.authorizationStatus(for: .audio) == .authorized {
+            addAudioInput()
         }
         if session.canAddOutput(photoOutput) {
             session.addOutput(photoOutput)
@@ -372,6 +400,7 @@ extension CameraManager: CLLocationManagerDelegate {
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        locationStatus = manager.authorizationStatus
         if manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways {
             manager.startUpdatingLocation()
         }

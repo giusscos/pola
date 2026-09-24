@@ -28,7 +28,7 @@ poly. transforms your iPhone camera into an instant film camera.
 Shoot in Photo, Video or Time Lapse mode and watch your shot develop into a classic polaroid frame — complete with film grain, light leaks and a caption strip that's uniquely yours.
 
 FILM FILTERS & PACKS
-Choose from 5 authentic film emulations and 5 colorful Polaroid frame packs. Mix and match to create a look that's unmistakably you.
+Choose from 10 authentic film emulations and 5 colorful Polaroid frame packs. Mix and match to create a look that's unmistakably you.
 
 YOUR CAPTION STYLE
 Write a short caption on the front strip and a longer note on the back. Pick from 6 typefaces and 4 weight options for a signature aesthetic.
@@ -46,7 +46,7 @@ ICLOUD SYNC
 Keep every polaroid safe and available across all your devices with iCloud.
 
 POLY. PREMIUM
-Unlock all 5 film emulations, 5 frame packs, all fonts and watermark-free exports in a single purchase or flexible subscription.
+Unlock all 10 film emulations, 5 frame packs, all fonts and watermark-free exports in a single purchase or flexible subscription.
 ```
 
 ### Keywords *(100 chars max)*
@@ -76,7 +76,7 @@ polaroid,instant,camera,film,filter,photo,vintage,analog,frames,timelapse
 | Element | Text |
 |---------|------|
 | Title | `Film Filters & Packs` |
-| Body | `Choose from 5 authentic film emulations and colorful Polaroid frames that make every shot uniquely yours.` |
+| Body | `Choose from 10 authentic film emulations and colorful Polaroid frames that make every shot uniquely yours.` |
 | Badge | `PREMIUM` |
 
 #### Screenshot 3 — Caption Style
@@ -125,7 +125,7 @@ poly. verwandelt deine iPhone-Kamera in eine Sofortbildkamera.
 Schieß Fotos, Videos oder Zeitraffer und sieh zu, wie dein Schnappschuss zu einem klassischen Polaroid-Rahmen wird – mit Filmkorn, Lichtlecks und einem Bildunterschrift-Streifen, der einzigartig ist.
 
 FILMFILTER & PACKS
-Wähle aus 5 authentischen Filmemulationen und 5 bunten Polaroid-Rahmen-Packs. Kombiniere sie für einen unverwechselbaren Look.
+Wähle aus 10 authentischen Filmemulationen und 5 bunten Polaroid-Rahmen-Packs. Kombiniere sie für einen unverwechselbaren Look.
 
 DEIN BILDUNTERSCHRIFT-STIL
 Schreibe eine kurze Bildunterschrift auf den Vorderstreifen und eine längere Notiz auf die Rückseite. Wähle aus 6 Schriften und 4 Stärkeoptionen.
@@ -143,7 +143,7 @@ ICLOUD-SYNC
 Halte jedes Polaroid sicher und auf all deinen Geräten verfügbar mit iCloud.
 
 POLY. PREMIUM
-Schalte alle 5 Filmemulationen, 5 Rahmen-Packs, alle Schriften und den Export ohne Wasserzeichen frei – als Einmalzahlung oder flexibles Abonnement.
+Schalte alle 10 Filmemulationen, 5 Rahmen-Packs, alle Schriften und den Export ohne Wasserzeichen frei – als Einmalzahlung oder flexibles Abonnement.
 ```
 
 ### Keywords
@@ -173,7 +173,7 @@ polaroid,sofortbild,kamera,film,filter,foto,vintage,analog,rahmen,zeitraffer
 | Element | Text |
 |---------|------|
 | Titel | `Filmfilter und Packs` |
-| Text | `Wähle aus 5 authentischen Filmemulationen und bunten Polaroid-Rahmen, die jeden Schnappschuss einzigartig machen.` |
+| Text | `Wähle aus 10 authentischen Filmemulationen und bunten Polaroid-Rahmen, die jeden Schnappschuss einzigartig machen.` |
 | Badge | `PREMIUM` |
 
 #### Screenshot 3 — Bildunterschrift-Stil
@@ -222,7 +222,7 @@ poly. transforma la cámara de tu iPhone en una cámara de película instantáne
 Dispara en modo Foto, Vídeo o Lapso de tiempo y observa cómo tu toma se convierte en un clásico marco polaroid — con grano de película, fugas de luz y una tira de leyenda que es únicamente tuya.
 
 FILTROS FILM & PACKS
-Elige entre 5 emulaciones de película auténticas y 5 packs de marcos Polaroid de colores. Combínalos para crear un look inconfundiblemente tuyo.
+Elige entre 10 emulaciones de película auténticas y 5 packs de marcos Polaroid de colores. Combínalos para crear un look inconfundiblemente tuyo.
 
 TU ESTILO DE LEYENDA
 Escribe una leyenda corta en la tira frontal y una nota más larga en el reverso. Elige entre 6 tipografías y 4 opciones de grosor.
@@ -240,7 +240,7 @@ ICLOUD
 Mantén cada polaroid seguro y disponible en todos tus dispositivos con iCloud.
 
 POLY. PREMIUM
-Desbloquea las 5 emulaciones de película, 5 packs de marcos, todas las fuentes y exportaciones sin marca de agua — en una compra única o suscripción flexible.
+Desbloquea las 10 emulaciones de película, 5 packs de marcos, todas las fuentes y exportaciones sin marca de agua — en una compra única o suscripción flexible.
 ```
 
 ### Keywords
@@ -270,7 +270,7 @@ polaroid,instantánea,cámara,película,filtro,foto,vintage,analógico,marcos,ti
 | Elemento | Texto |
 |----------|-------|
 | Título | `Filtros Film y Packs` |
-| Cuerpo | `Elige entre 5 emulaciones de película auténticas y coloridos marcos Polaroid que hacen cada toma única.` |
+| Cuerpo | `Elige entre 10 emulaciones de película auténticas y coloridos marcos Polaroid que hacen cada toma única.` |
 | Badge | `PREMIUM` |
 
 #### Screenshot 3 — Estilo de Leyenda
@@ -319,7 +319,7 @@ poly. transforme l'appareil photo de votre iPhone en caméra à développement i
 Prenez des photos, vidéos ou accélérés et regardez votre cliché se révéler dans un cadre polaroid classique — avec grain de film, fuites de lumière et une bande de légende qui vous ressemble.
 
 FILTRES FILM & PACKS
-Choisissez parmi 5 émulations de film authentiques et 5 packs de cadres Polaroid colorés. Combinez-les pour créer un look qui vous est propre.
+Choisissez parmi 10 émulations de film authentiques et 5 packs de cadres Polaroid colorés. Combinez-les pour créer un look qui vous est propre.
 
 VOTRE STYLE DE LÉGENDE
 Écrivez une courte légende sur la bande avant et une note plus longue au dos. Choisissez parmi 6 polices et 4 options d'épaisseur.
@@ -337,7 +337,7 @@ ICLOUD
 Gardez chaque polaroid en sécurité et disponible sur tous vos appareils avec iCloud.
 
 POLY. PREMIUM
-Débloquez les 5 émulations de film, 5 packs de cadres, toutes les polices et les exports sans filigrane — en achat unique ou abonnement flexible.
+Débloquez les 10 émulations de film, 5 packs de cadres, toutes les polices et les exports sans filigrane — en achat unique ou abonnement flexible.
 ```
 
 ### Keywords
@@ -367,7 +367,7 @@ polaroid,instantané,appareil,film,filtre,photo,vintage,analogique,cadres,accél
 | Élément | Texte |
 |---------|-------|
 | Titre | `Filtres Film et Packs` |
-| Corps | `Choisissez parmi 5 émulations de film authentiques et des cadres Polaroid colorés qui rendent chaque photo unique.` |
+| Corps | `Choisissez parmi 10 émulations de film authentiques et des cadres Polaroid colorés qui rendent chaque photo unique.` |
 | Badge | `PREMIUM` |
 
 #### Screenshot 3 — Style de Légende
@@ -416,7 +416,7 @@ poly. trasforma la fotocamera del tuo iPhone in una fotocamera a sviluppo istant
 Scatta in modalità Foto, Video o Time Lapse e guarda il tuo scatto trasformarsi in una classica cornice polaroid — con grana della pellicola, aloni di luce e una striscia didascalia tutta tua.
 
 FILTRI FILM & PACK
-Scegli tra 5 emulazioni di pellicola autentiche e 5 pack di cornici Polaroid colorate. Combinali per creare un look inconfondibilmente tuo.
+Scegli tra 10 emulazioni di pellicola autentiche e 5 pack di cornici Polaroid colorate. Combinali per creare un look inconfondibilmente tuo.
 
 IL TUO STILE DI DIDASCALIA
 Scrivi una breve didascalia sulla striscia frontale e una nota più lunga sul retro. Scegli tra 6 caratteri e 4 opzioni di spessore.
@@ -434,7 +434,7 @@ ICLOUD
 Tieni ogni polaroid al sicuro e disponibile su tutti i tuoi dispositivi con iCloud.
 
 POLY. PREMIUM
-Sblocca tutte le 5 emulazioni di pellicola, 5 pack di cornici, tutti i caratteri ed esportazioni senza filigrana — con acquisto unico o abbonamento flessibile.
+Sblocca tutte le 10 emulazioni di pellicola, 5 pack di cornici, tutti i caratteri ed esportazioni senza filigrana — con acquisto unico o abbonamento flessibile.
 ```
 
 ### Keywords
@@ -464,7 +464,7 @@ polaroid,istantanea,fotocamera,pellicola,filtro,foto,vintage,analogico,cornici,t
 | Elemento | Testo |
 |----------|-------|
 | Titolo | `Filtri Film e Pack` |
-| Corpo | `Scegli tra 5 emulazioni di pellicola autentiche e colorate cornici Polaroid che rendono ogni scatto unico.` |
+| Corpo | `Scegli tra 10 emulazioni di pellicola autentiche e colorate cornici Polaroid che rendono ogni scatto unico.` |
 | Badge | `PREMIUM` |
 
 #### Screenshot 3 — Stile Didascalia
@@ -500,7 +500,7 @@ The tables below list every localised string across all five languages for quick
 | poly. Premium | poly. Premium | poly. Premium | poly. Premium | poly. Premium |
 | Unlock the full experience | Erlebe das volle Erlebnis | Desbloquea la experiencia completa | Débloquez l'expérience complète | Sblocca l'esperienza completa |
 | Film Filters & Packs | Filmfilter & Packs | Filtros Film & Packs | Filtres Film & Packs | Filtri Film & Pack |
-| 5 film emulations + colored frames | 5 Filmemulationen + bunte Rahmen | 5 emulaciones film + marcos de colores | 5 émulations film + cadres colorés | 5 emulazioni film + cornici colorate |
+| 10 film emulations + colored frames | 10 Filmemulationen + bunte Rahmen | 10 emulaciones film + marcos de colores | 10 émulations film + cadres colorés | 10 emulazioni film + cornici colorate |
 | Caption Style | Bildunterschrift-Stil | Estilo de leyenda | Style de légende | Stile didascalia |
 | 6 fonts × 4 weights | 6 Schriften × 4 Stärken | 6 fuentes × 4 pesos | 6 polices × 4 graisses | 6 caratteri × 4 spessori |
 | Watermark-Free | Ohne Wasserzeichen | Sin marca de agua | Sans filigrane | Senza filigrana |
@@ -525,7 +525,7 @@ The tables below list every localised string across all five languages for quick
 |----------|----|----|----|----|
 | Authentic polaroids,\ndirect from your camera. | Authentische Polaroids,\ndirekt von deiner Kamera. | Polaroids auténticos,\ndirectamente desde tu cámara. | Polaroids authentiques,\ndirectement depuis votre appareil photo. | Polaroid autentici,\ndirettamente dalla tua fotocamera. |
 | Film Filters\n& Packs | Filmfilter\nund Packs | Filtros Film\ny Packs | Filtres Film\net Packs | Filtri Film\ne Pack |
-| Choose from 5 authentic film emulations… | Wähle aus 5 authentischen Filmemulationen… | Elige entre 5 emulaciones de película auténticas… | Choisissez parmi 5 émulations de film authentiques… | Scegli tra 5 emulazioni di pellicola autentiche… |
+| Choose from 10 authentic film emulations… | Wähle aus 10 authentischen Filmemulationen… | Elige entre 10 emulaciones de película auténticas… | Choisissez parmi 10 émulations de film authentiques… | Scegli tra 10 emulazioni di pellicola autentiche… |
 | Your Caption\nStyle | Dein Bildunterschrift-\nStil | Tu Estilo\nde Leyenda | Votre Style\nde Légende | Il tuo Stile\ndi Didascalia |
 | Personalize every polaroid with 6 fonts… | Personalisiere jeden Polaroid mit 6 Schriften… | Personaliza cada polaroid con 6 fuentes… | Personnalisez chaque polaroid avec 6 polices… | Personalizza ogni polaroid con 6 caratteri… |
 | Watermark-\nFree | Ohne\nWasserzeichen | Sin\nMarca de Agua | Sans\nFiligrane | Senza\nFiligrana |

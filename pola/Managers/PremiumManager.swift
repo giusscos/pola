@@ -8,17 +8,40 @@ final class PremiumManager {
     var isPremium: Bool = UserDefaults.standard.bool(forKey: "isPremium") {
         didSet { UserDefaults.standard.set(isPremium, forKey: "isPremium") }
     }
-    var watermarkDisabled: Bool = UserDefaults.standard.bool(forKey: "watermarkDisabled") {
-        didSet { UserDefaults.standard.set(watermarkDisabled, forKey: "watermarkDisabled") }
+    // Opt-in: premium exports are clean by default, this brings the logo back.
+    var showLogoOnExports: Bool = UserDefaults.standard.bool(forKey: "showLogoOnExports") {
+        didSet { UserDefaults.standard.set(showLogoOnExports, forKey: "showLogoOnExports") }
     }
 
+    var shouldWatermarkExports: Bool { !isPremium || showLogoOnExports }
+
     private(set) var products: [Product] = []
+    private(set) var activeProductID: String? = nil
+    private(set) var expirationDate: Date? = nil
+    private(set) var willAutoRenew = false
     var isPurchasing = false
     var purchaseError: String? = nil
 
     static let monthlyID  = "com.pola.premium.monthly"
     static let yearlyID   = "com.pola.premium.yearly"
     static let lifetimeID = "com.pola.premium.lifetime"
+
+    var isSubscriber: Bool {
+        activeProductID == Self.monthlyID || activeProductID == Self.yearlyID
+    }
+
+    var lifetimeProduct: Product? {
+        products.first { $0.id == Self.lifetimeID }
+    }
+
+    var activePlanName: String? {
+        switch activeProductID {
+        case Self.monthlyID:  return NSLocalizedString("Monthly", comment: "")
+        case Self.yearlyID:   return NSLocalizedString("Yearly", comment: "")
+        case Self.lifetimeID: return NSLocalizedString("Lifetime", comment: "")
+        default: return nil
+        }
+    }
 
     private init() {
         Task { @MainActor in
@@ -28,24 +51,18 @@ final class PremiumManager {
         }
     }
 
-    @MainActor
     private func startTransactionListener() async {
         Task { @MainActor in
             for await result in Transaction.updates {
                 guard case .verified(let tx) = result else { continue }
-                if Self.productIDs.contains(tx.productID) {
-                    if tx.revocationDate != nil {
-                        await refreshPurchaseStatus()
-                    } else {
-                        isPremium = true
-                    }
-                    await tx.finish()
-                }
+                guard Self.productIDs.contains(tx.productID) else { continue }
+                await tx.finish()
+                // Updates also arrive for expirations and refunds, so re-derive state instead of assuming "unlocked".
+                await refreshPurchaseStatus()
             }
         }
     }
 
-    @MainActor
     func loadProducts() async {
         do {
             let loaded = try await Product.products(for: Self.productIDs)
@@ -55,47 +72,73 @@ final class PremiumManager {
         } catch {}
     }
 
-    @MainActor
-    func purchase(_ product: Product) async {
+    @discardableResult
+    func purchase(_ product: Product) async -> Bool {
         isPurchasing = true
         purchaseError = nil
+        defer { isPurchasing = false }
+        Analytics.track(.purchaseStarted, ["product": product.id])
         do {
             let result = try await product.purchase()
-            if case .success(let verification) = result,
-               case .verified(let tx) = verification {
-                isPremium = true
+            switch result {
+            case .success(let verification):
+                guard case .verified(let tx) = verification else { return false }
                 await tx.finish()
+                await refreshPurchaseStatus()
+                Analytics.track(.purchaseCompleted, ["product": product.id])
+                return true
+            case .userCancelled:
+                Analytics.track(.purchaseCancelled, ["product": product.id])
+                return false
+            case .pending:
+                return false
+            @unknown default:
+                return false
             }
         } catch {
             purchaseError = error.localizedDescription
+            Analytics.track(.purchaseFailed, ["product": product.id])
+            return false
         }
-        isPurchasing = false
     }
 
-    @MainActor
     func restorePurchases() async {
         isPurchasing = true
         purchaseError = nil
         do {
             try await AppStore.sync()
             await refreshPurchaseStatus()
+            if isPremium { Analytics.track(.restoreCompleted) }
         } catch {
             purchaseError = error.localizedDescription
         }
         isPurchasing = false
     }
 
-    @MainActor
     func refreshPurchaseStatus() async {
-        var hasActive = false
+        var bestTx: StoreKit.Transaction? = nil
         for await result in Transaction.currentEntitlements {
-            guard case .verified(let tx) = result else { continue }
-            if Self.productIDs.contains(tx.productID) {
-                hasActive = true
+            guard case .verified(let tx) = result,
+                  Self.productIDs.contains(tx.productID) else { continue }
+            // Lifetime wins over any subscription so we never show a renewal date to lifetime owners.
+            if tx.productID == Self.lifetimeID {
+                bestTx = tx
                 break
             }
+            if bestTx == nil || (tx.expirationDate ?? .distantPast) > (bestTx?.expirationDate ?? .distantPast) {
+                bestTx = tx
+            }
         }
-        isPremium = hasActive
+
+        activeProductID = bestTx?.productID
+        expirationDate = bestTx?.expirationDate
+        willAutoRenew = false
+        if let bestTx, bestTx.productID != Self.lifetimeID,
+           let status = await bestTx.subscriptionStatus,
+           case .verified(let renewal) = status.renewalInfo {
+            willAutoRenew = renewal.willAutoRenew
+        }
+        isPremium = bestTx != nil
     }
 
     private static let productIDs: Set<String> = [monthlyID, yearlyID, lifetimeID]

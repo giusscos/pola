@@ -114,6 +114,7 @@ struct PolaroidPhotoCell: View {
 
     @AppStorage("polaroidFont") private var polaroidFontRaw: String = PolaroidFont.handwriting.rawValue
     @AppStorage("polaroidFontWeight") private var polaroidFontWeightRaw: String = PolaroidFontWeight.regular.rawValue
+    @AppStorage("dateStampEnabled") private var dateStampEnabled = false
     @State private var localReveal: Double
     @State private var flipAngle: Double = 0
     @State private var showingBack = false
@@ -237,7 +238,20 @@ struct PolaroidPhotoCell: View {
     // MARK: - Watermark
 
     private var showWatermark: Bool {
-        !(PremiumManager.shared.isPremium && PremiumManager.shared.watermarkDisabled)
+        PremiumManager.shared.shouldWatermarkExports
+    }
+
+    private var dateStamp: String? {
+        guard dateStampEnabled, PremiumManager.shared.isPremium, let timestamp else { return nil }
+        return polaroidDateStampText(timestamp)
+    }
+
+    private func dateStampOverlay(_ text: String) -> some View {
+        Text(verbatim: text)
+            .font(.system(size: 9 * fontScale, weight: .semibold, design: .monospaced))
+            .foregroundStyle(polaroidDateStampColor)
+            .shadow(color: polaroidDateStampColor.opacity(0.8), radius: 2 * fontScale)
+            .padding(5 * fontScale)
     }
 
     private var watermarkOverlay: some View {
@@ -277,6 +291,11 @@ struct PolaroidPhotoCell: View {
                     }
                 }
                 .clipped()
+                .overlay(alignment: .bottomTrailing) {
+                    if let dateStamp {
+                        dateStampOverlay(dateStamp)
+                    }
+                }
                 .overlay {
                     Color.black
                         .opacity(max(0, 1.0 - revealProgress))
@@ -549,9 +568,11 @@ func compositePolaroidVideo(_ entry: PolaroidEntry, sourceURL: URL) async -> URL
     let storedWeightName = UserDefaults.standard.string(forKey: "polaroidFontWeight") ?? PolaroidFontWeight.regular.rawValue
     let captionFont = (PolaroidFont(rawValue: storedFontName) ?? .handwriting)
         .uiFont(size: 13 * 1.7 * 3, weight: PolaroidFontWeight(rawValue: storedWeightName) ?? .regular)
+    let dateStampEnabled = UserDefaults.standard.bool(forKey: "dateStampEnabled") && PremiumManager.shared.isPremium
     let overlayImage = makePolaroidOverlayImage(
         size: renderSize, imageHole: imageHole, captionRect: captionRect,
-        caption: entry.caption, packColor: packColor, captionFont: captionFont
+        caption: entry.caption, packColor: packColor, captionFont: captionFont,
+        dateStamp: dateStampEnabled ? polaroidDateStampText(entry.timestamp) : nil
     )
 
     let overlayLayer = CALayer()
@@ -627,7 +648,7 @@ private func exportPolaroidVideo(_ export: AVAssetExportSession, to outputURL: U
 }
 
 private func drawPolaroidWatermark(in ctx: CGContext, imageRect: CGRect, scale: CGFloat) {
-    guard !(PremiumManager.shared.isPremium && PremiumManager.shared.watermarkDisabled) else { return }
+    guard PremiumManager.shared.shouldWatermarkExports else { return }
     let margin: CGFloat = 5 * scale
     let fontSize: CGFloat = 8 * scale
     let font = UIFont.systemFont(ofSize: fontSize, weight: .semibold, width: .expanded)
@@ -671,7 +692,22 @@ private func drawPolaroidWatermark(in ctx: CGContext, imageRect: CGRect, scale: 
     ctx.restoreGState()
 }
 
-private func makePolaroidOverlayImage(size: CGSize, imageHole: CGRect, captionRect: CGRect, caption: String, packColor: UIColor, captionFont: UIFont) -> UIImage {
+private func drawPolaroidDateStamp(_ text: String, in ctx: CGContext, imageRect: CGRect, scale: CGFloat) {
+    let color = UIColor(polaroidDateStampColor)
+    let attrs: [NSAttributedString.Key: Any] = [
+        .font: UIFont.monospacedSystemFont(ofSize: 9 * scale, weight: .semibold),
+        .foregroundColor: color
+    ]
+    let str = text as NSString
+    let size = str.size(withAttributes: attrs)
+    let margin = 5 * scale
+    ctx.saveGState()
+    ctx.setShadow(offset: .zero, blur: 2 * scale, color: color.withAlphaComponent(0.8).cgColor)
+    str.draw(at: CGPoint(x: imageRect.maxX - size.width - margin, y: imageRect.maxY - size.height - margin), withAttributes: attrs)
+    ctx.restoreGState()
+}
+
+private func makePolaroidOverlayImage(size: CGSize, imageHole: CGRect, captionRect: CGRect, caption: String, packColor: UIColor, captionFont: UIFont, dateStamp: String?) -> UIImage {
     let format = UIGraphicsImageRendererFormat()
     format.opaque = false
     format.scale = 1
@@ -682,6 +718,9 @@ private func makePolaroidOverlayImage(size: CGSize, imageHole: CGRect, captionRe
         cgCtx.fill(CGRect(origin: .zero, size: size))
         cgCtx.clear(imageHole)
         drawPolaroidWatermark(in: cgCtx, imageRect: imageHole, scale: 3)
+        if let dateStamp {
+            drawPolaroidDateStamp(dateStamp, in: cgCtx, imageRect: imageHole, scale: 3)
+        }
         guard !caption.isEmpty else { return }
         let font = captionFont
         let attrs: [NSAttributedString.Key: Any] = [
@@ -721,6 +760,18 @@ func renderPolaroidFrame(_ entry: PolaroidEntry) -> UIImage {
     let renderer = ImageRenderer(content: cell)
     renderer.scale = 3.0
     return renderer.uiImage ?? entry.image ?? UIImage()
+}
+
+// MARK: - Date stamp
+
+let polaroidDateStampColor = Color(red: 1.0, green: 0.58, blue: 0.2)
+
+// Mimics the orange LED imprint of 90s compact film cameras, e.g. "'26 9 24".
+func polaroidDateStampText(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.dateFormat = "''yy M d"
+    return formatter.string(from: date)
 }
 
 // MARK: - Color hex helpers

@@ -4,6 +4,8 @@ struct FilterItemCell: View {
     let filter: FilmFilter
     var isSelected: Bool = false
     var locked: Bool = false
+    var showNewBadge: Bool = false
+    var showFreeBadge: Bool = false
     var previewImage: UIImage? = nil
 
     var body: some View {
@@ -28,25 +30,35 @@ struct FilterItemCell: View {
                         .frame(width: 30, height: 30)
                 }
 
-                if locked {
-                    Color.black.opacity(0.45)
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.9))
-                }
-
-                if isSelected {
-                    VStack {
-                        HStack {
-                            Spacer()
+                // Keep the look visible on locked stocks; a small badge is enough to signal premium.
+                VStack {
+                    HStack(alignment: .top) {
+                        if showNewBadge {
+                            NewBadge()
+                        } else if showFreeBadge {
+                            Text("FREE")
+                                .font(.system(size: 9, weight: .heavy).width(.expanded))
+                                .foregroundStyle(.black)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color(red: 0.2, green: 0.85, blue: 0.6), in: Capsule())
+                        }
+                        Spacer()
+                        if isSelected {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(filter.color)
                                 .background(.white, in: .circle)
-                                .padding(6)
+                        } else if locked {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .padding(5)
+                                .background(.black.opacity(0.55), in: Circle())
                         }
-                        Spacer()
                     }
+                    Spacer()
                 }
+                .padding(6)
             }
             .aspectRatio(1, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -62,7 +74,7 @@ struct FilterItemCell: View {
 
                 Text(filter.name)
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(locked ? .secondary : .primary)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
             }
         }
