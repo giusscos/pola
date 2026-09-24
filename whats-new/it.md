@@ -3,7 +3,7 @@
 **Version 1.1.0**
 
 ```
-poly. 1.1 è l'aggiornamento più grande di sempre.
+Poly 1.1 è l'aggiornamento più grande di sempre.
 
 • Prova prima di acquistare: guarda ogni pellicola dal vivo nel mirino
 • Nuovi formati istantanei: Quadrato, Largo e Mini (Premium)

@@ -3,7 +3,7 @@
 **Version 1.1.0**
 
 ```
-poly. 1.1 is our biggest update yet.
+Poly 1.1 is our biggest update yet.
 
 • Try before you buy: preview any film stock live in the viewfinder
 • New instant formats: Square, Wide and Mini (Premium)

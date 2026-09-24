@@ -1,10 +1,10 @@
-# poly. 1.1.0 — Français (fr-FR)
+# Poly 1.1.0 — Français (fr-FR)
 
 Copy each block into the matching App Store Connect field. Limits are checked by `app-store/check_lengths.py`.
 
 ## App Name *(30)*
 ```
-poly. – Appareil instantané
+Poly - Appareil instantané
 ```
 
 ## Subtitle *(30)*
@@ -24,7 +24,7 @@ Nouveau : formats Carré, Large et Mini, le widget Souvenirs qui vous ramène à
 
 ## Description *(4000)*
 ```
-poly. transforme votre iPhone en appareil photo instantané.
+Poly transforme votre iPhone en appareil photo instantané.
 
 Appuyez sur le déclencheur et regardez votre photo sortir de l'appareil puis se révéler lentement, comme une vraie. Secouez votre iPhone pour accélérer. Ajoutez une légende manuscrite, retournez le tirage pour voir où il a été pris et gardez tout dans une bibliothèque qui ressemble à une boîte à chaussures pleine de photos.
 
@@ -49,7 +49,7 @@ Enregistrez des tirages nets dans Photos, partagez une image 9:16 pensée pour l
 LA CONFIDENTIALITÉ D'ABORD
 Pas de compte, pas de pub, aucun pistage. Vos photos restent dans votre bibliothèque et votre iCloud, synchronisées sur tous vos appareils.
 
-POLY. PREMIUM
+POLY PREMIUM
 Gratuit pour toujours : l'appareil photo, la vidéo, l'accéléré, la pellicule et le cadre SOLVA et toute votre bibliothèque.
 Premium débloque toutes les pellicules, couleurs et formats de cadre, les polices de légende, la date incrustée, le widget Souvenirs, les planches d'impression et les exports sans logo. Choisissez l'abonnement mensuel, annuel (les nouveaux abonnés peuvent commencer par un essai gratuit) ou l'achat unique à vie.
 
@@ -67,7 +67,7 @@ vintage,argentique,photo,filtre,cadre,jetable,années 90,grain,accéléré,widge
 
 ## What's New
 ```
-poly. 1.1 est notre plus grosse mise à jour.
+Poly 1.1 est notre plus grosse mise à jour.
 
 • Essayez avant d'acheter : chaque pellicule en direct dans le viseur
 • Nouveaux formats instantanés : Carré, Large et Mini (Premium)
@@ -94,7 +94,7 @@ poly. 1.1 est notre plus grosse mise à jour.
 ## In-App Purchases
 | Field | Value |
 |-------|-------|
-| Subscription group display name | poly. Premium |
+| Subscription group display name | Poly Premium |
 | Monthly — display name | Premium mensuel |
 | Monthly — description | Pellicules, formats, widget et plus |
 | Yearly — display name | Premium annuel |

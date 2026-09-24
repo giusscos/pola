@@ -4,7 +4,7 @@
 "Premium" = "Premium";
 "Premium Active" = "Premium actif";
 "All features unlocked" = "Toutes les fonctionnalités débloquées";
-"Unlock poly Premium" = "Débloquer poly Premium";
+"Unlock Poly Premium" = "Débloquer Poly Premium";
 "Camera" = "Appareil photo";
 "Default Filter" = "Filtre par défaut";
 "None" = "Aucun";
@@ -83,7 +83,7 @@
 "Caption Style" = "Style de légende";
 "6 fonts × 4 weights" = "6 polices × 4 graisses";
 "Clean Exports" = "Exports propres";
-"poly Premium" = "poly Premium";
+"Poly Premium" = "Poly Premium";
 "Unlock the full experience" = "Débloquez l'expérience complète";
 "BEST VALUE" = "MEILLEURE OFFRE";
 "One-time purchase" = "Achat unique";
@@ -154,7 +154,7 @@
 "Unlock all 10 film stocks and keep every look." = "Débloquez les 10 pellicules et gardez chaque look.";
 "This is your last photo on %@. Unlock all 10 film stocks and keep every look." = "Voici votre dernière photo sur %@. Débloquez les 10 pellicules et gardez chaque look.";
 "Welcome to Premium" = "Bienvenue dans Premium";
-"Every film stock, frame and font is now yours. Thank you for supporting poly." = "Toutes les pellicules, cadres et polices sont à vous. Merci de soutenir poly.";
+"Every film stock, frame and font is now yours. Thank you for supporting Poly." = "Toutes les pellicules, cadres et polices sont à vous. Merci de soutenir Poly.";
 "Start Shooting" = "Commencer à shooter";
 
 /* Trial pricing, frame formats & widget */

@@ -226,7 +226,7 @@ struct PaywallView: View {
     // MARK: - Header
 
     private var headerTitle: String {
-        context == .milestone ? "You're on a roll" : "poly Premium"
+        context == .milestone ? "You're on a roll" : "Poly Premium"
     }
 
     private var headerSubtitle: String {
@@ -683,7 +683,7 @@ private struct PremiumWelcomeView: View {
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : 12)
 
-                Text("Every film stock, frame and font is now yours. Thank you for supporting poly.")
+                Text("Every film stock, frame and font is now yours. Thank you for supporting Poly.")
                     .font(.system(size: 16))
                     .foregroundStyle(.white.opacity(0.6))
                     .multilineTextAlignment(.center)

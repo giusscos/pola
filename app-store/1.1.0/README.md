@@ -1,4 +1,4 @@
-# poly. 1.1.0 — App Store release kit
+# Poly 1.1.0 — App Store release kit
 
 Everything App Store Connect needs for 1.1.0, in English (`en.md`), German (`de.md`), Spanish (`es.md`), French (`fr.md`) and Italian (`it.md`). Each file has: App Name, Subtitle, Promotional Text, Description, Keywords, What's New, screenshot captions and In-App Purchase metadata.
 
@@ -15,7 +15,7 @@ The build is already set to **1.1.0** (`MARKETING_VERSION` for the app and the w
 
 | Field | 1.0.x | 1.1.0 | Why |
 |---|---|---|---|
-| App Name | `poly.` | `poly. – Instant Film Camera` (localized) | The name is the strongest search signal; `poly.` alone ranks for nothing. The Home Screen name stays **Poly**. |
+| App Name | `poly.` | `Poly - Instant Film Camera` (localized) | The name is the strongest search signal; `poly.` alone ranks for nothing. The brand is written **Poly** everywhere in the listing, matching the Home Screen name. |
 | Subtitle | `Authentic Polaroid Camera` | `Retro film looks that develop` | "Polaroid" is a registered trademark. Using it in metadata can get the update rejected (App Review 2.3.7 / 5.2.1). |
 | Keywords | included `polaroid`, repeated words from the name | no trademarks; no words already in name/subtitle | Apple indexes name and subtitle words already, so repeating them wastes bytes. |
 | Description | 5 film stocks, "watermark-free" | 10 stocks, formats, widget, date stamp, print sheets, Stories, privacy, full subscription terms | Matches what the app does now. Includes the auto-renew wording App Review expects. |
@@ -55,7 +55,7 @@ Upload the same order in every language. Only the caption text changes (from eac
 - [ ] **Subscriptions:**
   - Update display names and descriptions (IAP table in each file) for Monthly, Yearly and Lifetime, in 5 languages.
   - Add the **1-week free introductory offer** to Yearly, if you're launching the trial.
-  - Subscription group display name: `poly. Premium`.
+  - Subscription group display name: `Poly Premium`.
 - [ ] **App Privacy:** unchanged. There's no analytics SDK, and location plus photos stay on device and in the user's iCloud. Confirm "Data Not Collected" is still accurate for your answers.
 - [ ] **Age rating:** unchanged.
 - [ ] **App Review notes** (paste into "Notes"):

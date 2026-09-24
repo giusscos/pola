@@ -3,7 +3,7 @@
 **Version 1.1.0**
 
 ```
-poly. 1.1 ist unser bisher größtes Update.
+Poly 1.1 ist unser bisher größtes Update.
 
 • Erst testen, dann kaufen: Sieh dir jeden Film live im Sucher an
 • Neue Sofortbild-Formate: Quadrat, Breit und Mini (Premium)

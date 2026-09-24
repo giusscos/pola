@@ -1,10 +1,10 @@
-# poly. 1.1.0 — Deutsch (de-DE)
+# Poly 1.1.0 — Deutsch (de-DE)
 
 Copy each block into the matching App Store Connect field. Limits are checked by `app-store/check_lengths.py`.
 
 ## App Name *(30)*
 ```
-poly. – Sofortbildkamera
+Poly - Sofortbildkamera
 ```
 
 ## Subtitle *(30)*
@@ -24,7 +24,7 @@ Neu: Quadrat-, Breit- und Mini-Format, das Erinnerungs-Widget mit Fotos von dies
 
 ## Description *(4000)*
 ```
-poly. verwandelt dein iPhone in eine Sofortbildkamera.
+Poly verwandelt dein iPhone in eine Sofortbildkamera.
 
 Drück auf den Auslöser und sieh zu, wie dein Bild aus der Kamera gleitet und sich langsam entwickelt – ganz wie das Original. Schüttle dein iPhone, um es zu beschleunigen. Füge eine handschriftliche Bildunterschrift hinzu, dreh den Abzug um und sieh, wo er entstanden ist, und bewahre alles in einer Mediathek auf, die sich wie ein Schuhkarton voller Fotos anfühlt.
 
@@ -49,7 +49,7 @@ Sichere saubere Abzüge in Fotos, teile ein 9:16-Bild für Storys oder erstelle 
 PRIVATSPHÄRE ZUERST
 Kein Konto, keine Werbung, kein Tracking. Deine Fotos bleiben in deiner Mediathek und in deiner iCloud und werden auf all deinen Geräten synchronisiert.
 
-POLY. PREMIUM
+POLY PREMIUM
 Für immer gratis: die Kamera, Video, Zeitraffer, der Film und die Rahmenfarbe SOLVA und deine gesamte Mediathek.
 Premium schaltet alle Filme, Rahmenfarben und Formate frei, dazu Schriften für Bildunterschriften, den Datumsstempel, das Erinnerungs-Widget, Druckbögen und Exporte ohne Logo. Wähle ein Monats- oder Jahresabo (neue Abonnenten können mit einem Gratis-Testzeitraum starten) oder einen einmaligen Kauf auf Lebenszeit.
 
@@ -67,7 +67,7 @@ vintage,analog,foto,filter,rahmen,einwegkamera,90er,datum,körnung,zeitraffer,wi
 
 ## What's New
 ```
-poly. 1.1 ist unser bisher größtes Update.
+Poly 1.1 ist unser bisher größtes Update.
 
 • Erst testen, dann kaufen: Sieh dir jeden Film live im Sucher an
 • Neue Sofortbild-Formate: Quadrat, Breit und Mini (Premium)
@@ -94,7 +94,7 @@ poly. 1.1 ist unser bisher größtes Update.
 ## In-App Purchases
 | Field | Value |
 |-------|-------|
-| Subscription group display name | poly. Premium |
+| Subscription group display name | Poly Premium |
 | Monthly — display name | Premium monatlich |
 | Monthly — description | Alle Filme, Formate, Widget und mehr |
 | Yearly — display name | Premium jährlich |

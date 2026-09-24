@@ -1,10 +1,10 @@
-# poly. 1.1.0 — Español (es-ES)
+# Poly 1.1.0 — Español (es-ES)
 
 Copy each block into the matching App Store Connect field. Limits are checked by `app-store/check_lengths.py`.
 
 ## App Name *(30)*
 ```
-poly. – Cámara instantánea
+Poly - Cámara instantánea
 ```
 
 ## Subtitle *(30)*
@@ -24,7 +24,7 @@ Novedad: formatos Cuadrado, Ancho y Mini, el widget Recuerdos que te devuelve a 
 
 ## Description *(4000)*
 ```
-poly. convierte tu iPhone en una cámara de fotos instantáneas.
+Poly convierte tu iPhone en una cámara de fotos instantáneas.
 
 Pulsa el disparador y mira cómo la foto sale de la cámara y se revela poco a poco, igual que una de verdad. Agita el móvil para acelerarlo. Añade una leyenda escrita a mano, dale la vuelta a la foto para ver dónde la hiciste y guárdalo todo en una biblioteca que parece una caja llena de fotos.
 
@@ -49,7 +49,7 @@ Guarda fotos limpias en Fotos, comparte una imagen 9:16 pensada para Stories o c
 TU PRIVACIDAD, PRIMERO
 Sin cuenta, sin anuncios, sin seguimiento. Tus fotos se quedan en tu biblioteca y en tu iCloud, sincronizadas en todos tus dispositivos.
 
-POLY. PREMIUM
+POLY PREMIUM
 Gratis para siempre: la cámara, el vídeo, el time-lapse, la película y el marco SOLVA y toda tu biblioteca.
 Premium desbloquea todas las películas, los colores y formatos de marco, las fuentes de leyenda, la fecha impresa, el widget Recuerdos, las hojas de impresión y las exportaciones sin logo. Elige la suscripción mensual, la anual (los nuevos suscriptores pueden empezar con una prueba gratuita) o la compra única de por vida.
 
@@ -67,7 +67,7 @@ vintage,analógica,foto,filtro,marco,desechable,90s,fecha,grano,timelapse,widget
 
 ## What's New
 ```
-poly. 1.1 es nuestra mayor actualización hasta ahora.
+Poly 1.1 es nuestra mayor actualización hasta ahora.
 
 • Prueba antes de comprar: mira cada película en directo en el visor
 • Nuevos formatos instantáneos: Cuadrado, Ancho y Mini (Premium)
@@ -94,7 +94,7 @@ poly. 1.1 es nuestra mayor actualización hasta ahora.
 ## In-App Purchases
 | Field | Value |
 |-------|-------|
-| Subscription group display name | poly. Premium |
+| Subscription group display name | Poly Premium |
 | Monthly — display name | Premium mensual |
 | Monthly — description | Todas las películas, formatos, widget y más |
 | Yearly — display name | Premium anual |

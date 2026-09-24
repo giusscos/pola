@@ -102,7 +102,7 @@ struct SettingsView: View {
                                         .foregroundStyle(Color(red: 1.0, green: 0.8, blue: 0.3))
                                 }
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Unlock poly Premium")
+                                    Text("Unlock Poly Premium")
                                         .font(.headline)
                                         .foregroundStyle(.primary)
                                     Text("Film stocks, formats, widget & more")

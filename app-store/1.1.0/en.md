@@ -1,10 +1,10 @@
-# poly. 1.1.0 — English (en-US)
+# Poly 1.1.0 — English (en-US)
 
 Copy each block into the matching App Store Connect field. Limits are checked by `app-store/check_lengths.py`.
 
 ## App Name *(30)*
 ```
-poly. – Instant Film Camera
+Poly - Instant Film Camera
 ```
 
 ## Subtitle *(30)*
@@ -24,7 +24,7 @@ New: Square, Wide and Mini formats, a Memories widget that brings back this day,
 
 ## Description *(4000)*
 ```
-poly. turns your iPhone into an instant film camera.
+Poly turns your iPhone into an instant film camera.
 
 Press the shutter and watch your shot slide out and slowly develop, just like the real thing. Shake your phone to speed it up. Add a handwritten caption, flip the print over to see where it was taken, and keep every shot in a library that feels like a shoebox of prints.
 
@@ -49,7 +49,7 @@ Save clean prints to Photos, share a 9:16 image made for Stories, or lay out A4 
 PRIVATE BY DESIGN
 No account, no ads, no tracking. Your photos stay in your library and your iCloud, synced across your devices.
 
-POLY. PREMIUM
+POLY PREMIUM
 Free forever: the camera, video, time lapse, the SOLVA film stock and frame color, and your whole library.
 Premium unlocks every film stock, frame color and format, caption fonts, the date stamp, the Memories widget, print sheets and logo-free exports. Choose monthly, yearly (new subscribers can start with a free trial) or a one-time lifetime purchase.
 
@@ -68,7 +68,7 @@ vintage,analog,photo,filter,frame,disposable,90s,date stamp,grain,timelapse,widg
 
 ## What's New *(4000)*
 ```
-poly. 1.1 is our biggest update yet.
+Poly 1.1 is our biggest update yet.
 
 • Try before you buy: preview any film stock live in the viewfinder
 • New instant formats: Square, Wide and Mini (Premium)
@@ -97,7 +97,7 @@ Headline ≤ 31 characters, subline ≤ 45 characters. See `README.md` for which
 ## In-App Purchases
 | Field | Value |
 |-------|-------|
-| Subscription group display name | poly. Premium |
+| Subscription group display name | Poly Premium |
 | Monthly — display name *(30)* | Premium Monthly |
 | Monthly — description *(45)* | All film stocks, formats, widget and more |
 | Yearly — display name *(30)* | Premium Yearly |

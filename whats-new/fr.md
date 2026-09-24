@@ -3,7 +3,7 @@
 **Version 1.1.0**
 
 ```
-poly. 1.1 est notre plus grosse mise à jour.
+Poly 1.1 est notre plus grosse mise à jour.
 
 • Essayez avant d'acheter : chaque pellicule en direct dans le viseur
 • Nouveaux formats instantanés : Carré, Large et Mini (Premium)

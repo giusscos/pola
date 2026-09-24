@@ -1,10 +1,10 @@
-# poly. 1.1.0 — Italiano (it)
+# Poly 1.1.0 — Italiano (it)
 
 Copy each block into the matching App Store Connect field. Limits are checked by `app-store/check_lengths.py`.
 
 ## App Name *(30)*
 ```
-poly. – Fotocamera istantanea
+Poly - Fotocamera istantanea
 ```
 
 ## Subtitle *(30)*
@@ -24,7 +24,7 @@ Novità: formati Quadrato, Largo e Mini, il widget Ricordi che ti riporta a ques
 
 ## Description *(4000)*
 ```
-poly. trasforma il tuo iPhone in una fotocamera a sviluppo istantaneo.
+Poly trasforma il tuo iPhone in una fotocamera a sviluppo istantaneo.
 
 Premi il pulsante e guarda lo scatto uscire dalla fotocamera e svilupparsi piano piano, proprio come una vera istantanea. Scuoti il telefono per accelerare. Aggiungi una didascalia scritta a mano, gira la stampa per vedere dove l'hai scattata e conserva tutto in una libreria che sembra una scatola di foto.
 
@@ -49,7 +49,7 @@ Salva stampe pulite in Foto, condividi un'immagine 9:16 pensata per le Storie o 
 PRIVACY PRIMA DI TUTTO
 Nessun account, nessuna pubblicità, nessun tracciamento. Le tue foto restano nella tua libreria e sul tuo iCloud, sincronizzate su tutti i tuoi dispositivi.
 
-POLY. PREMIUM
+POLY PREMIUM
 Gratis per sempre: la fotocamera, video, time lapse, la pellicola e la cornice SOLVA e tutta la tua libreria.
 Premium sblocca tutte le pellicole, i colori e i formati delle cornici, i caratteri delle didascalie, il timbro data, il widget Ricordi, i fogli di stampa e le esportazioni senza logo. Scegli l'abbonamento mensile, annuale (i nuovi abbonati possono iniziare con una prova gratuita) o l'acquisto una tantum a vita.
 
@@ -67,7 +67,7 @@ vintage,analogica,foto,filtro,cornice,usa e getta,anni 90,data,grana,timelapse,w
 
 ## What's New
 ```
-poly. 1.1 è l'aggiornamento più grande di sempre.
+Poly 1.1 è l'aggiornamento più grande di sempre.
 
 • Prova prima di acquistare: guarda ogni pellicola dal vivo nel mirino
 • Nuovi formati istantanei: Quadrato, Largo e Mini (Premium)
@@ -94,7 +94,7 @@ poly. 1.1 è l'aggiornamento più grande di sempre.
 ## In-App Purchases
 | Field | Value |
 |-------|-------|
-| Subscription group display name | poly. Premium |
+| Subscription group display name | Poly Premium |
 | Monthly — display name | Premium mensile |
 | Monthly — description | Pellicole, formati, widget e altro |
 | Yearly — display name | Premium annuale |
