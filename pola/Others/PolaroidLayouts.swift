@@ -81,14 +81,22 @@ func renderPolaroidPrintSheet(_ entries: [PolaroidEntry]) -> URL? {
                     width: cellW,
                     height: cellH
                 )
-                frame.draw(in: rect)
-                drawCutMarks(around: rect, in: ctx.cgContext)
+                // Non-classic formats are aspect-fit inside the 3:4 slot so every page keeps the same grid.
+                let fitted = aspectFit(frame.size, in: rect)
+                frame.draw(in: fitted)
+                drawCutMarks(around: fitted, in: ctx.cgContext)
             }
         }
     } catch {
         return nil
     }
     return url
+}
+
+private func aspectFit(_ size: CGSize, in rect: CGRect) -> CGRect {
+    let scale = min(rect.width / size.width, rect.height / size.height)
+    let w = size.width * scale, h = size.height * scale
+    return CGRect(x: rect.midX - w / 2, y: rect.midY - h / 2, width: w, height: h)
 }
 
 private func drawCutMarks(around rect: CGRect, in cg: CGContext) {

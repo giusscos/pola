@@ -52,11 +52,14 @@ struct ContentView: View {
     @AppStorage("hasAnsweredLocationPrompt") private var hasAnsweredLocationPrompt = false
     @AppStorage("hasSeenMilestonePaywall") private var hasSeenMilestonePaywall = false
     @AppStorage(FilmDrops.seenKey) private var seenDropID = 0
+    @AppStorage("selectedFrameFormat") private var selectedFrameFormatRaw = FrameFormat.classic.rawValue
     // Drives the paywall sheet via `.sheet(item:)` so the sheet always sees the context it was opened with.
     @State private var paywallContext: PaywallContext? = nil
     // Paywall requested from inside the Filters sheet; shown once that sheet has finished dismissing.
     @State private var pendingPaywallContext: PaywallContext? = nil
     @State private var showLocationPrompt = false
+    // Set by a widget tap; the library opens this polaroid once it's on screen.
+    @State private var libraryDeepLinkID: UUID? = nil
     @State private var didApplyDefaultFilter = false
     @State private var showFiltersSheet = false
     @State private var printingEntry: PolaroidEntry? = nil
@@ -69,6 +72,12 @@ struct ContentView: View {
 
     private var activeFilter: FilmFilter? {
         filmFilter(named: selectedFilterName)
+    }
+
+    // Falls back to Classic if a subscription lapses while a premium format is selected.
+    private var activeFrameFormat: FrameFormat {
+        let format = FrameFormat(rawValue: selectedFrameFormatRaw) ?? .classic
+        return format.isFree || premium.isPremium ? format : .classic
     }
 
     private var isPreviewingLockedFilter: Bool {
@@ -165,6 +174,13 @@ struct ContentView: View {
                                     }
                                 }
                             }
+                            .overlay {
+                                if activeFrameFormat != .classic {
+                                    FrameFormatGuide(imageAspect: activeFrameFormat.imageAspect)
+                                        .transition(.opacity)
+                                }
+                            }
+                            .animation(.easeInOut(duration: 0.25), value: activeFrameFormat)
                             .overlay(alignment: .top) {
                                 if isPreviewingLockedFilter, let filter = activeFilter {
                                     lockedPreviewBanner(for: filter)
@@ -253,7 +269,7 @@ struct ContentView: View {
             }
         }
         .fullScreenCover(isPresented: $showLibrary) {
-            LibraryView(isDetailOpen: $libraryDetailOpen, isSelectMode: $librarySelectMode)
+            LibraryView(isDetailOpen: $libraryDetailOpen, isSelectMode: $librarySelectMode, openEntryID: $libraryDeepLinkID)
                 .ignoresSafeArea()
                 .environment(PremiumManager.shared)
                 .navigationTransition(.zoom(sourceID: "library", in: sheetZoom))
@@ -279,7 +295,7 @@ struct ContentView: View {
                 presentPaywall(pending)
             }
         }) {
-            FiltersView(selectedFilterName: $selectedFilterName, selectedPackName: $selectedPackName, onPaywallRequested: { context in
+            FiltersView(selectedFilterName: $selectedFilterName, selectedPackName: $selectedPackName, selectedFrameFormatRaw: $selectedFrameFormatRaw, onPaywallRequested: { context in
                 pendingPaywallContext = context
                 showFiltersSheet = false
             })
@@ -336,13 +352,20 @@ struct ContentView: View {
         }
         .onChange(of: premium.isPremium) { _, isPremium in
             if isPremium { applyDefaultFilterIfNeeded() }
+            MemoryWidgetExporter.export(entries: allEntries, isPremium: isPremium)
         }
         .onChange(of: scenePhase) { _, phase in
-            // Catch renewals, expirations and refunds that happened while the app was in the background.
-            if phase == .active {
+            switch phase {
+            case .active:
+                // Catch renewals, expirations and refunds that happened while the app was in the background.
                 Task { await premium.refreshPurchaseStatus() }
+            case .background:
+                MemoryWidgetExporter.export(entries: allEntries, isPremium: premium.isPremium)
+            default:
+                break
             }
         }
+        .onOpenURL { handleDeepLink($0) }
         .onChange(of: cameraMode) { _, mode in
             if mode == .video {
                 Task { await cameraManager.prepareMicrophone() }
@@ -372,6 +395,7 @@ struct ContentView: View {
                 image: processed,
                 filterName: selectedFilterName,
                 packName: selectedPackName,
+                frameFormat: activeFrameFormat,
                 coordinate: cameraManager.lastCoordinate
             )
             modelContext.insert(entry)
@@ -401,6 +425,7 @@ struct ContentView: View {
                     image: processed,
                     filterName: selectedFilterName,
                     packName: selectedPackName,
+                    frameFormat: activeFrameFormat,
                     coordinate: cameraManager.lastCoordinate
                 )
                 entry.videoFilename = store.saveVideo(from: url, id: entry.id)
@@ -437,6 +462,7 @@ struct ContentView: View {
                         isTimelapse: true,
                         filterName: selectedFilterName,
                         packName: selectedPackName,
+                        frameFormat: activeFrameFormat,
                         coordinate: coord
                     )
                     entry.videoFilename = store.saveVideo(from: videoURL, id: entry.id)
@@ -907,6 +933,19 @@ struct ContentView: View {
         ReviewPrompter.requestIfAppropriate()
     }
 
+    private func handleDeepLink(_ url: URL) {
+        guard url.scheme == PolyDeepLink.scheme else { return }
+        switch url.host() {
+        case "premium":
+            if !premium.isPremium { presentPaywall(.feature(.widget)) }
+        case "memory":
+            libraryDeepLinkID = UUID(uuidString: url.lastPathComponent)
+            showLibrary = true
+        default:
+            break
+        }
+    }
+
     private func applyDefaultFilterIfNeeded() {
         guard !didApplyDefaultFilter,
               let filter = filmFilter(named: defaultFilter),
@@ -1150,6 +1189,32 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+}
+
+/// Dims the parts of the 3:4 viewfinder that the selected film format will crop away.
+private struct FrameFormatGuide: View {
+    let imageAspect: CGFloat
+
+    var body: some View {
+        GeometryReader { geo in
+            let full = geo.size
+            let window: CGSize = full.width / full.height < imageAspect
+                ? CGSize(width: full.width, height: full.width / imageAspect)
+                : CGSize(width: full.height * imageAspect, height: full.height)
+            let rect = CGRect(x: (full.width - window.width) / 2, y: (full.height - window.height) / 2,
+                              width: window.width, height: window.height)
+            Path { p in
+                p.addRect(CGRect(origin: .zero, size: full))
+                p.addRect(rect)
+            }
+            .fill(.black.opacity(0.55), style: FillStyle(eoFill: true))
+            Rectangle()
+                .strokeBorder(.white.opacity(0.6), lineWidth: 1)
+                .frame(width: rect.width, height: rect.height)
+                .position(x: rect.midX, y: rect.midY)
+        }
+        .allowsHitTesting(false)
+    }
 }
 
 private struct ProcessingTimeLapseOverlay: View {

@@ -167,3 +167,31 @@
 "Welcome to Premium" = "Willkommen bei Premium";
 "Every film stock, frame and font is now yours. Thank you for supporting poly." = "Alle Filme, Rahmen und Schriften gehören jetzt dir. Danke, dass du poly unterstützt.";
 "Start Shooting" = "Los geht's";
+
+/* Trial pricing, frame formats & widget */
+"Frame Formats" = "Rahmenformate";
+"Square, Wide and Mini sizes" = "Quadratisch, Breit und Mini";
+"Shoot square, wide or mini." = "Fotografiere quadratisch, breit oder mini.";
+"Memories Widget" = "Erinnerungs-Widget";
+"A polaroid a day on your Home Screen" = "Jeden Tag ein Polaroid auf deinem Home-Bildschirm";
+"Relive a polaroid every day on your Home Screen." = "Erlebe jeden Tag ein Polaroid auf deinem Home-Bildschirm neu.";
+"Memories widget" = "Erinnerungs-Widget";
+"Touch and hold your Home Screen, tap Edit, then Add Widget and search for Poly." = "Halte den Home-Bildschirm gedrückt, tippe auf „Bearbeiten“, dann auf „Widget hinzufügen“ und suche nach Poly.";
+"Format" = "Format";
+"Square" = "Quadratisch";
+"Wide" = "Breit";
+"Mini" = "Mini";
+"%d days" = "%d Tage";
+"%d months" = "%d Monate";
+"%d years" = "%d Jahre";
+"%@/year" = "%@/Jahr";
+"%@/month" = "%@/Monat";
+"%@/week" = "%@/Woche";
+"%@ FREE" = "%@ GRATIS";
+"%@/mo · save %d%%" = "%@/Monat · %d %% sparen";
+"Billed yearly" = "Jährliche Abrechnung";
+"Billed monthly" = "Monatliche Abrechnung";
+"Try %@ free" = "%@ gratis testen";
+"One-time purchase. Yours forever." = "Einmaliger Kauf. Für immer deins.";
+"%@ free, then %@. Cancel anytime." = "%@ gratis, danach %@. Jederzeit kündbar.";
+"%@. Cancel anytime." = "%@. Jederzeit kündbar.";

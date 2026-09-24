@@ -12,29 +12,18 @@ Current catalogue (`pola/offlineStore.storekit`):
 
 ---
 
-## 1. Free trial on Yearly (highest expected impact)
+## 1. Free trial on Yearly — code shipped, needs App Store Connect
 
-**What:** 7-day free trial as an *introductory offer* on the yearly plan. Monthly stays trial-less so the trial nudges people to yearly.
+The paywall is ready. It checks eligibility with `isEligibleForIntroOffer`. When the selected plan has an eligible free trial, it shows a "7 DAYS FREE" badge, the button reads **"Try 7 days free"**, and the line under it reads *"7 days free, then $19.99/year. Cancel anytime."* (Guideline 3.1.2). Until the offer exists in App Store Connect, the paywall looks exactly as it does today.
 
-**Why:** Photo/camera apps usually convert best with a trial. Right now nobody can try Premium before paying. The in-app "preview a locked filter" flow helps, but it isn't a real trial.
-
-**How:**
+**To switch it on:**
 1. App Store Connect → Subscriptions → Yearly → Introductory Offers → Free, 1 week, all territories.
-2. Mirror it in `offlineStore.storekit` / `onlineStore.storekit` (`introductoryOffer` on the yearly product) so it can be tested locally.
-3. `PaywallView`:
-   - Check eligibility with `await product.subscription?.isEligibleForIntroOffer`.
-   - If eligible and yearly is selected, change the CTA to **"Try 7 days free"** and add a line under it: *"then €19.99/year. Cancel anytime."* Guideline 3.1.2 requires the price after the trial to be clearly visible.
-   - Add a trial badge on the yearly card.
-4. Add a `trialStarted` analytics event (`Transaction.offer?.type == .introductory`).
-5. Optional: a local notification 2 days before the trial ends ("Your trial ends Thursday"). Apple doesn't require it, but it reduces refunds and 1★ reviews.
+2. Re-sync `onlineStore.storekit` in Xcode (Editor → Sync). `offlineStore.storekit` already has the trial for local testing; point the scheme at it to try the flow.
+3. Optional, not built: a local notification 2 days before the trial ends, which reduces refunds.
 
-## 2. Price anchoring on the paywall
+## 2. Price anchoring on the paywall — shipped
 
-**What:** Show the yearly price per month and the saving compared with monthly.
-
-- Yearly card subtitle: **"€1.67/mo · save 44%"**, computed from `product.price / 12` against the monthly `product.price`. Never hardcode it, because prices vary by storefront.
-- Use `product.priceFormatStyle` so the currency is formatted correctly.
-- Optional: show the monthly-equivalent crossed out (€35.88 → €19.99).
+The yearly card shows **"$1.67/mo · save 44%"**, computed from the storefront prices, so it's correct in every currency. Monthly shows "Billed monthly" and Lifetime "One-time purchase". The line under the button always states what will be charged.
 
 ## 3. Lifetime price
 
@@ -56,7 +45,7 @@ Current catalogue (`pola/offlineStore.storekit`):
 - Add a "Redeem Code" row in Settings → Premium (`.offerCodeRedemption(isPresented:)`).
 - Use codes for influencer partnerships and press. Cheap to add, but it's a marketing channel decision.
 
-## 6. Paywall experiments to run once analytics is live
+## 6. Paywall experiments (only if you later add a way to measure them; App Store Connect conversion data works without an SDK)
 
 | Experiment | Variants | Metric |
 |---|---|---|
@@ -71,33 +60,15 @@ The free filter and free frame are one flag each (`isFree:` in `FiltersView.swif
 
 ## Non-pricing items deferred (need Xcode / accounts / design)
 
-### Analytics backend
-`pola/Managers/Analytics.swift` is live and already tracks the whole funnel (paywall shown per context, purchase started / completed / cancelled, locked-filter previews, captures, shares, story and print exports, review prompts, location opt-in). For now events only go to the unified log (`log stream --predicate 'subsystem == "com.pola"'`).
-To ship: add **TelemetryDeck** (privacy-friendly, no ATT prompt) via SPM, then append a sink:
-```swift
-struct TelemetryDeckSink: AnalyticsSink {
-    func send(_ event: AnalyticsEvent, parameters: [String: String]) {
-        TelemetryDeck.signal(event.rawValue, parameters: parameters)
-    }
-}
-// in polaApp.init(): Analytics.sinks.append(TelemetryDeckSink())
-```
-Update the privacy policy and the App Store privacy label when you do.
+### Analytics backend — not planned
+Decided against a third-party analytics service. `pola/Managers/Analytics.swift` only writes to the device log (`log stream --predicate 'subsystem == "com.pola"'`), which is useful when debugging on a device, and sends nothing off it.
 
-### Home-screen widget ("On this day" / random memory)
-A strong reason for people to come back, and a natural Premium perk. Needs:
-1. A Widget Extension target (Xcode → File → New → Target → Widget Extension).
-2. An App Group (e.g. `group.com.giusscos.pola`) on both targets, registered in the developer portal.
-3. Move the SwiftData store into the App Group container (`ModelConfiguration(groupContainer: .identifier(...))`), with a one-time migration of the existing store.
-4. A timeline provider that picks one photo per day, with a small polaroid-style SwiftUI view.
+### Home-screen widget — shipped
+The "Memories" widget comes in small and medium sizes and is a Premium feature; free users see a locked teaser that opens the paywall. Instead of moving the SwiftData/CloudKit store, the app writes a snapshot to the App Group `group.com.giusscos.pola`: up to 60 thumbnails plus `snapshot.json`, via `MemoryWidgetExporter`. It does this when the app goes to the background and when premium status changes. The widget shows photos from "on this day" in earlier years first, otherwise it rotates through the library every 3 hours. Tapping it opens that polaroid.
+**Before shipping:** open the project in Xcode once with your account signed in so automatic signing registers the App Group and the `com.giusscos.pola.PolyWidget` bundle ID. Also keep `MARKETING_VERSION` of `PolyWidgetExtension` in sync with the app when you bump versions.
 
-### Frame formats (SX-70 square, Wide, Mini)
-The 3:4 frame is hardcoded in several places: `PolaroidPhotoCell`, `compositePolaroidVideo` (270×360), `PolaroidPrintAnimationVC`, the library layout (`0.75` aspect) and the detail view. Adding formats means:
-1. Add `frameFormat` to `PolaroidEntry` (a CloudKit-safe default).
-2. Replace each hardcoded aspect ratio with a lookup from the format.
-3. Add a picker in the Filters sheet, next to "Frame".
-
-This is a good follow-up Premium drop.
+### Frame formats — shipped
+Classic, Square (SX-70), Wide and Mini, set with `FrameFormat` in `Shared/`. They're picked in Filters → Format (Premium, except Classic), stored per polaroid (`frameFormatRaw`, a CloudKit-safe default) and changeable in the edit sheet. The viewfinder dims the area that gets cropped. The library, detail view, print animation, exports, video composite, print sheet and widget all respect the format.
 
 ### Sound design
 A soft shutter/print "whirr" and a development-complete chime. There are no audio assets in the bundle yet. Add short `.caf` files and play them with `AVAudioPlayer`, respecting the silent switch (`.ambient` category while not recording).
@@ -127,6 +98,11 @@ Free exports carry the "Poly" watermark. Two options:
 - Onboarding shortened from 8 screens to 4 (welcome → film showcase → camera → paywall). Microphone access is requested on the first switch to Video; location through a soft card after the first photo.
 - Copy updated from "5" to "10 film stocks" in the app and in `app_store_content.md`.
 - Analytics funnel events (see above).
+
+**Second batch (trial, formats, widget)**
+- Free-trial-ready paywall with per-month price anchoring and a charge disclosure under the button (sections 1–2).
+- Frame formats: Square, Wide and Mini (Premium).
+- Memories home-screen widget (Premium) that opens the polaroid when tapped.
 
 **Everyone**
 - "Share as Story" (1080×1920) from the library context menu, and by long-pressing Share in the detail view.

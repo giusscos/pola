@@ -394,6 +394,7 @@ let polaPackColors: [PolaPackColor] = [
 struct FiltersView: View {
     @Binding var selectedFilterName: String?
     @Binding var selectedPackName: String?
+    @Binding var selectedFrameFormatRaw: String
     var onPaywallRequested: ((PaywallContext) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
@@ -441,6 +442,12 @@ struct FiltersView: View {
                         .padding(.horizontal, 20)
 
                     frameRow
+
+                    Text("Format")
+                        .font(.headline)
+                        .padding(.horizontal, 20)
+
+                    formatRow
                 }
                 .padding(.bottom, 24)
             }
@@ -502,6 +509,64 @@ struct FiltersView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 4)
         }
+    }
+
+    private var formatRow: some View {
+        HStack(spacing: 10) {
+            ForEach(FrameFormat.allCases) { format in
+                formatChip(format)
+            }
+        }
+        .padding(.horizontal, 20)
+    }
+
+    private func formatChip(_ format: FrameFormat) -> some View {
+        let isSelected = selectedFrameFormatRaw == format.rawValue
+        let locked = !format.isFree && !premium.isPremium
+        return Button {
+            if locked {
+                onPaywallRequested?(.feature(.frameFormats))
+            } else {
+                selectedFrameFormatRaw = format.rawValue
+            }
+        } label: {
+            VStack(spacing: 6) {
+                ZStack {
+                    // Miniature polaroid in the format's proportions
+                    let height: CGFloat = 46
+                    let width = min(56, height * format.frameAspect)
+                    VStack(spacing: 0) {
+                        Rectangle()
+                            .fill(Color(.systemGray4))
+                            .padding([.horizontal, .top], 3)
+                        Color.clear.frame(height: 8)
+                    }
+                    .frame(width: width, height: width / format.frameAspect)
+                    .background(.white)
+                    .shadow(color: .black.opacity(0.15), radius: 3, y: 2)
+
+                    if locked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(5)
+                            .background(.black.opacity(0.55), in: Circle())
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 58)
+                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 2)
+                )
+
+                Text(LocalizedStringKey(format.displayName))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(locked ? .secondary : .primary)
+            }
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: selectedFrameFormatRaw)
     }
 
     private func frameSwatch(name: String?, color: Color, locked: Bool) -> some View {
@@ -626,6 +691,6 @@ struct NewBadge: View {
 }
 
 #Preview {
-    FiltersView(selectedFilterName: .constant(nil), selectedPackName: .constant(nil))
+    FiltersView(selectedFilterName: .constant(nil), selectedPackName: .constant(nil), selectedFrameFormatRaw: .constant("classic"))
         .environment(PremiumManager.shared)
 }

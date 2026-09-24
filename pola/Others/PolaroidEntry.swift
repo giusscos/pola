@@ -19,6 +19,7 @@ final class PolaroidEntry: Identifiable {
     var filterName: String? = nil
     var packName: String? = nil
     var packColorHex: String? = nil
+    var frameFormatRaw: String = FrameFormat.classic.rawValue
 
     init(
         image: UIImage,
@@ -26,6 +27,7 @@ final class PolaroidEntry: Identifiable {
         isTimelapse: Bool = false,
         filterName: String? = nil,
         packName: String? = nil,
+        frameFormat: FrameFormat = .classic,
         coordinate: CLLocationCoordinate2D? = nil
     ) {
         self.id = UUID()
@@ -34,10 +36,16 @@ final class PolaroidEntry: Identifiable {
         self.isTimelapse = isTimelapse
         self.filterName = filterName
         self.packName = packName
+        self.frameFormatRaw = frameFormat.rawValue
         self.latitude = coordinate?.latitude
         self.longitude = coordinate?.longitude
         self.timestamp = Date()
         self.developmentProgress = 0.0
+    }
+
+    var frameFormat: FrameFormat {
+        get { FrameFormat(rawValue: frameFormatRaw) ?? .classic }
+        set { frameFormatRaw = newValue.rawValue }
     }
 
     var image: UIImage? {

@@ -45,7 +45,7 @@ private struct DetailPageView: View {
             fontScale: 1.7,
             onDeveloped: { entry.developmentProgress = 1.0 }
         )
-        .aspectRatio(270.0 / 360.0, contentMode: .fit)
+        .aspectRatio(entry.frameFormat.frameAspect, contentMode: .fit)
         .shadow(color: .black.opacity(0.2), radius: 24, x: 0, y: 6)
         .padding(.horizontal)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

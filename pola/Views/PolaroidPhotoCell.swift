@@ -519,9 +519,10 @@ func compositePolaroidVideo(_ entry: PolaroidEntry, sourceURL: URL) async -> URL
     let displaySize = CGSize(width: abs(tSize.width), height: abs(tSize.height))
     guard displaySize.width > 0, displaySize.height > 0 else { return nil }
 
-    // Polaroid dimensions at 3x
+    // Polaroid dimensions at 3x; height rounded to an even pixel count for the H.264 encoder
     let s: CGFloat = 3
-    let frameW: CGFloat = 270 * s, frameH: CGFloat = 360 * s
+    let frameW: CGFloat = 270 * s
+    let frameH: CGFloat = (frameW / entry.frameFormat.frameAspect / 2).rounded() * 2
     let pad: CGFloat = 8 * s
     let captionH: CGFloat = 26 * 1.7 * s
     let imgW = frameW - 2 * pad, imgH = frameH - captionH - pad
@@ -755,7 +756,7 @@ func renderPolaroidFrame(_ entry: PolaroidEntry) -> UIImage {
         packColorHex: entry.packColorHex,
         fontScale: 1.7
     )
-    .frame(width: 270, height: 360)
+    .frame(width: 270, height: (270 / entry.frameFormat.frameAspect).rounded())
 
     let renderer = ImageRenderer(content: cell)
     renderer.scale = 3.0

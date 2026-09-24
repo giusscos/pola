@@ -144,3 +144,43 @@ final class PremiumManager {
     private static let productIDs: Set<String> = [monthlyID, yearlyID, lifetimeID]
     private static let productOrder = [monthlyID, yearlyID, lifetimeID]
 }
+
+// MARK: - Pricing display helpers
+
+extension Product {
+    /// The free-trial part of the introductory offer, if the offer is a free trial.
+    var freeTrialPeriod: Product.SubscriptionPeriod? {
+        guard let offer = subscription?.introductoryOffer, offer.paymentMode == .freeTrial else { return nil }
+        return offer.period
+    }
+
+    /// "7 days", "1 month" — used in trial badges and the post-trial disclosure.
+    var freeTrialText: String? {
+        guard let period = freeTrialPeriod else { return nil }
+        switch period.unit {
+        case .day:   return String(format: NSLocalizedString("%d days", comment: ""), period.value)
+        case .week:  return String(format: NSLocalizedString("%d days", comment: ""), period.value * 7)
+        case .month: return String(format: NSLocalizedString("%d months", comment: ""), period.value)
+        case .year:  return String(format: NSLocalizedString("%d years", comment: ""), period.value)
+        @unknown default: return nil
+        }
+    }
+
+    /// "$19.99/year", "$2.99/month"; the plain price for non-subscriptions.
+    var pricePerPeriodText: String {
+        guard let unit = subscription?.subscriptionPeriod.unit else { return displayPrice }
+        let format: String
+        switch unit {
+        case .year:  format = NSLocalizedString("%@/year", comment: "")
+        case .month: format = NSLocalizedString("%@/month", comment: "")
+        case .week:  format = NSLocalizedString("%@/week", comment: "")
+        default:     return displayPrice
+        }
+        return String(format: format, displayPrice)
+    }
+
+    /// Price divided by 12, formatted in the storefront currency. Only meaningful for yearly plans.
+    var monthlyEquivalentText: String {
+        (price / 12).formatted(priceFormatStyle)
+    }
+}
