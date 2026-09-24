@@ -4,8 +4,7 @@
 "Premium" = "Premium";
 "Premium Active" = "Premium Active";
 "All features unlocked" = "All features unlocked";
-"Unlock poly Premium" = "Unlock poly Premium";
-"Filters, fonts & clean exports" = "Filters, fonts & clean exports";
+"Unlock Poly Premium" = "Unlock Poly Premium";
 "Camera" = "Camera";
 "Default Filter" = "Default Filter";
 "None" = "None";
@@ -25,12 +24,10 @@
 "Caption prompt after photo" = "Caption prompt after photo";
 "iCloud" = "iCloud";
 "Sync with iCloud" = "Sync with iCloud";
-"Store your polaroids in iCloud so they're available across your devices. Changes take effect immediately." = "Store your polaroids in iCloud so they're available across your devices. Changes take effect immediately.";
 "Privacy" = "Privacy";
 "Privacy Policy" = "Privacy Policy";
 "Terms of Use" = "Terms of Use";
 "App" = "App";
-"About" = "About";
 "Feedback" = "Feedback";
 "Show Onboarding" = "Show Onboarding";
 
@@ -40,7 +37,6 @@
 "Skip" = "Skip";
 "Done" = "Done";
 "FILM" = "FILM";
-"PACK" = "PACK";
 "VIDEO" = "VIDEO";
 "PHOTO" = "PHOTO";
 "TIME LAPSE" = "TIME LAPSE";
@@ -52,7 +48,6 @@
 "No Photos Yet" = "No Photos Yet";
 "Take your first photo to see it here" = "Take your first photo to see it here";
 "Share" = "Share";
-"Save" = "Save";
 "Delete" = "Delete";
 "Cancel" = "Cancel";
 "Select" = "Select";
@@ -83,20 +78,15 @@
 "Poly." = "Poly.";
 "Authentic polaroids,\ndirect from your camera." = "Authentic polaroids,\ndirect from your camera.";
 "Camera\nAccess" = "Camera\nAccess";
-"Pola needs access to your camera to capture authentic polaroid-style photos and videos." = "Pola needs access to your camera to capture authentic polaroid-style photos and videos.";
 
 /* Paywall */
 "Caption Style" = "Caption Style";
 "6 fonts × 4 weights" = "6 fonts × 4 weights";
 "Clean Exports" = "Clean Exports";
-"poly Premium" = "poly Premium";
+"Poly Premium" = "Poly Premium";
 "Unlock the full experience" = "Unlock the full experience";
 "BEST VALUE" = "BEST VALUE";
 "One-time purchase" = "One-time purchase";
-"per month" = "per month";
-"per year" = "per year";
-"per week" = "per week";
-"per day" = "per day";
 "Monthly" = "Monthly";
 "Yearly" = "Yearly";
 "Lifetime" = "Lifetime";
@@ -143,9 +133,8 @@
 "Share as Story" = "Share as Story";
 "10 FILM STOCKS" = "10 FILM STOCKS";
 "Shoot on\nreal film looks" = "Shoot on\nreal film looks";
-"From warm Ektar tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop." = "From warm Ektar tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop.";
+"From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop." = "From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop.";
 "10 Film Stocks" = "10 Film Stocks";
-"Classic and Weird Film packs" = "Classic and Weird Film packs";
 "Colored Frames" = "Colored Frames";
 "Any border color, on any polaroid" = "Any border color, on any polaroid";
 "Date Stamp" = "Date Stamp";
@@ -165,7 +154,7 @@
 "Unlock all 10 film stocks and keep every look." = "Unlock all 10 film stocks and keep every look.";
 "This is your last photo on %@. Unlock all 10 film stocks and keep every look." = "This is your last photo on %@. Unlock all 10 film stocks and keep every look.";
 "Welcome to Premium" = "Welcome to Premium";
-"Every film stock, frame and font is now yours. Thank you for supporting poly." = "Every film stock, frame and font is now yours. Thank you for supporting poly.";
+"Every film stock, frame and font is now yours. Thank you for supporting Poly." = "Every film stock, frame and font is now yours. Thank you for supporting Poly.";
 "Start Shooting" = "Start Shooting";
 
 /* Trial pricing, frame formats & widget */
@@ -195,3 +184,49 @@
 "One-time purchase. Yours forever." = "One-time purchase. Yours forever.";
 "%@ free, then %@. Cancel anytime." = "%@ free, then %@. Cancel anytime.";
 "%@. Cancel anytime." = "%@. Cancel anytime.";
+
+/* Previously unlocalized UI, fonts & accessibility */
+"Mirror front camera" = "Mirror front camera";
+"When enabled, the selfie camera preview and captures appear like a mirror." = "When enabled, the selfie camera preview and captures appear like a mirror.";
+"Print animation" = "Print animation";
+"Your polaroids sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud." = "Your polaroids sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud.";
+"Rate the App" = "Rate the App";
+"Filters" = "Filters";
+"Original" = "Original";
+"Processing time lapse…" = "Processing time lapse…";
+"Newest First" = "Newest First";
+"Oldest First" = "Oldest First";
+"No Results" = "No Results";
+"No photos matching \"%@\"" = "No photos matching \"%@\"";
+"Search captions…" = "Search captions…";
+"Loop" = "Loop";
+"Play Once" = "Play Once";
+"Color" = "Color";
+"Film stocks, formats, widget & more" = "Film stocks, formats, widget & more";
+"Poly needs your camera to shoot photos, videos and time lapses that develop like instant film." = "Poly needs your camera to shoot photos, videos and time lapses that develop like instant film.";
+"Classic Film and Weird Film packs" = "Classic Film and Weird Film packs";
+"1 day" = "1 day";
+"1 month" = "1 month";
+"1 year" = "1 year";
+"premium" = "premium";
+"Handwriting" = "Handwriting";
+"Default" = "Default";
+"Default Wide" = "Default Wide";
+"Default Narrow" = "Default Narrow";
+"Serif" = "Serif";
+"Rounded" = "Rounded";
+"Thin" = "Thin";
+"Normal" = "Normal";
+"Semibold" = "Semibold";
+"Bold" = "Bold";
+"On" = "On";
+"Off" = "Off";
+"Self-timer" = "Self-timer";
+"%d seconds" = "%d seconds";
+"Flashlight" = "Flashlight";
+"Flip Camera" = "Flip Camera";
+"Take Photo" = "Take Photo";
+"Start Recording" = "Start Recording";
+"Stop Recording" = "Stop Recording";
+"Start Time Lapse" = "Start Time Lapse";
+"Stop Time Lapse" = "Stop Time Lapse";

@@ -424,14 +424,15 @@ struct FiltersView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 4)
 
-                    Text("Film")
+                    // Pack names are product names and stay in English, like the stock names.
+                    Text(verbatim: "Classic Film")
                         .font(.headline)
                         .padding(.horizontal, 20)
 
                     filterGrid(for: filmFilters, includeOriginal: true)
 
                     HStack(spacing: 8) {
-                        Text("Weird Film")
+                        Text(verbatim: "Weird Film")
                             .font(.headline)
                         if showNewBadges {
                             NewBadge()

@@ -2,10 +2,9 @@
 "Settings" = "Impostazioni";
 "Language" = "Lingua";
 "Premium" = "Premium";
-"Premium Active" = "Premium Attivo";
+"Premium Active" = "Premium attivo";
 "All features unlocked" = "Tutte le funzioni sbloccate";
-"Unlock poly Premium" = "Sblocca poly Premium";
-"Filters, fonts & clean exports" = "Filtri, caratteri ed esportazioni pulite";
+"Unlock Poly Premium" = "Sblocca Poly Premium";
 "Camera" = "Fotocamera";
 "Default Filter" = "Filtro predefinito";
 "None" = "Nessuno";
@@ -13,24 +12,22 @@
 "Record audio" = "Registra audio";
 "Save as video polaroid" = "Salva come video polaroid";
 "All frames combined into one video" = "Tutti i fotogrammi in un unico video";
-"Time Lapse" = "Time Lapse";
+"Time Lapse" = "Time lapse";
 "Library" = "Libreria";
 "1 Column" = "1 Colonna";
 "2 Columns" = "2 Colonne";
 "3 Columns" = "3 Colonne";
-"Grid Columns" = "Colonne griglia";
+"Grid Columns" = "Colonne della griglia";
 "Polaroid" = "Polaroid";
-"Caption Font" = "Tipo carattere";
+"Caption Font" = "Carattere didascalia";
 "Font Weight" = "Spessore carattere";
 "Caption prompt after photo" = "Chiedi didascalia dopo la foto";
 "iCloud" = "iCloud";
 "Sync with iCloud" = "Sincronizza con iCloud";
-"Store your polaroids in iCloud so they're available across your devices. Changes take effect immediately." = "Salva i tuoi polaroid su iCloud per averli su tutti i tuoi dispositivi. Le modifiche hanno effetto immediato.";
 "Privacy" = "Privacy";
 "Privacy Policy" = "Informativa sulla privacy";
 "Terms of Use" = "Termini di utilizzo";
 "App" = "App";
-"About" = "Informazioni";
 "Feedback" = "Feedback";
 "Show Onboarding" = "Mostra introduzione";
 
@@ -40,7 +37,6 @@
 "Skip" = "Salta";
 "Done" = "Fatto";
 "FILM" = "FILM";
-"PACK" = "PACK";
 "VIDEO" = "VIDEO";
 "PHOTO" = "FOTO";
 "TIME LAPSE" = "TIME LAPSE";
@@ -49,10 +45,9 @@
 "Output" = "Output";
 
 /* Library */
-"No Photos Yet" = "Nessuna foto";
+"No Photos Yet" = "Ancora nessuna foto";
 "Take your first photo to see it here" = "Scatta la tua prima foto per vederla qui";
 "Share" = "Condividi";
-"Save" = "Salva";
 "Delete" = "Elimina";
 "Cancel" = "Annulla";
 "Select" = "Seleziona";
@@ -60,7 +55,7 @@
 "Sort" = "Ordina";
 "Grid" = "Griglia";
 "Edit Caption & Notes" = "Modifica didascalia e note";
-"Save to Photos" = "Salva nelle foto";
+"Save to Photos" = "Salva in Foto";
 "Delete this photo?" = "Eliminare questa foto?";
 "1 item" = "1 elemento";
 "%d items" = "%d elementi";
@@ -75,28 +70,23 @@
 "Show map on back" = "Mostra mappa sul retro";
 "Map" = "Mappa";
 "Disable to show your note instead of the map." = "Disattiva per mostrare la nota al posto della mappa.";
-"Edit Polaroid" = "Modifica Polaroid";
+"Edit Polaroid" = "Modifica polaroid";
 
 /* Onboarding */
 "Get Started" = "Inizia";
 "Continue" = "Continua";
 "Poly." = "Poly.";
 "Authentic polaroids,\ndirect from your camera." = "Polaroid autentici,\ndirettamente dalla tua fotocamera.";
-"Camera\nAccess" = "Fotocamera\nAccesso";
-"Pola needs access to your camera to capture authentic polaroid-style photos and videos." = "Pola ha bisogno di accedere alla fotocamera per scattare foto e video in stile polaroid.";
+"Camera\nAccess" = "Accesso alla\nfotocamera";
 
 /* Paywall */
 "Caption Style" = "Stile didascalia";
 "6 fonts × 4 weights" = "6 caratteri × 4 spessori";
 "Clean Exports" = "Esportazioni pulite";
-"poly Premium" = "poly Premium";
+"Poly Premium" = "Poly Premium";
 "Unlock the full experience" = "Sblocca l'esperienza completa";
-"BEST VALUE" = "MIGLIOR VALORE";
+"BEST VALUE" = "MIGLIOR PREZZO";
 "One-time purchase" = "Acquisto una tantum";
-"per month" = "al mese";
-"per year" = "all'anno";
-"per week" = "a settimana";
-"per day" = "al giorno";
 "Monthly" = "Mensile";
 "Yearly" = "Annuale";
 "Lifetime" = "A vita";
@@ -121,7 +111,7 @@
 /* Conversion & premium experience */
 "Show app logo on exports" = "Mostra logo app nelle esportazioni";
 "Manage Subscription" = "Gestisci abbonamento";
-"Upgrade to Lifetime" = "Passa a A vita";
+"Upgrade to Lifetime" = "Passa ad A vita";
 "After upgrading to Lifetime, cancel your subscription in Manage Subscription so you aren't charged again." = "Dopo il passaggio ad A vita, annulla l'abbonamento in Gestisci abbonamento per non ricevere altri addebiti.";
 "Lifetime — yours forever" = "A vita — tuo per sempre";
 "%@ · renews %@" = "%@ · si rinnova il %@";
@@ -129,7 +119,7 @@
 "Date stamp" = "Timbro data";
 "Previewing %@" = "Anteprima: %@";
 "Unlock" = "Sblocca";
-"Remember where you shot it?" = "Ricordare dove l'hai scattata?";
+"Remember where you shot it?" = "Vuoi ricordare dove l'hai scattata?";
 "Double-tap a polaroid to flip it and see a map of where it was taken." = "Tocca due volte un polaroid per girarlo e vedere su una mappa dove è stato scattato.";
 "Not Now" = "Non ora";
 "Enable Location" = "Attiva posizione";
@@ -143,9 +133,8 @@
 "Share as Story" = "Condividi come storia";
 "10 FILM STOCKS" = "10 PELLICOLE";
 "Shoot on\nreal film looks" = "Scatta con\nveri look pellicola";
-"From warm Ektar tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop." = "Dai toni caldi Ektar all'infrarosso e all'horror VHS. Scegli una pellicola, scatta e guarda il tuo polaroid svilupparsi.";
+"From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop." = "Dai toni caldi e dorati all'infrarosso e all'horror VHS. Scegli una pellicola, scatta e guarda il tuo polaroid svilupparsi.";
 "10 Film Stocks" = "10 pellicole";
-"Classic and Weird Film packs" = "Pack Classic e Weird Film";
 "Colored Frames" = "Cornici colorate";
 "Any border color, on any polaroid" = "Qualsiasi colore di cornice, su ogni polaroid";
 "Date Stamp" = "Timbro data";
@@ -165,7 +154,7 @@
 "Unlock all 10 film stocks and keep every look." = "Sblocca tutte le 10 pellicole e tieni ogni look.";
 "This is your last photo on %@. Unlock all 10 film stocks and keep every look." = "Questa è la tua ultima foto su %@. Sblocca tutte le 10 pellicole e tieni ogni look.";
 "Welcome to Premium" = "Benvenuto in Premium";
-"Every film stock, frame and font is now yours. Thank you for supporting poly." = "Tutte le pellicole, cornici e caratteri ora sono tuoi. Grazie per supportare poly.";
+"Every film stock, frame and font is now yours. Thank you for supporting Poly." = "Tutte le pellicole, cornici e caratteri ora sono tuoi. Grazie per supportare Poly.";
 "Start Shooting" = "Inizia a scattare";
 
 /* Trial pricing, frame formats & widget */
@@ -195,3 +184,49 @@
 "One-time purchase. Yours forever." = "Acquisto una tantum. Tuo per sempre.";
 "%@ free, then %@. Cancel anytime." = "%@ gratis, poi %@. Annulla quando vuoi.";
 "%@. Cancel anytime." = "%@. Annulla quando vuoi.";
+
+/* Previously unlocalized UI, fonts & accessibility */
+"Mirror front camera" = "Specchia fotocamera frontale";
+"When enabled, the selfie camera preview and captures appear like a mirror." = "Se attivo, l'anteprima e gli scatti della fotocamera frontale appaiono come allo specchio.";
+"Print animation" = "Animazione di stampa";
+"Your polaroids sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud." = "I tuoi polaroid si sincronizzano automaticamente tramite iCloud. Puoi gestire l'accesso a iCloud in Impostazioni > Account Apple > iCloud.";
+"Rate the App" = "Valuta l'app";
+"Filters" = "Filtri";
+"Original" = "Originale";
+"Processing time lapse…" = "Elaborazione del time lapse…";
+"Newest First" = "Più recenti prima";
+"Oldest First" = "Meno recenti prima";
+"No Results" = "Nessun risultato";
+"No photos matching \"%@\"" = "Nessuna foto corrisponde a “%@”";
+"Search captions…" = "Cerca nelle didascalie…";
+"Loop" = "In loop";
+"Play Once" = "Riproduci una volta";
+"Color" = "Colore";
+"Film stocks, formats, widget & more" = "Pellicole, formati, widget e altro";
+"Poly needs your camera to shoot photos, videos and time lapses that develop like instant film." = "Poly ha bisogno della fotocamera per scattare foto, video e time lapse che si sviluppano come una pellicola istantanea.";
+"Classic Film and Weird Film packs" = "Pack Classic Film e Weird Film";
+"1 day" = "1 giorno";
+"1 month" = "1 mese";
+"1 year" = "1 anno";
+"premium" = "premium";
+"Handwriting" = "Scritta a mano";
+"Default" = "Predefinito";
+"Default Wide" = "Predefinito largo";
+"Default Narrow" = "Predefinito stretto";
+"Serif" = "Serif";
+"Rounded" = "Arrotondato";
+"Thin" = "Sottile";
+"Normal" = "Normale";
+"Semibold" = "Semigrassetto";
+"Bold" = "Grassetto";
+"On" = "Attivo";
+"Off" = "Disattivo";
+"Self-timer" = "Autoscatto";
+"%d seconds" = "%d secondi";
+"Flashlight" = "Torcia";
+"Flip Camera" = "Cambia fotocamera";
+"Take Photo" = "Scatta foto";
+"Start Recording" = "Avvia registrazione";
+"Stop Recording" = "Interrompi registrazione";
+"Start Time Lapse" = "Avvia time lapse";
+"Stop Time Lapse" = "Interrompi time lapse";

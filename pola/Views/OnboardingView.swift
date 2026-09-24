@@ -19,14 +19,14 @@ struct OnboardingView: View {
                     color: Color(red: 1.0, green: 0.78, blue: 0.2),
                     badge: "10 FILM STOCKS",
                     title: "Shoot on\nreal film looks",
-                    description: "From warm Ektar tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop.",
+                    description: "From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop.",
                     visual: AnyView(filterVisual)
                 ).tag(1)
                 permissionPage(
                     color: Color(red: 0.2, green: 0.6, blue: 1.0),
                     systemIcon: "camera.fill",
                     title: "Camera\nAccess",
-                    description: "Pola needs access to your camera to capture authentic polaroid-style photos and videos."
+                    description: "Poly needs your camera to shoot photos, videos and time lapses that develop like instant film."
                 ).tag(2)
                 paywallPage.tag(3)
             }
@@ -79,7 +79,8 @@ struct OnboardingView: View {
                     handleContinue()
                 } label: {
                     HStack(spacing: 6) {
-                        Text(page == 0 ? "Get Started" : "Continue")
+                        // Wrapped explicitly: a ternary of literals would pick Text(String) and skip localization.
+                        Text(LocalizedStringKey(page == 0 ? "Get Started" : "Continue"))
                             .font(.system(size: 17, weight: .semibold))
                         Image(systemName: "arrow.right")
                             .font(.system(size: 14, weight: .semibold))
