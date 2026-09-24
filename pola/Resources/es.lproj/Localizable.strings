@@ -195,3 +195,8 @@
 "One-time purchase. Yours forever." = "Compra única. Tuyo para siempre.";
 "%@ free, then %@. Cancel anytime." = "%@ gratis, luego %@. Cancela cuando quieras.";
 "%@. Cancel anytime." = "%@. Cancela cuando quieras.";
+
+/* Lenses */
+"Lens" = "Lente";
+"No lens" = "Sin lente";
+"Grain and vintage optics, stacked on top of any film." = "Grano y ópticas vintage, combinables con cualquier película.";

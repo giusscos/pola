@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct FilterItemCell: View {
-    let filter: FilmFilter
+    let name: String
+    let color: Color
+    var imageName: String? = nil
     var isSelected: Bool = false
     var locked: Bool = false
     var showNewBadge: Bool = false
@@ -17,16 +19,16 @@ struct FilterItemCell: View {
                         .scaledToFill()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipped()
-                } else if let imageName = filter.imageName {
+                } else if let imageName {
                     Image(imageName)
                         .resizable()
                         .scaledToFill()
                         .clipped()
                 } else {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(filter.color.opacity(0.25))
+                        .fill(color.opacity(0.25))
                     Circle()
-                        .fill(filter.color)
+                        .fill(color)
                         .frame(width: 30, height: 30)
                 }
 
@@ -46,7 +48,7 @@ struct FilterItemCell: View {
                         Spacer()
                         if isSelected {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(filter.color)
+                                .foregroundStyle(color)
                                 .background(.white, in: .circle)
                         } else if locked {
                             Image(systemName: "lock.fill")
@@ -64,15 +66,15 @@ struct FilterItemCell: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(isSelected ? filter.color : .clear, lineWidth: 3)
+                    .strokeBorder(isSelected ? color : .clear, lineWidth: 3)
             )
 
             HStack(spacing: 4) {
                 Circle()
-                    .fill(filter.color)
+                    .fill(color)
                     .frame(width: 7, height: 7)
 
-                Text(filter.name)
+                Text(name)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.primary)
                     .lineLimit(1)

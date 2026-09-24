@@ -15,8 +15,6 @@ enum FilmFilterEffect {
     case frosinn  // FROSINN — cyanotype / blueprint
     case nott     // NÓTT — lo-fi night vision
 
-    private static let context = CIContext()
-
     private static let thermalKernel: CIColorKernel? = {
         guard let data = PolaroidKernels.data else { return nil }
         return try? CIColorKernel(functionName: "thermalKernel", fromMetalLibraryData: data)
@@ -38,9 +36,11 @@ enum FilmFilterEffect {
     }()
 
     func apply(to image: UIImage) -> UIImage {
-        guard let ciImage = CIImage(image: image),
-              let graded  = colorGraded(ciImage)
-        else { return image }
+        FilmPipeline.apply(to: image, film: self, lens: nil)
+    }
+
+    func apply(to input: CIImage) -> CIImage {
+        guard let graded = colorGraded(input) else { return input }
         var result = graded
         if let lift = shadowLift {
             result = fadeFilm(result, lift: lift) ?? result
@@ -54,8 +54,7 @@ enum FilmFilterEffect {
         if appliesGloom {
             result = addGloom(result) ?? result
         }
-        guard let cgImage = Self.context.createCGImage(result, from: result.extent) else { return image }
-        return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
+        return result
     }
 
     private var shadowLift: CGFloat? {
@@ -393,6 +392,7 @@ let polaPackColors: [PolaPackColor] = [
 
 struct FiltersView: View {
     @Binding var selectedFilterName: String?
+    @Binding var selectedLens: Lens?
     @Binding var selectedPackName: String?
     @Binding var selectedFrameFormatRaw: String
     var onPaywallRequested: ((PaywallContext) -> Void)? = nil
@@ -403,6 +403,8 @@ struct FiltersView: View {
 
     private let referenceImage: UIImage? = UIImage(named: "filter_reference")
     @State private var filterPreviews: [String: UIImage] = [:]
+    // Keyed by lens name, with "" for no lens; each shows the selected film through that lens.
+    @State private var lensPreviews: [String: UIImage] = [:]
     // Captured on open so NEW badges stay visible for this visit even though we mark the drop as seen.
     @State private var showNewBadges = false
 
@@ -436,6 +438,23 @@ struct FiltersView: View {
                     .padding(.horizontal, 20)
 
                     filterGrid(for: weirdFilters, includeOriginal: false)
+
+                    HStack(spacing: 8) {
+                        Text("Lens")
+                            .font(.headline)
+                        if showNewBadges {
+                            NewBadge()
+                        }
+                    }
+                    .padding(.horizontal, 20)
+
+                    Text("Grain and vintage optics, stacked on top of any film.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 20)
+                        .padding(.top, -12)
+
+                    lensGrid
 
                     Text("Frame")
                         .font(.headline)
@@ -484,7 +503,9 @@ struct FiltersView: View {
                     dismiss()
                 } label: {
                     FilterItemCell(
-                        filter: filter,
+                        name: filter.name,
+                        color: filter.color,
+                        imageName: filter.imageName,
                         isSelected: isSelected,
                         locked: locked,
                         showNewBadge: showNewBadges && filter.isNew,
@@ -496,6 +517,40 @@ struct FiltersView: View {
             }
         }
         .padding(.horizontal, 16)
+    }
+
+    private var lensGrid: some View {
+        LazyVGrid(columns: columns, spacing: 16) {
+            lensCell(nil)
+            ForEach(Lens.allCases) { lens in
+                lensCell(lens)
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+
+    // Unlike film stocks, picking a lens keeps the sheet open so it can be paired with a stock.
+    private func lensCell(_ lens: Lens?) -> some View {
+        let isSelected = selectedLens == lens
+        let locked = lens?.isLocked(for: premium) ?? false
+        return Button {
+            if let lens, locked, !isSelected {
+                Analytics.track(.lockedFilterPreviewed, ["filter": lens.name])
+            }
+            selectedLens = lens
+        } label: {
+            FilterItemCell(
+                name: lens?.name ?? NSLocalizedString("No lens", comment: ""),
+                color: lens?.color ?? .secondary,
+                imageName: lens == nil ? "filter_reference" : nil,
+                isSelected: isSelected,
+                locked: locked,
+                showNewBadge: showNewBadges && lens?.isNew == true,
+                previewImage: lensPreviews[lens?.name ?? ""]
+            )
+        }
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: selectedLens)
     }
 
     private var frameRow: some View {
@@ -676,6 +731,13 @@ struct FiltersView: View {
             previews[filter.name] = effect.apply(to: small)
         }
         filterPreviews = previews
+
+        let film = filmFilter(named: selectedFilterName)?.effect
+        var lensed: [String: UIImage] = ["": previews[selectedFilterName ?? ""] ?? small]
+        for lens in Lens.allCases {
+            lensed[lens.name] = FilmPipeline.apply(to: small, film: film, lens: lens)
+        }
+        lensPreviews = lensed
     }
 }
 
@@ -691,6 +753,6 @@ struct NewBadge: View {
 }
 
 #Preview {
-    FiltersView(selectedFilterName: .constant(nil), selectedPackName: .constant(nil), selectedFrameFormatRaw: .constant("classic"))
+    FiltersView(selectedFilterName: .constant(nil), selectedLens: .constant(nil), selectedPackName: .constant(nil), selectedFrameFormatRaw: .constant("classic"))
         .environment(PremiumManager.shared)
 }

@@ -17,6 +17,7 @@ final class PolaroidEntry: Identifiable {
     var developmentProgress: Double = 0.0
     var timestamp: Date = Date()
     var filterName: String? = nil
+    var lensName: String? = nil
     var packName: String? = nil
     var packColorHex: String? = nil
     var frameFormatRaw: String = FrameFormat.classic.rawValue
@@ -26,6 +27,7 @@ final class PolaroidEntry: Identifiable {
         videoFilename: String? = nil,
         isTimelapse: Bool = false,
         filterName: String? = nil,
+        lensName: String? = nil,
         packName: String? = nil,
         frameFormat: FrameFormat = .classic,
         coordinate: CLLocationCoordinate2D? = nil
@@ -35,6 +37,7 @@ final class PolaroidEntry: Identifiable {
         self.videoFilename = videoFilename
         self.isTimelapse = isTimelapse
         self.filterName = filterName
+        self.lensName = lensName
         self.packName = packName
         self.frameFormatRaw = frameFormat.rawValue
         self.latitude = coordinate?.latitude
