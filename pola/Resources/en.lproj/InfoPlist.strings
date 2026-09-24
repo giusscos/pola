@@ -1,0 +1,5 @@
+/* Permission prompts (localized Info.plist values) */
+"NSCameraUsageDescription" = "Poly uses the camera to shoot photos, videos and time lapses that develop like instant film.";
+"NSMicrophoneUsageDescription" = "Poly uses the microphone to record sound with your video polaroids. You can turn audio off at any time.";
+"NSLocationWhenInUseUsageDescription" = "Poly saves where each photo was taken so you can flip the polaroid and see it on a map. It's stored only in your library and your iCloud.";
+"NSPhotoLibraryAddUsageDescription" = "Poly saves your finished polaroids to your photo library when you choose to save them.";

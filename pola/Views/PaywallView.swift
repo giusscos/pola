@@ -54,7 +54,7 @@ enum PremiumFeature: CaseIterable {
 
     var subtitle: String {
         switch self {
-        case .filmStocks:   "Classic and Weird Film packs"
+        case .filmStocks:   "Classic Film and Weird Film packs"
         case .frameColors:  "Any border color, on any polaroid"
         case .frameFormats: "Square, Wide and Mini sizes"
         case .captionStyle: "6 fonts × 4 weights"
@@ -226,7 +226,7 @@ struct PaywallView: View {
     // MARK: - Header
 
     private var headerTitle: String {
-        context == .milestone ? "You're on a roll" : "poly Premium"
+        context == .milestone ? "You're on a roll" : "Poly Premium"
     }
 
     private var headerSubtitle: String {
@@ -398,7 +398,7 @@ struct PaywallView: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
-                        Text(product.displayName)
+                        Text(verbatim: PremiumManager.planName(for: product.id) ?? product.displayName)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
                         if hasEligibleTrial(product), let trial = product.freeTrialText {
@@ -683,7 +683,7 @@ private struct PremiumWelcomeView: View {
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : 12)
 
-                Text("Every film stock, frame and font is now yours. Thank you for supporting poly.")
+                Text("Every film stock, frame and font is now yours. Thank you for supporting Poly.")
                     .font(.system(size: 16))
                     .foregroundStyle(.white.opacity(0.6))
                     .multilineTextAlignment(.center)

@@ -35,10 +35,16 @@ final class PremiumManager {
     }
 
     var activePlanName: String? {
-        switch activeProductID {
-        case Self.monthlyID:  return NSLocalizedString("Monthly", comment: "")
-        case Self.yearlyID:   return NSLocalizedString("Yearly", comment: "")
-        case Self.lifetimeID: return NSLocalizedString("Lifetime", comment: "")
+        activeProductID.flatMap(Self.planName(for:))
+    }
+
+    /// Plan names come from the app's own strings so they're translated even when a
+    /// storefront is missing a localization in App Store Connect.
+    static func planName(for productID: String) -> String? {
+        switch productID {
+        case monthlyID:  return NSLocalizedString("Monthly", comment: "")
+        case yearlyID:   return NSLocalizedString("Yearly", comment: "")
+        case lifetimeID: return NSLocalizedString("Lifetime", comment: "")
         default: return nil
         }
     }
@@ -157,13 +163,17 @@ extension Product {
     /// "7 days", "1 month" — used in trial badges and the post-trial disclosure.
     var freeTrialText: String? {
         guard let period = freeTrialPeriod else { return nil }
+        let (count, one, many): (Int, String, String)
         switch period.unit {
-        case .day:   return String(format: NSLocalizedString("%d days", comment: ""), period.value)
-        case .week:  return String(format: NSLocalizedString("%d days", comment: ""), period.value * 7)
-        case .month: return String(format: NSLocalizedString("%d months", comment: ""), period.value)
-        case .year:  return String(format: NSLocalizedString("%d years", comment: ""), period.value)
+        case .day:   (count, one, many) = (period.value, "1 day", "%d days")
+        case .week:  (count, one, many) = (period.value * 7, "1 day", "%d days")
+        case .month: (count, one, many) = (period.value, "1 month", "%d months")
+        case .year:  (count, one, many) = (period.value, "1 year", "%d years")
         @unknown default: return nil
         }
+        return count == 1
+            ? NSLocalizedString(one, comment: "")
+            : String(format: NSLocalizedString(many, comment: ""), count)
     }
 
     /// "$19.99/year", "$2.99/month"; the plain price for non-subscriptions.

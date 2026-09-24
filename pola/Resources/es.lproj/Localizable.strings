@@ -2,10 +2,9 @@
 "Settings" = "Configuración";
 "Language" = "Idioma";
 "Premium" = "Premium";
-"Premium Active" = "Premium Activo";
+"Premium Active" = "Premium activo";
 "All features unlocked" = "Todas las funciones desbloqueadas";
-"Unlock poly Premium" = "Desbloquear poly Premium";
-"Filters, fonts & clean exports" = "Filtros, fuentes y exportaciones limpias";
+"Unlock Poly Premium" = "Desbloquear Poly Premium";
 "Camera" = "Cámara";
 "Default Filter" = "Filtro predeterminado";
 "None" = "Ninguno";
@@ -13,7 +12,7 @@
 "Record audio" = "Grabar audio";
 "Save as video polaroid" = "Guardar como vídeo polaroid";
 "All frames combined into one video" = "Todos los fotogramas en un vídeo";
-"Time Lapse" = "Lapso de tiempo";
+"Time Lapse" = "Time-lapse";
 "Library" = "Biblioteca";
 "1 Column" = "1 Columna";
 "2 Columns" = "2 Columnas";
@@ -25,12 +24,10 @@
 "Caption prompt after photo" = "Pedir leyenda después de la foto";
 "iCloud" = "iCloud";
 "Sync with iCloud" = "Sincronizar con iCloud";
-"Store your polaroids in iCloud so they're available across your devices. Changes take effect immediately." = "Almacena tus polaroids en iCloud para tenerlos en todos tus dispositivos. Los cambios tienen efecto inmediato.";
 "Privacy" = "Privacidad";
 "Privacy Policy" = "Política de privacidad";
 "Terms of Use" = "Términos de uso";
 "App" = "App";
-"About" = "Acerca de";
 "Feedback" = "Comentarios";
 "Show Onboarding" = "Mostrar presentación";
 
@@ -40,19 +37,17 @@
 "Skip" = "Omitir";
 "Done" = "Listo";
 "FILM" = "FILM";
-"PACK" = "PACK";
 "VIDEO" = "VIDEO";
 "PHOTO" = "FOTO";
-"TIME LAPSE" = "TIME LAPSE";
+"TIME LAPSE" = "TIME-LAPSE";
 "Interval" = "Intervalo";
 "Duration" = "Duración";
 "Output" = "Salida";
 
 /* Library */
-"No Photos Yet" = "Sin fotos aún";
+"No Photos Yet" = "Aún no hay fotos";
 "Take your first photo to see it here" = "Toma tu primera foto para verla aquí";
 "Share" = "Compartir";
-"Save" = "Guardar";
 "Delete" = "Eliminar";
 "Cancel" = "Cancelar";
 "Select" = "Seleccionar";
@@ -60,7 +55,7 @@
 "Sort" = "Ordenar";
 "Grid" = "Cuadrícula";
 "Edit Caption & Notes" = "Editar leyenda y notas";
-"Save to Photos" = "Guardar en fotos";
+"Save to Photos" = "Guardar en Fotos";
 "Delete this photo?" = "¿Eliminar esta foto?";
 "1 item" = "1 elemento";
 "%d items" = "%d elementos";
@@ -75,28 +70,23 @@
 "Show map on back" = "Mostrar mapa en el reverso";
 "Map" = "Mapa";
 "Disable to show your note instead of the map." = "Desactiva para mostrar tu nota en lugar del mapa.";
-"Edit Polaroid" = "Editar Polaroid";
+"Edit Polaroid" = "Editar polaroid";
 
 /* Onboarding */
 "Get Started" = "Empezar";
 "Continue" = "Continuar";
 "Poly." = "Poly.";
 "Authentic polaroids,\ndirect from your camera." = "Polaroids auténticos,\ndirectamente desde tu cámara.";
-"Camera\nAccess" = "Cámara\nAcceso";
-"Pola needs access to your camera to capture authentic polaroid-style photos and videos." = "Pola necesita acceso a la cámara para capturar fotos y vídeos auténticos al estilo polaroid.";
+"Camera\nAccess" = "Acceso a\nla cámara";
 
 /* Paywall */
 "Caption Style" = "Estilo de leyenda";
 "6 fonts × 4 weights" = "6 fuentes × 4 pesos";
 "Clean Exports" = "Exportaciones limpias";
-"poly Premium" = "poly Premium";
+"Poly Premium" = "Poly Premium";
 "Unlock the full experience" = "Desbloquea la experiencia completa";
-"BEST VALUE" = "MEJOR VALOR";
+"BEST VALUE" = "MEJOR PRECIO";
 "One-time purchase" = "Compra única";
-"per month" = "al mes";
-"per year" = "al año";
-"per week" = "a la semana";
-"per day" = "al día";
 "Monthly" = "Mensual";
 "Yearly" = "Anual";
 "Lifetime" = "De por vida";
@@ -126,7 +116,7 @@
 "Lifetime — yours forever" = "De por vida — tuyo para siempre";
 "%@ · renews %@" = "%@ · se renueva el %@";
 "%@ · ends %@" = "%@ · termina el %@";
-"Date stamp" = "Sello de fecha";
+"Date stamp" = "Fecha impresa";
 "Previewing %@" = "Vista previa: %@";
 "Unlock" = "Desbloquear";
 "Remember where you shot it?" = "¿Recordar dónde la hiciste?";
@@ -143,12 +133,11 @@
 "Share as Story" = "Compartir como historia";
 "10 FILM STOCKS" = "10 PELÍCULAS";
 "Shoot on\nreal film looks" = "Dispara con\nlooks de película real";
-"From warm Ektar tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop." = "De los cálidos tonos Ektar al infrarrojo y el terror VHS. Elige una película, dispara y mira cómo se revela tu polaroid.";
+"From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop." = "De los cálidos tonos dorados al infrarrojo y el terror VHS. Elige una película, dispara y mira cómo se revela tu polaroid.";
 "10 Film Stocks" = "10 películas";
-"Classic and Weird Film packs" = "Packs Classic y Weird Film";
 "Colored Frames" = "Marcos de colores";
-"Any border color, on any polaroid" = "Cualquier color de marco en cualquier polaroid";
-"Date Stamp" = "Sello de fecha";
+"Any border color, on any polaroid" = "Cualquier color de marco";
+"Date Stamp" = "Fecha impresa";
 "Retro date imprint on your shots" = "Fecha retro impresa en tus fotos";
 "Print Sheets" = "Hojas de impresión";
 "A4 layouts ready to print at home" = "Diseños A4 listos para imprimir en casa";
@@ -165,7 +154,7 @@
 "Unlock all 10 film stocks and keep every look." = "Desbloquea las 10 películas y quédate con cada look.";
 "This is your last photo on %@. Unlock all 10 film stocks and keep every look." = "Esta es tu última foto con %@. Desbloquea las 10 películas y quédate con cada look.";
 "Welcome to Premium" = "Bienvenido a Premium";
-"Every film stock, frame and font is now yours. Thank you for supporting poly." = "Todas las películas, marcos y fuentes son tuyos. Gracias por apoyar poly.";
+"Every film stock, frame and font is now yours. Thank you for supporting Poly." = "Todas las películas, marcos y fuentes son tuyos. Gracias por apoyar Poly.";
 "Start Shooting" = "Empieza a disparar";
 
 /* Trial pricing, frame formats & widget */
@@ -195,6 +184,52 @@
 "One-time purchase. Yours forever." = "Compra única. Tuyo para siempre.";
 "%@ free, then %@. Cancel anytime." = "%@ gratis, luego %@. Cancela cuando quieras.";
 "%@. Cancel anytime." = "%@. Cancela cuando quieras.";
+
+/* Previously unlocalized UI, fonts & accessibility */
+"Mirror front camera" = "Reflejar cámara frontal";
+"When enabled, the selfie camera preview and captures appear like a mirror." = "Si está activado, la vista previa y las fotos de la cámara frontal se ven como en un espejo.";
+"Print animation" = "Animación de impresión";
+"Your polaroids sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud." = "Tus polaroids se sincronizan automáticamente con iCloud. Puedes gestionar el acceso a iCloud en Ajustes > Cuenta de Apple > iCloud.";
+"Rate the App" = "Valorar la app";
+"Filters" = "Filtros";
+"Original" = "Original";
+"Processing time lapse…" = "Procesando time-lapse…";
+"Newest First" = "Más recientes primero";
+"Oldest First" = "Más antiguas primero";
+"No Results" = "Sin resultados";
+"No photos matching \"%@\"" = "No hay fotos que coincidan con «%@»";
+"Search captions…" = "Buscar leyendas…";
+"Loop" = "En bucle";
+"Play Once" = "Reproducir una vez";
+"Color" = "Color";
+"Film stocks, formats, widget & more" = "Películas, formatos, widget y más";
+"Poly needs your camera to shoot photos, videos and time lapses that develop like instant film." = "Poly necesita tu cámara para hacer fotos, vídeos y time-lapses que se revelan como una película instantánea.";
+"Classic Film and Weird Film packs" = "Packs Classic Film y Weird Film";
+"1 day" = "1 día";
+"1 month" = "1 mes";
+"1 year" = "1 año";
+"premium" = "premium";
+"Handwriting" = "Manuscrita";
+"Default" = "Predeterminada";
+"Default Wide" = "Predeterminada ancha";
+"Default Narrow" = "Predeterminada estrecha";
+"Serif" = "Serif";
+"Rounded" = "Redondeada";
+"Thin" = "Fina";
+"Normal" = "Normal";
+"Semibold" = "Seminegrita";
+"Bold" = "Negrita";
+"On" = "Activado";
+"Off" = "Desactivado";
+"Self-timer" = "Temporizador";
+"%d seconds" = "%d segundos";
+"Flashlight" = "Linterna";
+"Flip Camera" = "Cambiar cámara";
+"Take Photo" = "Hacer foto";
+"Start Recording" = "Empezar a grabar";
+"Stop Recording" = "Detener grabación";
+"Start Time Lapse" = "Iniciar time-lapse";
+"Stop Time Lapse" = "Detener time-lapse";
 
 /* Lenses */
 "Lens" = "Lente";

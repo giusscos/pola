@@ -54,7 +54,8 @@ enum FilmFilterEffect {
         if appliesGloom {
             result = addGloom(result) ?? result
         }
-        return result
+        // Never let an effect change the photo's size.
+        return result.cropped(to: input.extent)
     }
 
     private var shadowLift: CGFloat? {
@@ -142,12 +143,14 @@ enum FilmFilterEffect {
         return vignette.outputImage
     }
 
+    // CIGloom blurs, so it samples past the edges and grows the extent: clamp first so the
+    // borders don't fade to transparent, then crop back to the original frame.
     private func addGloom(_ input: CIImage) -> CIImage? {
         guard let gloom = CIFilter(name: "CIGloom") else { return input }
-        gloom.setValue(input, forKey: kCIInputImageKey)
+        gloom.setValue(input.clampedToExtent(), forKey: kCIInputImageKey)
         gloom.setValue(5.0,   forKey: kCIInputRadiusKey)
         gloom.setValue(0.4,   forKey: kCIInputIntensityKey)
-        return gloom.outputImage
+        return gloom.outputImage?.cropped(to: input.extent)
     }
 
     private func applyColorKernel(_ kernel: CIColorKernel?, to input: CIImage) -> CIImage {
@@ -422,14 +425,15 @@ struct FiltersView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 4)
 
-                    Text("Film")
+                    // Pack names are product names and stay in English, like the stock names.
+                    Text(verbatim: "Classic Film")
                         .font(.headline)
                         .padding(.horizontal, 20)
 
                     filterGrid(for: filmFilters, includeOriginal: true)
 
                     HStack(spacing: 8) {
-                        Text("Weird Film")
+                        Text(verbatim: "Weird Film")
                             .font(.headline)
                         if showNewBadges {
                             NewBadge()

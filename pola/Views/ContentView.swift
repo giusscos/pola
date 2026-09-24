@@ -126,10 +126,13 @@ struct ContentView: View {
             Button { cameraManager.toggleAudio() } label: {
                 Image(systemName: icon).foregroundStyle(tint)
             }
+            .accessibilityLabel(Text("Record audio"))
+            .accessibilityValue(Text(LocalizedStringKey(cameraManager.isAudioEnabled ? "On" : "Off")))
         } else if cameraMode == .timeLapse {
             Button { showTimeLapseSettings = true } label: {
                 Image(systemName: "slider.horizontal.3")
             }
+            .accessibilityLabel(Text("Time Lapse"))
             .matchedTransitionSource(id: "timelapse", in: sheetZoom)
         }
     }
@@ -153,6 +156,10 @@ struct ContentView: View {
                     Image(systemName: "timer")
                 }
             }
+            .accessibilityLabel(Text("Self-timer"))
+            .accessibilityValue(shootingTimerDelay > 0
+                                ? Text(verbatim: String(format: NSLocalizedString("%d seconds", comment: ""), shootingTimerDelay))
+                                : Text("Off"))
         }
     }
 
@@ -280,6 +287,7 @@ struct ContentView: View {
                     Button { showSettings = true } label: {
                         Image(systemName: "gearshape.fill")
                     }
+                    .accessibilityLabel(Text("Settings"))
                     .matchedTransitionSource(id: "settings", in: sheetZoom)
                 }
 
@@ -288,6 +296,8 @@ struct ContentView: View {
                         Image(systemName: cameraManager.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
                             .foregroundStyle(cameraManager.isTorchOn ? .yellow : .primary)
                     }
+                    .accessibilityLabel(Text("Flashlight"))
+                    .accessibilityValue(Text(LocalizedStringKey(cameraManager.isTorchOn ? "On" : "Off")))
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -302,6 +312,7 @@ struct ContentView: View {
                     Button { flipCameraWithAnimation() } label: {
                         Image(systemName: "arrow.triangle.2.circlepath.camera")
                     }
+                    .accessibilityLabel(Text("Flip Camera"))
                 }
             }
         }
@@ -669,6 +680,14 @@ struct ContentView: View {
         shutterButton
     }
 
+    private var shutterAccessibilityLabel: LocalizedStringKey {
+        switch cameraMode {
+        case .photo: "Take Photo"
+        case .video: cameraManager.isRecording ? "Stop Recording" : "Start Recording"
+        case .timeLapse: cameraManager.isTimelapsing ? "Stop Time Lapse" : "Start Time Lapse"
+        }
+    }
+
     private var shutterButton: some View {
         Button {
             handleShutter()
@@ -724,6 +743,7 @@ struct ContentView: View {
             }
         }
         .modifier(PolaGlassEffectModifier())
+        .accessibilityLabel(Text(shutterAccessibilityLabel))
     }
 
     private var filmButton: some View {
@@ -755,6 +775,10 @@ struct ContentView: View {
         .onTapGesture {
             showFiltersSheet = true
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Filters"))
+        .accessibilityValue(Text(verbatim: selectedFilterName ?? NSLocalizedString("Original", comment: "")))
+        .accessibilityAddTraits(.isButton)
     }
 
     @ViewBuilder
@@ -858,6 +882,7 @@ struct ContentView: View {
                     .frame(width: 44, height: 44)
                 }
             }
+            .accessibilityLabel(Text("Library"))
             .matchedTransitionSource(id: "library", in: sheetZoom)
             .frame(width: 72, alignment: .leading)
 
