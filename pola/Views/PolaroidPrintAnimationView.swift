@@ -396,6 +396,7 @@ final class PolaroidPrintAnimationVC: UIViewController {
         if progress >= 1.0 {
             displayLink?.invalidate()
             displayLink = nil
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
         }
     }
 

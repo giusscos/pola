@@ -144,6 +144,7 @@ final class PolaroidDetailViewController: UIViewController {
         CATransaction.commit()
         if progress >= 1.0 {
             entry.developmentProgress = 1.0
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
             try? modelContext.save()
             developmentLink?.invalidate()
             developmentLink = nil
@@ -290,8 +291,18 @@ final class PolaroidDetailViewController: UIViewController {
     private func updateToolbar() {
         let flex = UIBarButtonItem(systemItem: .flexibleSpace)
 
-        let shareBtn = UIBarButtonItem(image: UIImage(systemName: "square.and.arrow.up"), style: .plain,
-                                       target: self, action: #selector(shareCurrent))
+        // Tap shares the polaroid; long-press offers the story layout.
+        let shareBtn = UIBarButtonItem(
+            title: nil,
+            image: UIImage(systemName: "square.and.arrow.up"),
+            primaryAction: UIAction { [weak self] _ in self?.shareCurrent() },
+            menu: UIMenu(children: [
+                UIAction(title: NSLocalizedString("Share as Story", comment: ""),
+                         image: UIImage(systemName: "rectangle.portrait.on.rectangle.portrait")) { [weak self] _ in
+                    self?.shareCurrentAsStory()
+                }
+            ])
+        )
         let saveIcon = saveDidSucceed ? "checkmark" : "square.and.arrow.down"
         let saveBtn = UIBarButtonItem(image: UIImage(systemName: saveIcon), style: .plain,
                                       target: self, action: #selector(saveCurrent))
@@ -342,14 +353,17 @@ final class PolaroidDetailViewController: UIViewController {
         updateToolbar()
     }
 
-    @objc private func shareCurrent() {
+    private func shareCurrent() {
         guard let entry = currentEntry else { return }
         Task {
             let items = await prepareShareItems(for: [entry], videoDirectory: store.videoDirectory)
-            await MainActor.run {
-                present(UIActivityViewController(activityItems: items, applicationActivities: nil), animated: true)
-            }
+            presentShareSheet(items: items, sourceItem: toolbarItems?.first)
         }
+    }
+
+    private func shareCurrentAsStory() {
+        guard let entry = currentEntry else { return }
+        presentShareSheet(items: [renderPolaroidStory(entry)], event: .storyShared, sourceItem: toolbarItems?.first)
     }
 
     @objc private func saveCurrent() {
@@ -375,6 +389,7 @@ final class PolaroidDetailViewController: UIViewController {
             }
         }
         isSaving = false; saveDidSucceed = true; updateToolbar()
+        ReviewPrompter.requestIfAppropriate()
         try? await Task.sleep(for: .seconds(2))
         saveDidSucceed = false; updateToolbar()
     }

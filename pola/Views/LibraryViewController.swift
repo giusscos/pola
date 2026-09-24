@@ -59,7 +59,7 @@ final class LibraryViewController: UICollectionViewController {
         switch columnCount { case 1: return 1.3; case 2: return 1; default: return 0.6 }
     }
 
-    private let categoryNames = ["All", "FL\u{00C4}RN", "SOLVA", "BR\u{00D6}KK", "VYLUR", "GR\u{00C5}LT"]
+    private let categoryNames = ["All"] + allFilters.map(\.name)
 
     private var filteredEntries: [PolaroidEntry] {
         var result = entries
@@ -358,9 +358,9 @@ final class LibraryViewController: UICollectionViewController {
             })
         } else {
             fontMenuElement = UIAction(title: NSLocalizedString("Caption Font", comment: ""),
-                                       image: UIImage(systemName: "lock.fill")) { [weak self] _ in self?.showPaywall() }
+                                       image: UIImage(systemName: "lock.fill")) { [weak self] _ in self?.showPaywall(.feature(.captionStyle)) }
             weightMenuElement = UIAction(title: NSLocalizedString("Font Weight", comment: ""),
-                                         image: UIImage(systemName: "lock.fill")) { [weak self] _ in self?.showPaywall() }
+                                         image: UIImage(systemName: "lock.fill")) { [weak self] _ in self?.showPaywall(.feature(.captionStyle)) }
         }
 
         return UIMenu(children: [filterMenu, sortMenu, gridMenu, fontMenuElement, weightMenuElement])
@@ -396,10 +396,13 @@ final class LibraryViewController: UICollectionViewController {
         let saveBtn = UIBarButtonItem(image: UIImage(systemName: saveIcon), style: .plain,
                                       target: self, action: #selector(saveSelected))
         saveBtn.isEnabled = !isSaving && !saveDidSucceed
+        let printIcon = premium.isPremium ? "printer" : "printer.fill"
+        let printBtn = UIBarButtonItem(image: UIImage(systemName: printIcon), style: .plain,
+                                       target: self, action: #selector(printSheetSelected))
         let deleteBtn = UIBarButtonItem(image: UIImage(systemName: "trash"), style: .plain,
                                         target: self, action: #selector(deleteSelectedPrompt))
         deleteBtn.tintColor = .systemRed
-        selectToolbar?.items = [shareBtn, flex, saveBtn, flex, deleteBtn]
+        selectToolbar?.items = [shareBtn, flex, saveBtn, flex, printBtn, flex, deleteBtn]
     }
 
     // MARK: - Search
@@ -522,10 +525,19 @@ final class LibraryViewController: UICollectionViewController {
         let selected = entries.filter { selectedIDs.contains($0.id) }
         Task {
             let items = await prepareShareItems(for: selected, videoDirectory: store.videoDirectory)
-            await MainActor.run {
-                present(UIActivityViewController(activityItems: items, applicationActivities: nil), animated: true)
-            }
+            presentShareSheet(items: items)
         }
+    }
+
+    @objc private func printSheetSelected() {
+        guard premium.isPremium else {
+            showPaywall(.feature(.printSheets))
+            return
+        }
+        let selected = filteredEntries.filter { selectedIDs.contains($0.id) }
+        guard let url = renderPolaroidPrintSheet(selected) else { return }
+        Analytics.track(.printSheetCreated, ["count": "\(selected.count)"])
+        presentShareSheet(items: [url], event: .printSheetCreated)
     }
 
     @objc private func saveSelected() {
@@ -576,6 +588,7 @@ final class LibraryViewController: UICollectionViewController {
         isSaving = false
         saveDidSucceed = true
         updateSelectToolbar()
+        ReviewPrompter.requestIfAppropriate()
         try? await Task.sleep(for: .seconds(2))
         saveDidSucceed = false
         updateSelectToolbar()
@@ -596,10 +609,13 @@ final class LibraryViewController: UICollectionViewController {
         }
     }
 
-    private func showPaywall() {
-        let vc = UIHostingController(rootView: PaywallView(onClose: { [weak self] in self?.dismiss(animated: true) })
-            .environment(PremiumManager.shared))
-        present(vc, animated: true)
+    private func showPaywall(_ context: PaywallContext) {
+        let paywall = PaywallView(context: context, onClose: { [weak self] in
+            self?.dismiss(animated: true)
+            self?.updateNavigationBarButtons()
+            self?.updateSelectToolbar()
+        })
+        present(UIHostingController(rootView: paywall.environment(PremiumManager.shared)), animated: true)
     }
 
     // MARK: - Context menu
@@ -630,10 +646,12 @@ final class LibraryViewController: UICollectionViewController {
                         guard let self else { return }
                         Task {
                             let items = await prepareShareItems(for: [entry], videoDirectory: self.store.videoDirectory)
-                            await MainActor.run {
-                                self.present(UIActivityViewController(activityItems: items, applicationActivities: nil), animated: true)
-                            }
+                            self.presentShareSheet(items: items)
                         }
+                    },
+                    UIAction(title: NSLocalizedString("Share as Story", comment: ""),
+                             image: UIImage(systemName: "rectangle.portrait.on.rectangle.portrait")) { [weak self] _ in
+                        self?.presentShareSheet(items: [renderPolaroidStory(entry)], event: .storyShared)
                     },
                     UIAction(title: NSLocalizedString("Delete", comment: ""),
                              image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in

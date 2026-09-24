@@ -46,9 +46,18 @@ struct ContentView: View {
     @Namespace private var sheetZoom
     @Namespace private var zoomNamespace
     @Environment(PremiumManager.self) private var premium
-    @Environment(\.requestReview) private var requestReview
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("totalPhotosCount") private var totalPhotosCount: Int = 0
-    @State private var showPaywall = false
+    @AppStorage("defaultFilter") private var defaultFilter: String = "None"
+    @AppStorage("hasAnsweredLocationPrompt") private var hasAnsweredLocationPrompt = false
+    @AppStorage("hasSeenMilestonePaywall") private var hasSeenMilestonePaywall = false
+    @AppStorage(FilmDrops.seenKey) private var seenDropID = 0
+    // Drives the paywall sheet via `.sheet(item:)` so the sheet always sees the context it was opened with.
+    @State private var paywallContext: PaywallContext? = nil
+    // Paywall requested from inside the Filters sheet; shown once that sheet has finished dismissing.
+    @State private var pendingPaywallContext: PaywallContext? = nil
+    @State private var showLocationPrompt = false
+    @State private var didApplyDefaultFilter = false
     @State private var showFiltersSheet = false
     @State private var printingEntry: PolaroidEntry? = nil
     @State private var printingEntries: [PolaroidEntry] = []
@@ -60,6 +69,14 @@ struct ContentView: View {
 
     private var activeFilter: FilmFilter? {
         filmFilter(named: selectedFilterName)
+    }
+
+    private var isPreviewingLockedFilter: Bool {
+        activeFilter?.isLocked(for: premium) == true
+    }
+
+    private func presentPaywall(_ context: PaywallContext) {
+        paywallContext = context
     }
 
     @ViewBuilder
@@ -148,6 +165,14 @@ struct ContentView: View {
                                     }
                                 }
                             }
+                            .overlay(alignment: .top) {
+                                if isPreviewingLockedFilter, let filter = activeFilter {
+                                    lockedPreviewBanner(for: filter)
+                                        .padding(.top, 12)
+                                        .transition(.move(edge: .top).combined(with: .opacity))
+                                }
+                            }
+                            .animation(.spring(duration: 0.4, bounce: 0.2), value: isPreviewingLockedFilter)
                         Spacer()
                     }
                 } else {
@@ -162,6 +187,12 @@ struct ContentView: View {
 
                 VStack(spacing: 0) {
                     Spacer()
+                    if showLocationPrompt && printingEntry == nil && !showCaptionInput {
+                        locationPromptCard
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 12)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
                     if showCaptionInput && printingEntry == nil {
                         captionInputCard
                             .padding(.horizontal, 20)
@@ -185,6 +216,7 @@ struct ContentView: View {
                 }
                 .animation(.spring(duration: 0.45, bounce: 0.2), value: activeStrip)
                 .animation(.spring(duration: 0.4, bounce: 0.1), value: showCaptionInput)
+                .animation(.spring(duration: 0.4, bounce: 0.1), value: showLocationPrompt)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 bottomRow
@@ -233,14 +265,23 @@ struct ContentView: View {
                 .environment(LanguageManager.shared)
                 .navigationTransition(.zoom(sourceID: "settings", in: sheetZoom))
         }
-        .sheet(isPresented: $showPaywall) {
-            PaywallView(onClose: { showPaywall = false })
-                .environment(PremiumManager.shared)
+        .sheet(item: $paywallContext) { context in
+            PaywallView(
+                context: context,
+                previewImage: context.highlighted == .filmStocks ? allEntries.first?.image : nil,
+                onClose: { paywallContext = nil }
+            )
+            .environment(PremiumManager.shared)
         }
-        .sheet(isPresented: $showFiltersSheet) {
-            FiltersView(selectedFilterName: $selectedFilterName, onPaywallRequested: {
+        .sheet(isPresented: $showFiltersSheet, onDismiss: {
+            if let pending = pendingPaywallContext {
+                pendingPaywallContext = nil
+                presentPaywall(pending)
+            }
+        }) {
+            FiltersView(selectedFilterName: $selectedFilterName, selectedPackName: $selectedPackName, onPaywallRequested: { context in
+                pendingPaywallContext = context
                 showFiltersSheet = false
-                showPaywall = true
             })
             .environment(PremiumManager.shared)
             .navigationTransition(.zoom(sourceID: "filtersSheet", in: sheetZoom))
@@ -254,7 +295,10 @@ struct ContentView: View {
                 PolaroidPrintAnimationView(
                     entry: entry,
                     captionEnabled: captionPromptEnabled,
-                    onComplete: { printingEntry = nil }
+                    onComplete: {
+                        printingEntry = nil
+                        captureFlowFinished()
+                    }
                 )
                 .ignoresSafeArea()
                 .transition(.opacity)
@@ -264,7 +308,10 @@ struct ContentView: View {
             if !printingEntries.isEmpty {
                 MultiPolaroidPrintAnimationView(
                     entries: printingEntries,
-                    onComplete: { printingEntries = [] }
+                    onComplete: {
+                        printingEntries = []
+                        captureFlowFinished()
+                    }
                 )
                 .ignoresSafeArea()
                 .transition(.opacity)
@@ -281,10 +328,25 @@ struct ContentView: View {
         .animation(.easeIn(duration: 0.15), value: printingEntries.isEmpty)
         .animation(.easeInOut(duration: 0.25), value: isProcessingTimelapse)
         .task {
+            applyDefaultFilterIfNeeded()
             if hasSeenOnboarding {
                 await cameraManager.configure()
             }
             store.migrateIfNeeded(into: modelContext)
+        }
+        .onChange(of: premium.isPremium) { _, isPremium in
+            if isPremium { applyDefaultFilterIfNeeded() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // Catch renewals, expirations and refunds that happened while the app was in the background.
+            if phase == .active {
+                Task { await premium.refreshPurchaseStatus() }
+            }
+        }
+        .onChange(of: cameraMode) { _, mode in
+            if mode == .video {
+                Task { await cameraManager.prepareMicrophone() }
+            }
         }
         .onChange(of: hasSeenOnboarding) { _, newValue in
             if newValue {
@@ -318,11 +380,13 @@ struct ContentView: View {
                 timelapsePendingEntries.append(entry)
             } else {
                 totalPhotosCount += 1
-                if totalPhotosCount == 7 { requestReview() }
+                Analytics.track(.photoCaptured, ["filter": selectedFilterName ?? "none"])
                 if printAnimationEnabled {
                     printingEntry = entry
                 } else if captionPromptEnabled {
                     showCaptionInput = true
+                } else {
+                    captureFlowFinished()
                 }
             }
         }
@@ -343,11 +407,13 @@ struct ContentView: View {
                 modelContext.insert(entry)
                 pendingEntryID = entry.id
                 totalPhotosCount += 1
-                if totalPhotosCount == 7 { requestReview() }
+                Analytics.track(.videoCaptured, ["filter": selectedFilterName ?? "none"])
                 if printAnimationEnabled {
                     printingEntry = entry
                 } else if captionPromptEnabled {
                     showCaptionInput = true
+                } else {
+                    captureFlowFinished()
                 }
             }
         }
@@ -376,10 +442,13 @@ struct ContentView: View {
                     entry.videoFilename = store.saveVideo(from: videoURL, id: entry.id)
                     modelContext.insert(entry)
                     pendingEntryID = entry.id
+                    Analytics.track(.timelapseCaptured, ["filter": selectedFilterName ?? "none"])
                     if printAnimationEnabled {
                         printingEntry = entry
                     } else if captionPromptEnabled {
                         showCaptionInput = true
+                    } else {
+                        captureFlowFinished()
                     }
                 }
             }
@@ -396,9 +465,11 @@ struct ContentView: View {
                     isInTimelapse = false
                     guard !timelapsePendingEntries.isEmpty else { return }
                     totalPhotosCount += timelapsePendingEntries.count
-                    if totalPhotosCount >= 7 { requestReview() }
+                    Analytics.track(.timelapseCaptured, ["filter": selectedFilterName ?? "none"])
                     if printAnimationEnabled {
                         printingEntries = timelapsePendingEntries
+                    } else {
+                        captureFlowFinished()
                     }
                     timelapsePendingEntries = []
                 }
@@ -413,10 +484,10 @@ struct ContentView: View {
             HStack(spacing: 10) {
                 ForEach(allFilters) { filter in
                     let isSelected = selectedFilterName == filter.name
-                    let locked = !premium.isPremium
+                    let locked = filter.isLocked(for: premium)
                     filterCard(filter: filter, isSelected: isSelected, locked: locked) {
                         if locked {
-                            showPaywall = true
+                            presentPaywall(.filter(filter.name))
                         } else {
                             withAnimation(.snappy) {
                                 selectedFilterName = isSelected ? nil : filter.name
@@ -437,10 +508,10 @@ struct ContentView: View {
             HStack(spacing: 10) {
                 ForEach(polaPackColors) { pack in
                     let isSelected = selectedPackName == pack.name
-                    let locked = !premium.isPremium
+                    let locked = pack.isLocked(for: premium)
                     packCard(pack: pack, isSelected: isSelected, locked: locked) {
                         if locked {
-                            showPaywall = true
+                            presentPaywall(.feature(.frameColors))
                         } else {
                             withAnimation(.snappy) {
                                 selectedPackName = isSelected ? nil : pack.name
@@ -603,6 +674,15 @@ struct ContentView: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundStyle(isActive ? .white : .white.opacity(0.65))
                     .scaleEffect(isActive ? 1.08 : 1.0)
+            }
+            .overlay(alignment: .topTrailing) {
+                if seenDropID < FilmDrops.latestDropID {
+                    Circle()
+                        .fill(Color(red: 1.0, green: 0.8, blue: 0.3))
+                        .frame(width: 10, height: 10)
+                        .overlay(Circle().strokeBorder(.black, lineWidth: 1.5))
+                        .offset(x: -2, y: 2)
+                }
             }
             Text("FILM")
                 .font(.system(size: 10, weight: .semibold))
@@ -804,6 +884,103 @@ struct ContentView: View {
         pendingCaption = ""
         pendingEntryID = nil
         withAnimation { showCaptionInput = false }
+        captureFlowFinished()
+    }
+
+    // MARK: - Post-capture moments
+
+    /// Runs once a capture has fully settled (print animation or caption done). At most one
+    /// follow-up is shown per capture, in priority order: location opt-in, milestone paywall, review.
+    private func captureFlowFinished() {
+        if !hasAnsweredLocationPrompt && cameraManager.locationStatus == .notDetermined {
+            withAnimation { showLocationPrompt = true }
+            return
+        }
+        if !premium.isPremium && !hasSeenMilestonePaywall && totalPhotosCount >= 3 {
+            hasSeenMilestonePaywall = true
+            Task {
+                try? await Task.sleep(for: .seconds(0.4))
+                presentPaywall(.milestone)
+            }
+            return
+        }
+        ReviewPrompter.requestIfAppropriate()
+    }
+
+    private func applyDefaultFilterIfNeeded() {
+        guard !didApplyDefaultFilter,
+              let filter = filmFilter(named: defaultFilter),
+              !filter.isLocked(for: premium) else { return }
+        didApplyDefaultFilter = true
+        selectedFilterName = filter.name
+    }
+
+    // MARK: - Locked filter preview
+
+    private func lockedPreviewBanner(for filter: FilmFilter) -> some View {
+        Button {
+            presentPaywall(.filter(filter.name))
+        } label: {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(filter.color)
+                    .frame(width: 8, height: 8)
+                Text(String(format: NSLocalizedString("Previewing %@", comment: ""), filter.name))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text("Unlock")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color(red: 1.0, green: 0.8, blue: 0.3), in: Capsule())
+            }
+            .padding(.leading, 14)
+            .padding(.trailing, 5)
+            .padding(.vertical, 5)
+            .background(.black.opacity(0.55), in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Location opt-in
+
+    private var locationPromptCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "map.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Color(red: 0.2, green: 0.85, blue: 0.55))
+                    .frame(width: 36, height: 36)
+                    .background(Color(red: 0.2, green: 0.85, blue: 0.55).opacity(0.15), in: RoundedRectangle(cornerRadius: 9))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Remember where you shot it?")
+                        .font(.headline)
+                    Text("Double-tap a polaroid to flip it and see a map of where it was taken.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            HStack {
+                Button("Not Now") { answerLocationPrompt(enable: false) }
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Enable Location") { answerLocationPrompt(enable: true) }
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+            }
+            .font(.callout)
+        }
+        .padding(16)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.3), radius: 12, y: 4)
+    }
+
+    private func answerLocationPrompt(enable: Bool) {
+        hasAnsweredLocationPrompt = true
+        withAnimation { showLocationPrompt = false }
+        Analytics.track(.locationPromptAnswered, ["enabled": enable ? "yes" : "no"])
+        if enable { cameraManager.requestLocationAccess() }
     }
 
     // MARK: - Video helpers
@@ -900,6 +1077,12 @@ struct ContentView: View {
     // MARK: - Shutter actions
 
     private func handleShutter() {
+        if let filter = activeFilter, filter.isLocked(for: premium),
+           !cameraManager.isRecording, !cameraManager.isTimelapsing {
+            Analytics.track(.lockedFilterCaptureBlocked, ["filter": filter.name])
+            presentPaywall(.filter(filter.name))
+            return
+        }
         if cameraMode == .video && cameraManager.isRecording {
             cameraManager.stopVideoRecording()
             return

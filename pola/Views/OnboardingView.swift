@@ -1,29 +1,5 @@
 import SwiftUI
 import AVFoundation
-import CoreLocation
-
-private final class LocationAuthorizationHelper: NSObject, CLLocationManagerDelegate {
-    private let manager = CLLocationManager()
-    private var continuation: CheckedContinuation<Void, Never>?
-
-    override init() {
-        super.init()
-        manager.delegate = self
-    }
-
-    func request() async {
-        guard manager.authorizationStatus == .notDetermined else { return }
-        await withCheckedContinuation { c in
-            continuation = c
-            manager.requestWhenInUseAuthorization()
-        }
-    }
-
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        continuation?.resume()
-        continuation = nil
-    }
-}
 
 struct OnboardingView: View {
     @Binding var hasSeenOnboarding: Bool
@@ -32,7 +8,6 @@ struct OnboardingView: View {
 
     @State private var page = 0
     @State private var appeared = false
-    @State private var locationHelper = LocationAuthorizationHelper()
     @State private var filterPreviews: [String: UIImage] = [:]
 
     var body: some View {
@@ -42,52 +17,24 @@ struct OnboardingView: View {
                 featurePage(
                     pageIndex: 1,
                     color: Color(red: 1.0, green: 0.78, blue: 0.2),
-                    badge: "PREMIUM",
-                    title: "Film Filters\n& Packs",
-                    description: "Choose from 5 authentic film emulations and colorful Polaroid frames that make every shot uniquely yours.",
+                    badge: "10 FILM STOCKS",
+                    title: "Shoot on\nreal film looks",
+                    description: "From warm Ektar tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop.",
                     visual: AnyView(filterVisual)
                 ).tag(1)
-                featurePage(
-                    pageIndex: 2,
-                    color: Color(red: 0.7, green: 0.4, blue: 1.0),
-                    badge: "PREMIUM",
-                    title: "Your Caption\nStyle",
-                    description: "Personalize every polaroid with 6 fonts and 4 weight options — a signature that's uniquely yours.",
-                    visual: AnyView(fontVisual)
-                ).tag(2)
-                featurePage(
-                    pageIndex: 3,
-                    color: Color(red: 0.2, green: 0.85, blue: 0.6),
-                    badge: "PREMIUM",
-                    title: "Clean\nExports",
-                    description: "Share and save your memories without any branding. Pure, clean polaroids every time.",
-                    visual: AnyView(watermarkVisual)
-                ).tag(3)
                 permissionPage(
                     color: Color(red: 0.2, green: 0.6, blue: 1.0),
                     systemIcon: "camera.fill",
                     title: "Camera\nAccess",
                     description: "Pola needs access to your camera to capture authentic polaroid-style photos and videos."
-                ).tag(4)
-                permissionPage(
-                    color: Color(red: 1.0, green: 0.55, blue: 0.2),
-                    systemIcon: "mic.fill",
-                    title: "Microphone\nAccess",
-                    description: "Allow microphone access so Pola can record audio when capturing videos and time-lapses."
-                ).tag(5)
-                permissionPage(
-                    color: Color(red: 0.2, green: 0.85, blue: 0.55),
-                    systemIcon: "location.fill",
-                    title: "Location\nAccess",
-                    description: "Optionally tag your memories with a location to remember exactly where each shot was taken."
-                ).tag(6)
-                paywallPage.tag(7)
+                ).tag(2)
+                paywallPage.tag(3)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
             .animation(.easeInOut(duration: 0.35), value: page)
 
-            if page < 7 {
+            if page < Self.paywallPage {
                 navOverlay
                     .transition(.opacity)
             }
@@ -99,8 +46,8 @@ struct OnboardingView: View {
         .task {
             await generateFilterPreviews()
         }
-        .onChange(of: premium.isPremium) { _, newValue in
-            if newValue { dismiss() }
+        .onChange(of: page) { _, newPage in
+            if newPage == Self.paywallPage { Analytics.track(.onboardingCompleted) }
         }
     }
 
@@ -111,7 +58,7 @@ struct OnboardingView: View {
             HStack {
                 Spacer()
                 Button {
-                    withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = 7 }
+                    withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = Self.paywallPage }
                 } label: {
                     Text("Skip")
                         .font(.system(size: 15, weight: .medium))
@@ -151,7 +98,7 @@ struct OnboardingView: View {
 
     private var pageIndicator: some View {
         HStack(spacing: 6) {
-            ForEach(0..<7, id: \.self) { i in
+            ForEach(0..<Self.paywallPage, id: \.self) { i in
                 Capsule()
                     .fill(i == page ? Color.white : Color.white.opacity(0.3))
                     .frame(width: i == page ? 22 : 6, height: 6)
@@ -279,10 +226,12 @@ struct OnboardingView: View {
 
     // MARK: - Paywall page
 
+    // Onboarding is kept short (welcome, film, camera) so people reach the camera quickly;
+    // microphone and location are requested later, when they are first needed.
+    private static let paywallPage = 3
+
     private var paywallPage: some View {
-        PaywallView {
-            dismiss()
-        }
+        PaywallView(context: .onboarding, onClose: { dismiss() })
     }
 
     // MARK: - Feature Visuals
@@ -328,114 +277,28 @@ struct OnboardingView: View {
                 }
             }
 
-            // Instant pack row
+            // Weird Film row
             HStack(spacing: 10) {
-                ForEach(polaPackColors) { pack in
+                ForEach(weirdFilters) { filter in
                     ZStack {
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(pack.color.opacity(0.15))
-                        Circle()
-                            .fill(pack.color)
-                            .frame(width: 22, height: 22)
-                            .shadow(color: pack.color.opacity(0.5), radius: 4, x: 0, y: 2)
+                        if let preview = filterPreviews[filter.name] {
+                            Image(uiImage: preview)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .clipped()
+                        } else {
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(filter.color.opacity(0.15))
+                        }
                     }
                     .frame(width: 44, height: 44)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .shadow(color: pack.color.opacity(0.4), radius: 8)
+                    .shadow(color: filter.color.opacity(0.4), radius: 8)
                 }
             }
         }
         .padding(.horizontal, 16)
-    }
-
-    private var fontVisual: some View {
-        let samples: [(text: String, rotation: Double, yOffset: CGFloat, xOffset: CGFloat, opacity: Double)] = [
-            ("Summer Vibes", -5, -32, -10, 0.9),
-            ("golden hour",   2,   0,  12, 1.0),
-            ("NYC / 2026",   -3,  30,  -6, 0.85),
-        ]
-
-        return ZStack {
-            ForEach(Array(samples.enumerated()), id: \.offset) { i, s in
-                ZStack {
-                    Rectangle()
-                        .fill(Color.white)
-                        .frame(width: 210, height: 42)
-                        .shadow(color: .black.opacity(0.35), radius: 10, y: 5)
-
-                    Text(s.text)
-                        .font(fontForSample(i))
-                        .foregroundStyle(.black.opacity(0.65))
-                }
-                .rotationEffect(.degrees(s.rotation))
-                .offset(x: s.xOffset, y: s.yOffset)
-                .opacity(s.opacity)
-            }
-        }
-        .frame(height: 140)
-    }
-
-    private func fontForSample(_ index: Int) -> Font {
-        switch index {
-        case 0:  return .custom("Bradley Hand", size: 20)
-        case 1:  return .system(size: 17, weight: .semibold, design: .serif)
-        default: return .system(size: 16, weight: .bold).width(.expanded)
-        }
-    }
-
-    private var watermarkVisual: some View {
-        ZStack {
-            // Polaroid card
-            VStack(spacing: 0) {
-                ZStack {
-                    LinearGradient(
-                        colors: [Color(red: 0.25, green: 0.55, blue: 0.75), Color(red: 0.15, green: 0.35, blue: 0.55)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                }
-                .frame(width: 160, height: 140)
-                .padding(.horizontal, 8)
-                .padding(.top, 8)
-
-                ZStack {
-                    Color.white
-                    Text("clean export")
-                        .font(.custom("Bradley Hand", size: 14))
-                        .foregroundStyle(.black.opacity(0.55))
-                }
-                .frame(width: 176, height: 38)
-            }
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 3))
-            .shadow(color: .black.opacity(0.45), radius: 20, y: 8)
-            .rotationEffect(.degrees(-4))
-
-            // Crossed-out watermark pill (showing "Pola" text with strikethrough)
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.black.opacity(0.6))
-                    .frame(width: 64, height: 28)
-                Text("Poly")
-                    .font(.system(size: 11, weight: .semibold))
-                    .kerning(1.5)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .strikethrough(true, color: .red)
-            }
-            .offset(x: -46, y: -50)
-
-            // Clean badge
-            ZStack {
-                Circle()
-                    .fill(Color(red: 0.2, green: 0.85, blue: 0.6))
-                    .frame(width: 44, height: 44)
-                    .shadow(color: Color(red: 0.2, green: 0.85, blue: 0.6).opacity(0.5), radius: 12)
-                Image(systemName: "checkmark")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.black)
-            }
-            .offset(x: 72, y: -62)
-        }
     }
 
     // MARK: - Helpers
@@ -445,7 +308,7 @@ struct OnboardingView: View {
         let size = CGSize(width: 120, height: 120)
         let small = ref.preparingThumbnail(of: size) ?? ref
         var previews: [String: UIImage] = [:]
-        for filter in filmFilters {
+        for filter in allFilters {
             guard let effect = filter.effect else { continue }
             previews[filter.name] = effect.apply(to: small)
         }
@@ -509,24 +372,13 @@ struct OnboardingView: View {
     // MARK: - Permission handling
 
     private func handleContinue() {
-        switch page {
-        case 4:
+        if page == 2 {
             Task {
                 await AVCaptureDevice.requestAccess(for: .video)
-                await MainActor.run { withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = 5 } }
+                await MainActor.run { withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = Self.paywallPage } }
             }
-        case 5:
-            Task {
-                await AVCaptureDevice.requestAccess(for: .audio)
-                await MainActor.run { withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = 6 } }
-            }
-        case 6:
-            Task {
-                await locationHelper.request()
-                await MainActor.run { withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = 7 } }
-            }
-        default:
-            withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = min(page + 1, 7) }
+        } else {
+            withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = min(page + 1, Self.paywallPage) }
         }
     }
 }

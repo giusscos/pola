@@ -6,7 +6,8 @@ struct SettingsView: View {
     @Environment(LanguageManager.self) private var languageManager
     @Environment(\.requestReview) private var requestReview
     @Environment(\.openURL) private var openURL
-    @State private var showPaywall = false
+    @State private var paywallContext: PaywallContext? = nil
+    @State private var showManageSubscription = false
     @State private var showOnboarding = false
     @State private var pendingLanguage: String? = nil
     @State private var showLanguageAlert = false
@@ -22,6 +23,7 @@ struct SettingsView: View {
     @AppStorage("timelapseInterval") private var timelapseInterval: Double = 5
     @AppStorage("timelapseDuration") private var timelapseDuration: Double = 60
     @AppStorage("timelapseSaveAsVideo") private var timelapseSaveAsVideo: Bool = false
+    @AppStorage("dateStampEnabled") private var dateStampEnabled = false
 
     private var totalTimelapsePhotos: Int { max(1, Int(timelapseDuration / timelapseInterval)) }
 
@@ -37,7 +39,7 @@ struct SettingsView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Premium Active")
                                     .font(.headline)
-                                Text("All features unlocked")
+                                Text(verbatim: planDescription)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -48,13 +50,38 @@ struct SettingsView: View {
                         }
 
                         Toggle(isOn: Binding(
-                            get: { premium.watermarkDisabled },
-                            set: { premium.watermarkDisabled = $0 }
+                            get: { premium.showLogoOnExports },
+                            set: { premium.showLogoOnExports = $0 }
                         )) {
-                            Label("Hide app logo on exports", systemImage: "photo")
+                            Label("Show app logo on exports", systemImage: "photo")
+                        }
+
+                        if premium.isSubscriber {
+                            Button { showManageSubscription = true } label: {
+                                Label("Manage Subscription", systemImage: "creditcard")
+                                    .foregroundStyle(.primary)
+                            }
+                            if let lifetime = premium.lifetimeProduct {
+                                Button {
+                                    Task { await premium.purchase(lifetime) }
+                                } label: {
+                                    HStack {
+                                        Label("Upgrade to Lifetime", systemImage: "infinity")
+                                            .foregroundStyle(.primary)
+                                        Spacer()
+                                        if premium.isPurchasing {
+                                            ProgressView()
+                                        } else {
+                                            Text(lifetime.displayPrice)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                }
+                                .disabled(premium.isPurchasing)
+                            }
                         }
                     } else {
-                        Button { showPaywall = true } label: {
+                        Button { presentPaywall(.general) } label: {
                             HStack(spacing: 14) {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 10)
@@ -80,12 +107,16 @@ struct SettingsView: View {
                     }
                 } header: {
                     Text("Premium")
+                } footer: {
+                    if premium.isSubscriber && premium.lifetimeProduct != nil {
+                        Text("After upgrading to Lifetime, cancel your subscription in Manage Subscription so you aren't charged again.")
+                    }
                 }
 
                 Section {
                     Picker(selection: $defaultFilter) {
                         Text("None").tag("None")
-                        ForEach(allFilters) { filter in
+                        ForEach(allFilters.filter { !$0.isLocked(for: premium) }) { filter in
                             Text(filter.name).tag(filter.name)
                         }
                     } label: {
@@ -164,27 +195,13 @@ struct SettingsView: View {
                         } label: {
                             Label("Font Weight", systemImage: "bold")
                         }
+                        Toggle(isOn: $dateStampEnabled) {
+                            Label("Date stamp", systemImage: "calendar.badge.clock")
+                        }
                     } else {
-                        Button { showPaywall = true } label: {
-                            HStack {
-                                Label("Caption Font", systemImage: "textformat")
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                Image(systemName: "lock.fill")
-                                    .foregroundStyle(.secondary)
-                                    .font(.caption)
-                            }
-                        }
-                        Button { showPaywall = true } label: {
-                            HStack {
-                                Label("Font Weight", systemImage: "bold")
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                Image(systemName: "lock.fill")
-                                    .foregroundStyle(.secondary)
-                                    .font(.caption)
-                            }
-                        }
+                        lockedRow("Caption Font", systemImage: "textformat", feature: .captionStyle)
+                        lockedRow("Font Weight", systemImage: "bold", feature: .captionStyle)
+                        lockedRow("Date stamp", systemImage: "calendar.badge.clock", feature: .dateStamp)
                     }
                     Toggle(isOn: $printAnimationEnabled) {
                         Label("Print animation", systemImage: "sparkles")
@@ -261,9 +278,15 @@ struct SettingsView: View {
                 }
             }
         }
-        .sheet(isPresented: $showPaywall) {
-            PaywallView(onClose: { showPaywall = false })
+        .sheet(item: $paywallContext) { context in
+            PaywallView(context: context, onClose: { paywallContext = nil })
                 .environment(PremiumManager.shared)
+        }
+        .manageSubscriptionsSheet(isPresented: $showManageSubscription)
+        .onChange(of: showManageSubscription) { _, isShowing in
+            if !isShowing {
+                Task { await premium.refreshPurchaseStatus() }
+            }
         }
         .fullScreenCover(isPresented: $showOnboarding) {
             OnboardingView(hasSeenOnboarding: .constant(true))
@@ -278,6 +301,40 @@ struct SettingsView: View {
             }
         } message: { _ in
             Text("Close and reopen the app to fully apply the language changes.")
+        }
+    }
+}
+
+extension SettingsView {
+    private var planDescription: String {
+        guard let plan = premium.activePlanName else {
+            return NSLocalizedString("All features unlocked", comment: "")
+        }
+        if premium.activeProductID == PremiumManager.lifetimeID {
+            return NSLocalizedString("Lifetime — yours forever", comment: "")
+        }
+        guard let date = premium.expirationDate else { return plan }
+        let dateText = date.formatted(date: .abbreviated, time: .omitted)
+        let format = premium.willAutoRenew
+            ? NSLocalizedString("%@ · renews %@", comment: "")
+            : NSLocalizedString("%@ · ends %@", comment: "")
+        return String(format: format, plan, dateText)
+    }
+
+    private func presentPaywall(_ context: PaywallContext) {
+        paywallContext = context
+    }
+
+    private func lockedRow(_ title: LocalizedStringKey, systemImage: String, feature: PremiumFeature) -> some View {
+        Button { presentPaywall(.feature(feature)) } label: {
+            HStack {
+                Label(title, systemImage: systemImage)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "lock.fill")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+            }
         }
     }
 }
