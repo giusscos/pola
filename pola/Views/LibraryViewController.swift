@@ -44,6 +44,7 @@ final class LibraryViewController: UICollectionViewController {
     private var entriesByID: [UUID: PolaroidEntry] = [:]
     private var isSaving = false
     private var saveDidSucceed = false
+    private var pendingDetailID: UUID?
 
     private var columnCount: Int {
         get { UserDefaults.standard.object(forKey: "libraryColumnCount") as? Int ?? 3 }
@@ -177,7 +178,8 @@ final class LibraryViewController: UICollectionViewController {
                 }
             )
             .id("\(id.uuidString)-\(Int(entry.developmentProgress * 100))")
-            .aspectRatio(0.75, contentMode: .fit)
+            .aspectRatio(entry.frameFormat.frameAspect, contentMode: .fit)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay(alignment: .topLeading) {
                 if selectMode {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
@@ -505,6 +507,22 @@ final class LibraryViewController: UICollectionViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         navigationController?.delegate = self
+        openPendingDetailIfPossible()
+    }
+
+    /// Opens a polaroid from outside the library (e.g. a widget tap), waiting until the view is on screen.
+    func requestDetail(for id: UUID) {
+        pendingDetailID = id
+        openPendingDetailIfPossible()
+    }
+
+    private func openPendingDetailIfPossible() {
+        guard let id = pendingDetailID, view.window != nil,
+              let entry = entriesByID[id] else { return }
+        pendingDetailID = nil
+        if isSelectMode { isSelectMode = false }
+        navigationController?.popToRootViewController(animated: false)
+        openDetail(for: entry)
     }
 
     // MARK: - Actions

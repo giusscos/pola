@@ -112,7 +112,13 @@
           "groupNumber" : 1,
           "internalID" : "171E3D9C",
           "introductoryOffers" : [
-
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "internalID" : "7D4A91C2",
+              "numberOfPeriods" : 1,
+              "paymentMode" : "free",
+              "subscriptionPeriod" : "P1W"
+            }
           ],
           "localizations" : [
             {

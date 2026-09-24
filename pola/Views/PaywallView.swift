@@ -6,8 +6,10 @@ import SwiftUI
 enum PremiumFeature: CaseIterable {
     case filmStocks
     case frameColors
+    case frameFormats
     case captionStyle
     case dateStamp
+    case widget
     case printSheets
     case cleanExports
 
@@ -15,8 +17,10 @@ enum PremiumFeature: CaseIterable {
         switch self {
         case .filmStocks:   "camera.filters"
         case .frameColors:  "paintpalette.fill"
+        case .frameFormats: "aspectratio.fill"
         case .captionStyle: "textformat"
         case .dateStamp:    "calendar.badge.clock"
+        case .widget:       "apps.iphone"
         case .printSheets:  "printer.fill"
         case .cleanExports: "checkmark.shield.fill"
         }
@@ -26,8 +30,10 @@ enum PremiumFeature: CaseIterable {
         switch self {
         case .filmStocks:   Color(red: 1.0, green: 0.78, blue: 0.2)
         case .frameColors:  Color(red: 1.0, green: 0.45, blue: 0.55)
+        case .frameFormats: Color(red: 0.35, green: 0.85, blue: 0.9)
         case .captionStyle: Color(red: 0.7, green: 0.4, blue: 1.0)
         case .dateStamp:    Color(red: 1.0, green: 0.55, blue: 0.15)
+        case .widget:       Color(red: 0.95, green: 0.6, blue: 0.85)
         case .printSheets:  Color(red: 0.3, green: 0.65, blue: 1.0)
         case .cleanExports: Color(red: 0.2, green: 0.85, blue: 0.6)
         }
@@ -37,8 +43,10 @@ enum PremiumFeature: CaseIterable {
         switch self {
         case .filmStocks:   "10 Film Stocks"
         case .frameColors:  "Colored Frames"
+        case .frameFormats: "Frame Formats"
         case .captionStyle: "Caption Style"
         case .dateStamp:    "Date Stamp"
+        case .widget:       "Memories Widget"
         case .printSheets:  "Print Sheets"
         case .cleanExports: "Clean Exports"
         }
@@ -48,8 +56,10 @@ enum PremiumFeature: CaseIterable {
         switch self {
         case .filmStocks:   "Classic and Weird Film packs"
         case .frameColors:  "Any border color, on any polaroid"
+        case .frameFormats: "Square, Wide and Mini sizes"
         case .captionStyle: "6 fonts × 4 weights"
         case .dateStamp:    "Retro date imprint on your shots"
+        case .widget:       "A polaroid a day on your Home Screen"
         case .printSheets:  "A4 layouts ready to print at home"
         case .cleanExports: "No logo on shares and saves"
         }
@@ -60,8 +70,10 @@ enum PremiumFeature: CaseIterable {
         switch self {
         case .filmStocks:   "Every film stock, every look."
         case .frameColors:  "Give every polaroid its own color."
+        case .frameFormats: "Shoot square, wide or mini."
         case .captionStyle: "Make every caption yours."
         case .dateStamp:    "Stamp the date like a real film camera."
+        case .widget:       "Relive a polaroid every day on your Home Screen."
         case .printSheets:  "Print your polaroids at home."
         case .cleanExports: "Share your polaroids without the logo."
         }
@@ -108,6 +120,7 @@ struct PaywallView: View {
     @State private var selectedProductID = PremiumManager.yearlyID
     @State private var didUnlock = false
     @State private var filterPreview: UIImage? = nil
+    @State private var trialEligibleIDs: Set<String> = []
 
     private let accent = Color(red: 1.0, green: 0.8, blue: 0.3)
 
@@ -153,6 +166,25 @@ struct PaywallView: View {
             withAnimation(.spring(duration: 0.5, bounce: 0.2)) { didUnlock = true }
         }
         .task { renderFilterPreview() }
+        .task(id: premium.products.map(\.id)) { await loadTrialEligibility() }
+    }
+
+    private var selectedProduct: Product? {
+        premium.products.first(where: { $0.id == selectedProductID }) ?? premium.products.first
+    }
+
+    private func hasEligibleTrial(_ product: Product) -> Bool {
+        product.freeTrialPeriod != nil && trialEligibleIDs.contains(product.id)
+    }
+
+    private func loadTrialEligibility() async {
+        var eligible: Set<String> = []
+        for product in premium.products where product.freeTrialPeriod != nil {
+            if await product.subscription?.isEligibleForIntroOffer == true {
+                eligible.insert(product.id)
+            }
+        }
+        trialEligibleIDs = eligible
     }
 
     private var paywallContent: some View {
@@ -296,7 +328,7 @@ struct PaywallView: View {
 
     // MARK: - Features
 
-    // Two-column grid keeps all six features and the plans above the fold on most phones.
+    // Two-column grid keeps all features and the plans above the fold on most phones.
     private var featureList: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
             ForEach(orderedFeatures, id: \.self) { f in
@@ -369,18 +401,16 @@ struct PaywallView: View {
                         Text(product.displayName)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
-                        if isYearly {
-                            Text("BEST VALUE")
-                                .font(.system(size: 9, weight: .bold).width(.expanded))
-                                .foregroundStyle(.black)
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 3)
-                                .background(accent, in: Capsule())
+                        if hasEligibleTrial(product), let trial = product.freeTrialText {
+                            badge(String(format: NSLocalizedString("%@ FREE", comment: ""), trial).uppercased(),
+                                  color: Color(red: 0.2, green: 0.85, blue: 0.6))
+                        } else if isYearly {
+                            badge(NSLocalizedString("BEST VALUE", comment: ""), color: accent)
                         }
                     }
-                    Text(product.description)
+                    Text(verbatim: planSubtitle(for: product))
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(isYearly && savingsPercent(for: product) != nil ? accent.opacity(0.85) : .white.opacity(0.45))
                 }
 
                 Spacer()
@@ -416,6 +446,40 @@ struct PaywallView: View {
         .sensoryFeedback(.selection, trigger: selectedProductID)
     }
 
+    private func badge(_ text: String, color: Color) -> some View {
+        Text(verbatim: text)
+            .font(.system(size: 9, weight: .bold).width(.expanded))
+            .foregroundStyle(.black)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(color, in: Capsule())
+    }
+
+    /// Yearly vs. twelve monthly payments, rounded down so we never overstate the saving.
+    private func savingsPercent(for yearly: Product) -> Int? {
+        guard yearly.id == PremiumManager.yearlyID,
+              let monthly = premium.products.first(where: { $0.id == PremiumManager.monthlyID }) else { return nil }
+        let fullYear = NSDecimalNumber(decimal: monthly.price * 12).doubleValue
+        let yearlyPrice = NSDecimalNumber(decimal: yearly.price).doubleValue
+        guard fullYear > 0, yearlyPrice < fullYear else { return nil }
+        let percent = Int(((fullYear - yearlyPrice) / fullYear * 100).rounded(.down))
+        return percent > 0 ? percent : nil
+    }
+
+    private func planSubtitle(for product: Product) -> String {
+        switch product.id {
+        case PremiumManager.yearlyID:
+            if let percent = savingsPercent(for: product) {
+                return String(format: NSLocalizedString("%@/mo · save %d%%", comment: ""), product.monthlyEquivalentText, percent)
+            }
+            return NSLocalizedString("Billed yearly", comment: "")
+        case PremiumManager.monthlyID:
+            return NSLocalizedString("Billed monthly", comment: "")
+        default:
+            return NSLocalizedString("One-time purchase", comment: "")
+        }
+    }
+
     private var placeholderPricing: some View {
         VStack(spacing: 10) {
             ForEach(["Monthly", "Yearly", "Lifetime"], id: \.self) { name in
@@ -436,20 +500,53 @@ struct PaywallView: View {
 
     // MARK: - CTA
 
+    private var ctaTitle: String {
+        if let product = selectedProduct, hasEligibleTrial(product), let trial = product.freeTrialText {
+            return String(format: NSLocalizedString("Try %@ free", comment: ""), trial)
+        }
+        return NSLocalizedString("Unlock Premium", comment: "")
+    }
+
+    /// What the user will be charged, shown right under the button (required for free trials).
+    private var ctaDisclosure: String? {
+        guard let product = selectedProduct else { return nil }
+        if product.subscription == nil {
+            return NSLocalizedString("One-time purchase. Yours forever.", comment: "")
+        }
+        if hasEligibleTrial(product), let trial = product.freeTrialText {
+            return String(format: NSLocalizedString("%@ free, then %@. Cancel anytime.", comment: ""), trial, product.pricePerPeriodText)
+        }
+        return String(format: NSLocalizedString("%@. Cancel anytime.", comment: ""), product.pricePerPeriodText)
+    }
+
     private var ctaButton: some View {
+        VStack(spacing: 8) {
+            purchaseButton
+            if let ctaDisclosure {
+                Text(verbatim: ctaDisclosure)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .multilineTextAlignment(.center)
+                    .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.2), value: ctaDisclosure)
+            }
+        }
+        .padding(.horizontal, 24)
+    }
+
+    private var purchaseButton: some View {
         Button {
-            let product = premium.products.first(where: { $0.id == selectedProductID })
-                       ?? premium.products.first
-            guard let product else { return }
+            guard let product = selectedProduct else { return }
             Task { await premium.purchase(product) }
         } label: {
             ZStack {
                 if premium.isPurchasing {
                     ProgressView().tint(.black)
                 } else {
-                    Text("Unlock Premium")
+                    Text(verbatim: ctaTitle)
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(.black)
+                        .contentTransition(.opacity)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -464,7 +561,6 @@ struct PaywallView: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .disabled(premium.isPurchasing || premium.products.isEmpty)
-        .padding(.horizontal, 24)
     }
 
     // MARK: - Footer

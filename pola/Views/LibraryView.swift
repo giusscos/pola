@@ -8,6 +8,7 @@ struct LibraryView: UIViewControllerRepresentable {
     @Query(sort: \PolaroidEntry.timestamp, order: .reverse) private var entries: [PolaroidEntry]
     @Binding var isDetailOpen: Bool
     @Binding var isSelectMode: Bool
+    @Binding var openEntryID: UUID?
 
     func makeUIViewController(context: Context) -> UINavigationController {
         let vc = LibraryViewController()
@@ -32,6 +33,10 @@ struct LibraryView: UIViewControllerRepresentable {
         vc.premium = premium
         vc.modelContext = modelContext
         vc.entries = entries
+        if let id = openEntryID {
+            vc.requestDetail(for: id)
+            DispatchQueue.main.async { openEntryID = nil }
+        }
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(isDetailOpen: $isDetailOpen, isSelectMode: $isSelectMode) }

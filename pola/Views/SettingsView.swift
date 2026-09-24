@@ -56,6 +56,17 @@ struct SettingsView: View {
                             Label("Show app logo on exports", systemImage: "photo")
                         }
 
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Memories widget")
+                                Text("Touch and hold your Home Screen, tap Edit, then Add Widget and search for Poly.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            Image(systemName: "apps.iphone")
+                        }
+
                         if premium.isSubscriber {
                             Button { showManageSubscription = true } label: {
                                 Label("Manage Subscription", systemImage: "creditcard")
@@ -104,6 +115,7 @@ struct SettingsView: View {
                                     .font(.caption)
                             }
                         }
+                        lockedRow("Memories widget", systemImage: "apps.iphone", feature: .widget)
                     }
                 } header: {
                     Text("Premium")

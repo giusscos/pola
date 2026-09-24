@@ -52,6 +52,32 @@ struct EditPolaroidSheet: View {
                 }
 
                 Section {
+                    if premium.isPremium {
+                        Picker("Format", selection: $entry.frameFormatRaw) {
+                            ForEach(FrameFormat.allCases) { format in
+                                Text(LocalizedStringKey(format.displayName)).tag(format.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    } else {
+                        Button { paywallContext = .feature(.frameFormats) } label: {
+                            HStack {
+                                Text(LocalizedStringKey(FrameFormat.classic.displayName))
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Text("Square, Wide and Mini sizes")
+                                    .foregroundStyle(.secondary)
+                                Image(systemName: "lock.fill")
+                                    .foregroundStyle(.secondary)
+                                    .font(.caption)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Format")
+                }
+
+                Section {
                     TextField("Short note...", text: $entry.caption)
                 } header: {
                     Text("Caption (front strip)")

@@ -48,7 +48,7 @@ final class PolaroidPrintAnimationVC: UIViewController {
     private let imagePadding:     CGFloat = 8
     private let captionStripH:    CGFloat = 48
     private var imageAreaW:    CGFloat { polaroidWidth - imagePadding * 2 }
-    private var imageAreaH:    CGFloat { imageAreaW * 4 / 3 }
+    private var imageAreaH:    CGFloat { imageAreaW / entry.frameFormat.imageAspect }
     private var polaroidHeight:   CGFloat { imagePadding + imageAreaH + captionStripH }
 
     private var printEndCenter = CGPoint.zero
@@ -483,7 +483,8 @@ final class MultiPolaroidPrintAnimationVC: UIViewController {
     private let imagePadding:   CGFloat = 7
     private let captionStripH:  CGFloat = 38
     private var imageAreaW:     CGFloat { polaroidWidth - imagePadding * 2 }
-    private var imageAreaH:     CGFloat { imageAreaW * 4 / 3 }
+    // A time lapse batch is always shot in one format
+    private var imageAreaH:     CGFloat { imageAreaW / (entries.first?.frameFormat.imageAspect ?? FrameFormat.classic.imageAspect) }
     private var polaroidHeight: CGFloat { imagePadding + imageAreaH + captionStripH }
 
     // Rotations / offsets for each card in the stack (index 0 = printed first = back)
