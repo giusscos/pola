@@ -230,3 +230,8 @@
 "Stop Recording" = "Interrompi registrazione";
 "Start Time Lapse" = "Avvia time lapse";
 "Stop Time Lapse" = "Interrompi time lapse";
+
+/* Lenses */
+"Lens" = "Obiettivo";
+"No lens" = "Nessun obiettivo";
+"Grain and vintage optics, stacked on top of any film." = "Grana e ottiche vintage, da abbinare a qualsiasi pellicola.";

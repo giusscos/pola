@@ -39,3 +39,18 @@ extern "C" float4 nightVisionKernel(coreimage::sample_t s) {
     phosphor = clamp(phosphor + float3(0.0, bloom, bloom * 0.3), 0.0, 1.0);
     return float4(phosphor, s.a);
 }
+
+// Cheap plastic lens: barrel bulge plus lateral chromatic aberration.
+// `radius` is the half-diagonal, so the corners stay pinned and no empty edges appear.
+extern "C" float4 vintageLensKernel(coreimage::sampler s, float2 center, float radius, float distortion, float fringe, coreimage::destination dest) {
+    float2 d = (dest.coord() - center) / radius;
+    float r2 = dot(d, d);
+    float2 bulged = d * (1.0 + distortion * r2) / (1.0 + distortion);
+    // Fringing grows towards the edges, like a real uncorrected lens.
+    float2 red  = bulged * (1.0 + fringe * r2);
+    float2 blue = bulged * (1.0 - fringe * r2);
+    float4 px  = s.sample(s.transform(center + bulged * radius));
+    float4 pxR = s.sample(s.transform(center + red * radius));
+    float4 pxB = s.sample(s.transform(center + blue * radius));
+    return float4(pxR.r, px.g, pxB.b, px.a);
+}

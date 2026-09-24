@@ -230,3 +230,8 @@
 "Stop Recording" = "Stop Recording";
 "Start Time Lapse" = "Start Time Lapse";
 "Stop Time Lapse" = "Stop Time Lapse";
+
+/* Lenses */
+"Lens" = "Lens";
+"No lens" = "No lens";
+"Grain and vintage optics, stacked on top of any film." = "Grain and vintage optics, stacked on top of any film.";

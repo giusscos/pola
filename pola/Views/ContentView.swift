@@ -30,6 +30,7 @@ struct ContentView: View {
     @State private var librarySelectMode = false
     @State private var showSettings = false
     @State private var selectedFilterName: String? = nil
+    @State private var selectedLens: Lens? = nil
     @State private var selectedPackName: String? = nil
     @State private var activeStrip: ActiveStrip = .none
     @State private var cameraMode: CameraMode = .photo
@@ -81,7 +82,36 @@ struct ContentView: View {
     }
 
     private var isPreviewingLockedFilter: Bool {
-        activeFilter?.isLocked(for: premium) == true
+        lockedPreview != nil
+    }
+
+    /// The locked film stock or lens currently shown in the viewfinder, if any.
+    private var lockedPreview: (name: String, color: Color)? {
+        if let filter = activeFilter, filter.isLocked(for: premium) {
+            return (filter.name, filter.color)
+        }
+        if let lens = selectedLens, lens.isLocked(for: premium) {
+            return (lens.name, lens.color)
+        }
+        return nil
+    }
+
+    private var lockedPreviewPaywallContext: PaywallContext? {
+        if let filter = activeFilter, filter.isLocked(for: premium) {
+            return .filter(filter.name)
+        }
+        if let lens = selectedLens, lens.isLocked(for: premium) {
+            return .feature(.filmStocks)
+        }
+        return nil
+    }
+
+    private func develop(_ image: UIImage) -> UIImage {
+        FilmPipeline.apply(to: image, film: activeFilter?.effect, lens: selectedLens)
+    }
+
+    private var captureAnalytics: [String: String] {
+        ["filter": selectedFilterName ?? "none", "lens": selectedLens?.name ?? "none"]
     }
 
     private func presentPaywall(_ context: PaywallContext) {
@@ -158,7 +188,7 @@ struct ContentView: View {
                             }
                             .overlay {
                                 // Vignette hint in preview when a filter is active
-                                if activeFilter?.effect != nil {
+                                if activeFilter?.effect != nil && selectedLens == nil {
                                     RadialGradient(
                                         colors: [.clear, .black.opacity(0.50)],
                                         center: .center,
@@ -168,6 +198,13 @@ struct ContentView: View {
                                     .allowsHitTesting(false)
                                 }
                             }
+                            .overlay {
+                                if let lens = selectedLens {
+                                    LensViewfinderHint(lens: lens)
+                                        .transition(.opacity)
+                                }
+                            }
+                            .animation(.easeInOut(duration: 0.25), value: selectedLens)
                             .overlay {
                                 if isCountingDown, countdownValue > 0 {
                                     ZStack {
@@ -189,8 +226,8 @@ struct ContentView: View {
                             }
                             .animation(.easeInOut(duration: 0.25), value: activeFrameFormat)
                             .overlay(alignment: .top) {
-                                if isPreviewingLockedFilter, let filter = activeFilter {
-                                    lockedPreviewBanner(for: filter)
+                                if let locked = lockedPreview {
+                                    lockedPreviewBanner(name: locked.name, color: locked.color)
                                         .padding(.top, 12)
                                         .transition(.move(edge: .top).combined(with: .opacity))
                                 }
@@ -306,7 +343,7 @@ struct ContentView: View {
                 presentPaywall(pending)
             }
         }) {
-            FiltersView(selectedFilterName: $selectedFilterName, selectedPackName: $selectedPackName, selectedFrameFormatRaw: $selectedFrameFormatRaw, onPaywallRequested: { context in
+            FiltersView(selectedFilterName: $selectedFilterName, selectedLens: $selectedLens, selectedPackName: $selectedPackName, selectedFrameFormatRaw: $selectedFrameFormatRaw, onPaywallRequested: { context in
                 pendingPaywallContext = context
                 showFiltersSheet = false
             })
@@ -400,11 +437,11 @@ struct ContentView: View {
         .onChange(of: cameraManager.capturedImage) { _, image in
             guard let image else { return }
             cameraManager.capturedImage = nil
-            let effect = activeFilter?.effect
-            let processed = effect?.apply(to: image) ?? image
+            let processed = develop(image)
             let entry = PolaroidEntry(
                 image: processed,
                 filterName: selectedFilterName,
+                lensName: selectedLens?.name,
                 packName: selectedPackName,
                 frameFormat: activeFrameFormat,
                 coordinate: cameraManager.lastCoordinate
@@ -415,7 +452,7 @@ struct ContentView: View {
                 timelapsePendingEntries.append(entry)
             } else {
                 totalPhotosCount += 1
-                Analytics.track(.photoCaptured, ["filter": selectedFilterName ?? "none"])
+                Analytics.track(.photoCaptured, captureAnalytics)
                 if printAnimationEnabled {
                     printingEntry = entry
                 } else if captionPromptEnabled {
@@ -430,11 +467,11 @@ struct ContentView: View {
             cameraManager.capturedVideoURL = nil
             Task {
                 let thumbnail = await videoThumbnail(from: url) ?? UIImage()
-                let effect = activeFilter?.effect
-                let processed = effect?.apply(to: thumbnail) ?? thumbnail
+                let processed = develop(thumbnail)
                 let entry = PolaroidEntry(
                     image: processed,
                     filterName: selectedFilterName,
+                    lensName: selectedLens?.name,
                     packName: selectedPackName,
                     frameFormat: activeFrameFormat,
                     coordinate: cameraManager.lastCoordinate
@@ -443,7 +480,7 @@ struct ContentView: View {
                 modelContext.insert(entry)
                 pendingEntryID = entry.id
                 totalPhotosCount += 1
-                Analytics.track(.videoCaptured, ["filter": selectedFilterName ?? "none"])
+                Analytics.track(.videoCaptured, captureAnalytics)
                 if printAnimationEnabled {
                     printingEntry = entry
                 } else if captionPromptEnabled {
@@ -456,8 +493,7 @@ struct ContentView: View {
         .onChange(of: cameraManager.timelapseVideoFrames) { _, frames in
             guard let frames else { return }
             cameraManager.timelapseVideoFrames = nil
-            let effect = activeFilter?.effect
-            let processed = frames.map { effect?.apply(to: $0) ?? $0 }
+            let processed = frames.map { develop($0) }
             let coord = cameraManager.lastCoordinate
             isProcessingTimelapse = true
             Task {
@@ -472,6 +508,7 @@ struct ContentView: View {
                         image: thumbnail,
                         isTimelapse: true,
                         filterName: selectedFilterName,
+                        lensName: selectedLens?.name,
                         packName: selectedPackName,
                         frameFormat: activeFrameFormat,
                         coordinate: coord
@@ -479,7 +516,7 @@ struct ContentView: View {
                     entry.videoFilename = store.saveVideo(from: videoURL, id: entry.id)
                     modelContext.insert(entry)
                     pendingEntryID = entry.id
-                    Analytics.track(.timelapseCaptured, ["filter": selectedFilterName ?? "none"])
+                    Analytics.track(.timelapseCaptured, captureAnalytics)
                     if printAnimationEnabled {
                         printingEntry = entry
                     } else if captionPromptEnabled {
@@ -502,7 +539,7 @@ struct ContentView: View {
                     isInTimelapse = false
                     guard !timelapsePendingEntries.isEmpty else { return }
                     totalPhotosCount += timelapsePendingEntries.count
-                    Analytics.track(.timelapseCaptured, ["filter": selectedFilterName ?? "none"])
+                    Analytics.track(.timelapseCaptured, captureAnalytics)
                     if printAnimationEnabled {
                         printingEntries = timelapsePendingEntries
                     } else {
@@ -710,7 +747,7 @@ struct ContentView: View {
     }
 
     private var filmButton: some View {
-        let isActive = selectedFilterName != nil
+        let isActive = selectedFilterName != nil || selectedLens != nil
         return VStack(spacing: 4) {
             ZStack {
                 Circle()
@@ -981,15 +1018,17 @@ struct ContentView: View {
 
     // MARK: - Locked filter preview
 
-    private func lockedPreviewBanner(for filter: FilmFilter) -> some View {
+    private func lockedPreviewBanner(name: String, color: Color) -> some View {
         Button {
-            presentPaywall(.filter(filter.name))
+            if let context = lockedPreviewPaywallContext {
+                presentPaywall(context)
+            }
         } label: {
             HStack(spacing: 8) {
                 Circle()
-                    .fill(filter.color)
+                    .fill(color)
                     .frame(width: 8, height: 8)
-                Text(String(format: NSLocalizedString("Previewing %@", comment: ""), filter.name))
+                Text(String(format: NSLocalizedString("Previewing %@", comment: ""), name))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white)
                 Text("Unlock")
@@ -1141,10 +1180,10 @@ struct ContentView: View {
     // MARK: - Shutter actions
 
     private func handleShutter() {
-        if let filter = activeFilter, filter.isLocked(for: premium),
+        if let locked = lockedPreview, let context = lockedPreviewPaywallContext,
            !cameraManager.isRecording, !cameraManager.isTimelapsing {
-            Analytics.track(.lockedFilterCaptureBlocked, ["filter": filter.name])
-            presentPaywall(.filter(filter.name))
+            Analytics.track(.lockedFilterCaptureBlocked, ["filter": locked.name])
+            presentPaywall(context)
             return
         }
         if cameraMode == .video && cameraManager.isRecording {
