@@ -54,6 +54,8 @@ enum FilmFilterEffect {
         if appliesGloom {
             result = addGloom(result) ?? result
         }
+        // Never let an effect change the photo's size.
+        result = result.cropped(to: ciImage.extent)
         guard let cgImage = Self.context.createCGImage(result, from: result.extent) else { return image }
         return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
     }
@@ -143,12 +145,14 @@ enum FilmFilterEffect {
         return vignette.outputImage
     }
 
+    // CIGloom blurs, so it samples past the edges and grows the extent: clamp first so the
+    // borders don't fade to transparent, then crop back to the original frame.
     private func addGloom(_ input: CIImage) -> CIImage? {
         guard let gloom = CIFilter(name: "CIGloom") else { return input }
-        gloom.setValue(input, forKey: kCIInputImageKey)
+        gloom.setValue(input.clampedToExtent(), forKey: kCIInputImageKey)
         gloom.setValue(5.0,   forKey: kCIInputRadiusKey)
         gloom.setValue(0.4,   forKey: kCIInputIntensityKey)
-        return gloom.outputImage
+        return gloom.outputImage?.cropped(to: input.extent)
     }
 
     private func applyColorKernel(_ kernel: CIColorKernel?, to input: CIImage) -> CIImage {
