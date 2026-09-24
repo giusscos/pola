@@ -1,3 +1,4 @@
+import OSLog
 import StoreKit
 import SwiftUI
 
@@ -88,20 +89,35 @@ final class PremiumManager {
             let result = try await product.purchase()
             switch result {
             case .success(let verification):
-                guard case .verified(let tx) = verification else { return false }
+                guard case .verified(let tx) = verification else {
+                    if case .unverified(_, let error) = verification {
+                        Self.logger.error("Purchase \(product.id) unverified: \(error)")
+                    }
+                    return false
+                }
+                Self.logger.info("Purchase \(product.id) verified, tx \(tx.id), expires \(String(describing: tx.expirationDate)), revoked \(String(describing: tx.revocationDate)), env \(tx.environment.rawValue)")
                 await tx.finish()
                 await refreshPurchaseStatus()
+                // The purchase result is authoritative even if the entitlement lookups lag behind it.
+                if !isPremium, Self.isActive(tx) {
+                    refreshGeneration += 1
+                    await apply(tx)
+                    Self.logger.info("Unlocked from purchase result: \(tx.productID)")
+                }
                 Analytics.track(.purchaseCompleted, ["product": product.id])
                 return true
             case .userCancelled:
+                Self.logger.info("Purchase \(product.id) cancelled")
                 Analytics.track(.purchaseCancelled, ["product": product.id])
                 return false
             case .pending:
+                Self.logger.info("Purchase \(product.id) pending")
                 return false
             @unknown default:
                 return false
             }
         } catch {
+            Self.logger.error("Purchase \(product.id) failed: \(error)")
             purchaseError = error.localizedDescription
             Analytics.track(.purchaseFailed, ["product": product.id])
             return false
@@ -122,10 +138,19 @@ final class PremiumManager {
     }
 
     func refreshPurchaseStatus() async {
+        // Purchases, Transaction.updates and scene activation can all refresh at once;
+        // only the most recently started refresh may write state, so a stale one can't re-lock.
+        refreshGeneration += 1
+        let generation = refreshGeneration
+
         var bestTx: StoreKit.Transaction? = nil
         for await result in Transaction.currentEntitlements {
+            if case .unverified(let tx, let error) = result {
+                Self.logger.error("Entitlement \(tx.productID) unverified: \(error)")
+            }
             guard case .verified(let tx) = result,
                   Self.productIDs.contains(tx.productID) else { continue }
+            Self.logger.info("Entitlement \(tx.productID), expires \(String(describing: tx.expirationDate))")
             // Lifetime wins over any subscription so we never show a renewal date to lifetime owners.
             if tx.productID == Self.lifetimeID {
                 bestTx = tx
@@ -136,16 +161,50 @@ final class PremiumManager {
             }
         }
 
-        activeProductID = bestTx?.productID
-        expirationDate = bestTx?.expirationDate
-        willAutoRenew = false
-        if let bestTx, bestTx.productID != Self.lifetimeID,
-           let status = await bestTx.subscriptionStatus,
-           case .verified(let renewal) = status.renewalInfo {
-            willAutoRenew = renewal.willAutoRenew
+        // currentEntitlements has been seen omitting an active subscription, so cross-check the status API.
+        if bestTx == nil {
+            bestTx = await activeSubscriptionTransaction()
         }
-        isPremium = bestTx != nil
+
+        guard generation == refreshGeneration else { return }
+        await apply(bestTx)
+        guard generation == refreshGeneration else { return }
+        Self.logger.info("Refreshed status: isPremium=\(self.isPremium), product=\(self.activeProductID ?? "none")")
     }
+
+    private var refreshGeneration = 0
+
+    private func apply(_ tx: StoreKit.Transaction?) async {
+        var autoRenew = false
+        if let tx, tx.productID != Self.lifetimeID,
+           let status = await tx.subscriptionStatus,
+           case .verified(let renewal) = status.renewalInfo {
+            autoRenew = renewal.willAutoRenew
+        }
+        activeProductID = tx?.productID
+        expirationDate = tx?.expirationDate
+        willAutoRenew = autoRenew
+        isPremium = tx != nil
+    }
+
+    private func activeSubscriptionTransaction() async -> StoreKit.Transaction? {
+        guard let subscription = products.first(where: { $0.subscription != nil })?.subscription,
+              let statuses = try? await subscription.status else { return nil }
+        for status in statuses {
+            Self.logger.info("Subscription status: \(String(describing: status.state))")
+            guard status.state == .subscribed || status.state == .inGracePeriod,
+                  case .verified(let tx) = status.transaction,
+                  Self.productIDs.contains(tx.productID) else { continue }
+            return tx
+        }
+        return nil
+    }
+
+    private static func isActive(_ tx: StoreKit.Transaction) -> Bool {
+        tx.revocationDate == nil && (tx.expirationDate.map { $0 > .now } ?? true)
+    }
+
+    private static let logger = Logger(subsystem: "com.giusscos.pola", category: "Premium")
 
     private static let productIDs: Set<String> = [monthlyID, yearlyID, lifetimeID]
     private static let productOrder = [monthlyID, yearlyID, lifetimeID]

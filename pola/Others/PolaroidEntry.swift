@@ -1,4 +1,5 @@
 import CoreLocation
+import ImageIO
 import SwiftData
 import UIKit
 
@@ -54,6 +55,35 @@ final class PolaroidEntry: Identifiable {
     var image: UIImage? {
         UIImage(data: imageData)
     }
+
+    /// Downsampled image for grids. Decoding full-resolution photos for every cell exhausts
+    /// memory with large libraries, so this decodes straight to `maxPixelSize` and caches it.
+    /// `imageData` never changes after creation, so the entry ID is a safe cache key.
+    func thumbnail(maxPixelSize: CGFloat) -> UIImage? {
+        let bucket = max(64, Int(maxPixelSize.rounded(.up)))
+        let key = "\(id.uuidString)-\(bucket)" as NSString
+        if let cached = Self.thumbnailCache.object(forKey: key) { return cached }
+
+        let options = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithData(imageData as CFData, options) else { return nil }
+        let thumbOptions = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: bucket
+        ] as CFDictionary
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbOptions) else { return nil }
+
+        let thumbnail = UIImage(cgImage: cgImage)
+        Self.thumbnailCache.setObject(thumbnail, forKey: key, cost: cgImage.bytesPerRow * cgImage.height)
+        return thumbnail
+    }
+
+    private static let thumbnailCache: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.totalCostLimit = 150 * 1024 * 1024
+        return cache
+    }()
 
     var coordinate: CLLocationCoordinate2D? {
         guard let lat = latitude, let lon = longitude else { return nil }

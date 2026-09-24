@@ -32,10 +32,17 @@ struct LibraryView: UIViewControllerRepresentable {
         vc.store = store
         vc.premium = premium
         vc.modelContext = modelContext
-        vc.entries = entries
-        if let id = openEntryID {
-            vc.requestDetail(for: id)
-            DispatchQueue.main.async { openEntryID = nil }
+        // SwiftUI calls this from inside a UIKit layout pass that UIKit observation-tracks (iOS 26+).
+        // Rebuilding the library's views inside that pass invalidates it again, which hangs the
+        // app or makes SwiftUI abort the presentation, so apply the changes right after it.
+        let entries = entries
+        let deepLinkID = openEntryID
+        DispatchQueue.main.async {
+            vc.setEntries(entries)
+            if let deepLinkID {
+                vc.requestDetail(for: deepLinkID)
+                openEntryID = nil
+            }
         }
     }
 

@@ -21,7 +21,7 @@ enum Lens: String, CaseIterable, Identifiable {
         }
     }
 
-    var isNew: Bool { true }
+    var isNew: Bool { false }
 
     func isLocked(for premium: PremiumManager) -> Bool {
         !premium.isPremium

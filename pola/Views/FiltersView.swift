@@ -14,6 +14,29 @@ enum FilmFilterEffect {
     case skrim    // SKRÍM — horror VHS
     case frosinn  // FROSINN — cyanotype / blueprint
     case nott     // NÓTT — lo-fi night vision
+    case roda     // RÖDA — overexposed warm instant print with colour fringing
+    case lilja    // LILJA — modern Polaroid colour film, lavender shadows
+    case skift    // SKIFT — RGB split glitch
+
+    private static let instantWarmKernel: CIColorKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIColorKernel(functionName: "instantWarmKernel", fromMetalLibraryData: data)
+    }()
+
+    private static let instantLavenderKernel: CIKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIKernel(functionName: "instantLavenderKernel", fromMetalLibraryData: data)
+    }()
+
+    private static let rgbSplitKernel: CIKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIKernel(functionName: "rgbSplitKernel", fromMetalLibraryData: data)
+    }()
+
+    private static let fringeKernel: CIKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIKernel(functionName: "vintageLensKernel", fromMetalLibraryData: data)
+    }()
 
     private static let thermalKernel: CIColorKernel? = {
         guard let data = PolaroidKernels.data else { return nil }
@@ -65,7 +88,7 @@ enum FilmFilterEffect {
         case .sepia:  return 0.07
         case .cool:   return 0.03
         case .noir:   return 0.0
-        case .lomur, .dreki, .skrim, .frosinn, .nott: return nil
+        case .lomur, .dreki, .skrim, .frosinn, .nott, .roda, .lilja, .skift: return nil
         }
     }
 
@@ -78,6 +101,9 @@ enum FilmFilterEffect {
         case .noir:    return 1.10
         case .skrim:   return 1.40
         case .nott:    return 1.60
+        case .roda:    return 0.70
+        case .lilja:   return 0.60
+        case .skift:   return 0.90
         case .lomur, .dreki, .frosinn: return nil
         }
     }
@@ -91,7 +117,9 @@ enum FilmFilterEffect {
         case .noir:    return 1.8
         case .lomur:   return 0.8
         case .nott:    return 2.0
-        case .dreki, .skrim, .frosinn: return nil
+        case .roda:    return 0.6
+        // LILJA's kernel does its own lavender falloff.
+        case .dreki, .skrim, .frosinn, .lilja, .skift: return nil
         }
     }
 
@@ -302,7 +330,72 @@ enum FilmFilterEffect {
 
         case .nott:
             return applyColorKernel(Self.nightVisionKernel, to: input)
+
+        case .roda:
+            let fringed = chromaticFringe(input, amount: 0.012)
+            let graded = applyColorKernel(Self.instantWarmKernel, to: fringed)
+            return softGlow(graded, blur: 0.0015, bloomRadius: 0.02, intensity: 0.35)
+
+        case .lilja:
+            guard let kernel = Self.instantLavenderKernel else { return input }
+            let extent = input.extent
+            let graded = kernel.apply(
+                extent: extent,
+                roiCallback: { _, rect in rect },
+                arguments: [input, CIVector(x: extent.midX, y: extent.midY), hypot(extent.width, extent.height) / 2]
+            ) ?? input
+            return softGlow(graded, blur: 0.002, bloomRadius: 0.03, intensity: 0.25)
+
+        case .skift:
+            guard let kernel = Self.rgbSplitKernel,
+                  let controls = CIFilter(name: "CIColorControls") else { return input }
+            controls.setValue(input, forKey: kCIInputImageKey)
+            controls.setValue(1.15, forKey: kCIInputSaturationKey)
+            controls.setValue(1.08, forKey: kCIInputContrastKey)
+            let punchy = controls.outputImage ?? input
+            // Sized off the short side so the split looks the same on thumbnails and full photos.
+            let extent = input.extent
+            let shortSide = min(extent.width, extent.height)
+            let split = shortSide * 0.009
+            let tearWidth = shortSide * 0.05
+            let pad = split * 3 + tearWidth + 2
+            return kernel.apply(
+                extent: extent,
+                roiCallback: { _, rect in rect.insetBy(dx: -pad, dy: -pad) },
+                arguments: [
+                    punchy.clampedToExtent(),
+                    CIVector(x: split, y: split * 0.35),
+                    max(2, shortSide * 0.025),
+                    tearWidth,
+                    Double.random(in: 0...1000),
+                ]
+            ) ?? punchy
         }
+    }
+
+    /// Lateral colour fringing with no barrel bulge: red spreads outward, blue inward.
+    private func chromaticFringe(_ input: CIImage, amount: CGFloat) -> CIImage {
+        guard let kernel = Self.fringeKernel else { return input }
+        let extent = input.extent
+        let radius = hypot(extent.width, extent.height) / 2
+        let pad = ceil(radius * amount) + 2
+        return kernel.apply(
+            extent: extent,
+            roiCallback: { _, _ in extent.insetBy(dx: -pad, dy: -pad) },
+            arguments: [input.clampedToExtent(), CIVector(x: extent.midX, y: extent.midY), radius, 0.0, amount]
+        ) ?? input
+    }
+
+    /// Soft focus plus a highlight bloom, sized relative to the image's short side.
+    private func softGlow(_ input: CIImage, blur: CGFloat, bloomRadius: CGFloat, intensity: CGFloat) -> CIImage {
+        let extent = input.extent
+        let shortSide = min(extent.width, extent.height)
+        let softened = input.clampedToExtent().applyingGaussianBlur(sigma: shortSide * blur)
+        guard let bloom = CIFilter(name: "CIBloom") else { return softened.cropped(to: extent) }
+        bloom.setValue(softened,               forKey: kCIInputImageKey)
+        bloom.setValue(shortSide * bloomRadius, forKey: kCIInputRadiusKey)
+        bloom.setValue(intensity,              forKey: kCIInputIntensityKey)
+        return (bloom.outputImage ?? softened).cropped(to: extent)
     }
 }
 
@@ -325,6 +418,8 @@ struct FilmFilter: Identifiable {
         case .frosinn: return 0.4
         case .nott:    return 0.3
         case .lomur:   return 1.2
+        case .roda:    return 1.2
+        case .lilja:   return 0.85
         default:       return 1.0
         }
     }
@@ -343,15 +438,21 @@ let filmFilters: [FilmFilter] = [
     FilmFilter(name: "GRÅLT", color: Color(red: 0.28, green: 0.28, blue: 0.28), imageName: "filter_gralt", effect: .noir),
 ]
 
-let weirdFilters: [FilmFilter] = [
-    FilmFilter(name: "LÖMUR",  color: Color(red: 1.0,  green: 0.45, blue: 0.0),  imageName: nil, effect: .lomur, isNew: true),
-    FilmFilter(name: "DREKI",  color: Color(red: 0.95, green: 0.85, blue: 0.90), imageName: nil, effect: .dreki, isNew: true),
-    FilmFilter(name: "SKRÍM",  color: Color(red: 0.15, green: 0.75, blue: 0.35), imageName: nil, effect: .skrim, isNew: true),
-    FilmFilter(name: "FROSINN", color: Color(red: 0.1, green: 0.35, blue: 0.75),  imageName: nil, effect: .frosinn, isNew: true),
-    FilmFilter(name: "NÓTT",   color: Color(red: 0.18, green: 0.88, blue: 0.42), imageName: nil, effect: .nott, isNew: true),
+let instantFilters: [FilmFilter] = [
+    FilmFilter(name: "RÖDA",  color: Color(red: 0.88, green: 0.22, blue: 0.14), imageName: nil, effect: .roda, isNew: true),
+    FilmFilter(name: "LILJA", color: Color(red: 0.74, green: 0.64, blue: 0.88), imageName: nil, effect: .lilja, isNew: true),
 ]
 
-let allFilters: [FilmFilter] = filmFilters + weirdFilters
+let weirdFilters: [FilmFilter] = [
+    FilmFilter(name: "LÖMUR",  color: Color(red: 1.0,  green: 0.45, blue: 0.0),  imageName: nil, effect: .lomur),
+    FilmFilter(name: "DREKI",  color: Color(red: 0.95, green: 0.85, blue: 0.90), imageName: nil, effect: .dreki),
+    FilmFilter(name: "SKRÍM",  color: Color(red: 0.15, green: 0.75, blue: 0.35), imageName: nil, effect: .skrim),
+    FilmFilter(name: "FROSINN", color: Color(red: 0.1, green: 0.35, blue: 0.75),  imageName: nil, effect: .frosinn),
+    FilmFilter(name: "NÓTT",   color: Color(red: 0.18, green: 0.88, blue: 0.42), imageName: nil, effect: .nott),
+    FilmFilter(name: "SKIFT",  color: Color(red: 0.95, green: 0.20, blue: 0.62), imageName: nil, effect: .skift, isNew: true),
+]
+
+let allFilters: [FilmFilter] = filmFilters + instantFilters + weirdFilters
 
 extension FilmFilter {
     func isLocked(for premium: PremiumManager) -> Bool {
@@ -361,7 +462,7 @@ extension FilmFilter {
 
 /// Bump `latestDropID` whenever a new filter pack ships so the NEW badges and the FILM dot reappear.
 enum FilmDrops {
-    static let latestDropID = 1
+    static let latestDropID = 2
     static let seenKey = "seenFilmDropID"
 }
 
@@ -432,21 +533,18 @@ struct FiltersView: View {
 
                     filterGrid(for: filmFilters, includeOriginal: true)
 
-                    HStack(spacing: 8) {
-                        Text(verbatim: "Weird Film")
-                            .font(.headline)
-                        if showNewBadges {
-                            NewBadge()
-                        }
-                    }
-                    .padding(.horizontal, 20)
+                    sectionHeader("Instant Film", filters: instantFilters)
+
+                    filterGrid(for: instantFilters, includeOriginal: false)
+
+                    sectionHeader("Weird Film", filters: weirdFilters)
 
                     filterGrid(for: weirdFilters, includeOriginal: false)
 
                     HStack(spacing: 8) {
                         Text("Lens")
                             .font(.headline)
-                        if showNewBadges {
+                        if showNewBadges && Lens.allCases.contains(where: \.isNew) {
                             NewBadge()
                         }
                     }
@@ -486,6 +584,18 @@ struct FiltersView: View {
         .task {
             await generatePreviews()
         }
+    }
+
+    // Pack names are product names and stay in English, like the stock names.
+    private func sectionHeader(_ title: String, filters: [FilmFilter]) -> some View {
+        HStack(spacing: 8) {
+            Text(verbatim: title)
+                .font(.headline)
+            if showNewBadges && filters.contains(where: \.isNew) {
+                NewBadge()
+            }
+        }
+        .padding(.horizontal, 20)
     }
 
     private func filterGrid(for filters: [FilmFilter], includeOriginal: Bool) -> some View {

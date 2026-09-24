@@ -14,8 +14,36 @@ final class LibraryViewController: UICollectionViewController {
             guard isViewLoaded else { return }
             entriesByID = Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0) })
             applySnapshot(animated: !oldValue.isEmpty)
+            // Select and the options menu only exist when there are photos.
+            if entries.isEmpty != oldValue.isEmpty { updateNavigationBarButtons() }
         }
     }
+    private var entriesSignature: [Int] = []
+
+    /// SwiftUI calls `updateUIViewController` far more often than the data changes, so only
+    /// rebuild the snapshot when something a cell displays is actually different.
+    func setEntries(_ newEntries: [PolaroidEntry]) {
+        let signature = newEntries.map(Self.displaySignature(of:))
+        guard signature != entriesSignature else { return }
+        entriesSignature = signature
+        entries = newEntries
+    }
+
+    private static func displaySignature(of entry: PolaroidEntry) -> Int {
+        var hasher = Hasher()
+        hasher.combine(entry.id)
+        hasher.combine(entry.caption)
+        hasher.combine(entry.backText)
+        hasher.combine(entry.showMap)
+        hasher.combine(entry.filterName)
+        hasher.combine(entry.packName)
+        hasher.combine(entry.packColorHex)
+        hasher.combine(entry.frameFormatRaw)
+        hasher.combine(entry.videoFilename)
+        hasher.combine(Int(entry.developmentProgress * 100))
+        return hasher.finalize()
+    }
+
     var store: PhotoStore!
     var premium: PremiumManager!
     var modelContext: ModelContext!
@@ -58,6 +86,12 @@ final class LibraryViewController: UICollectionViewController {
 
     private var cellFontScale: CGFloat {
         switch columnCount { case 1: return 1.3; case 2: return 1; default: return 0.6 }
+    }
+
+    /// Longest side of a grid photo in pixels; polaroids are taller than wide, hence the 0.75 ratio.
+    private var thumbnailPixelSize: CGFloat {
+        let width = view.bounds.width > 0 ? view.bounds.width : 430
+        return width / CGFloat(columnCount) / 0.75 * traitCollection.displayScale
     }
 
     private let categoryNames = ["All"] + allFilters.map(\.name)
@@ -150,10 +184,11 @@ final class LibraryViewController: UICollectionViewController {
         let selectMode = isSelectMode
         let fontScale = cellFontScale
         let store = store!
+        let thumbnail = entry.thumbnail(maxPixelSize: thumbnailPixelSize)
 
         cell.contentConfiguration = UIHostingConfiguration {
             PolaroidPhotoCell(
-                image: entry.image,
+                image: thumbnail,
                 videoURL: entry.videoURL(in: store.videoDirectory),
                 isTimelapse: entry.isTimelapse,
                 playVideo: entry.isTimelapse,
@@ -252,32 +287,42 @@ final class LibraryViewController: UICollectionViewController {
         updateNavigationBarButtons()
     }
 
-    private func updateNavigationTitle() {
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.alignment = isSelectMode ? .center : .leading
-        stack.spacing = 0
-
+    /// The title view is built once and only its text changes. Replacing `navigationItem.titleView`
+    /// on every update makes UIKit schedule another SwiftUI update, which calls back into
+    /// `updateUIViewController` and loops forever.
+    private lazy var titleStack: UIStackView = {
         let titleLabel = UILabel()
         titleLabel.text = NSLocalizedString("Library", comment: "")
         titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
-        stack.addArrangedSubview(titleLabel)
+        subtitleLabel.font = .preferredFont(forTextStyle: .caption1)
+        subtitleLabel.textColor = .secondaryLabel
 
-        if !entries.isEmpty {
-            let sub = UILabel()
-            sub.font = .preferredFont(forTextStyle: .caption1)
-            sub.textColor = .secondaryLabel
-            if isSelectMode && !selectedIDs.isEmpty {
-                sub.text = "\(selectedIDs.count)/\(entries.count)"
-            } else {
-                let count = filteredEntries.count
-                sub.text = count == 1
-                    ? NSLocalizedString("1 item", comment: "")
-                    : String(format: NSLocalizedString("%d items", comment: ""), count)
-            }
-            stack.addArrangedSubview(sub)
+        let stack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        stack.axis = .vertical
+        stack.spacing = 0
+        return stack
+    }()
+    private let subtitleLabel = UILabel()
+
+    private func updateNavigationTitle() {
+        let alignment: UIStackView.Alignment = isSelectMode ? .center : .leading
+        if titleStack.alignment != alignment { titleStack.alignment = alignment }
+
+        let subtitle: String?
+        if entries.isEmpty {
+            subtitle = nil
+        } else if isSelectMode && !selectedIDs.isEmpty {
+            subtitle = "\(selectedIDs.count)/\(entries.count)"
+        } else {
+            let count = filteredEntries.count
+            subtitle = count == 1
+                ? NSLocalizedString("1 item", comment: "")
+                : String(format: NSLocalizedString("%d items", comment: ""), count)
         }
-        navigationItem.titleView = stack
+        if subtitleLabel.text != subtitle { subtitleLabel.text = subtitle }
+        if subtitleLabel.isHidden != (subtitle == nil) { subtitleLabel.isHidden = subtitle == nil }
+
+        if navigationItem.titleView !== titleStack { navigationItem.titleView = titleStack }
     }
 
     private func updateNavigationBarButtons() {

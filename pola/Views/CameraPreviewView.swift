@@ -9,15 +9,32 @@ struct CameraPreviewView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> PreviewView {
         let view = PreviewView()
-        view.previewLayer.session = session
         view.previewLayer.videoGravity = .resizeAspectFill
-        applyMirroring(to: view.previewLayer)
+        attach(to: view)
         return view
     }
 
     func updateUIView(_ uiView: PreviewView, context: Context) {
-        uiView.previewLayer.session = session
-        applyMirroring(to: uiView.previewLayer)
+        attach(to: uiView)
+    }
+
+    /// Attaching a session to a preview layer makes AVFoundation rebuild its capture graph and
+    /// spin a nested run loop until it's done. Doing that inside SwiftUI's update re-enters the
+    /// view graph ("Cycle detected through attribute") and breaks sheet presentation, so attach
+    /// only when the session changes and after the current update has finished.
+    private func attach(to view: PreviewView) {
+        guard view.previewLayer.session !== session else {
+            applyMirroring(to: view.previewLayer)
+            return
+        }
+        let session = session
+        let mirroring = self
+        DispatchQueue.main.async {
+            if view.previewLayer.session !== session {
+                view.previewLayer.session = session
+            }
+            mirroring.applyMirroring(to: view.previewLayer)
+        }
     }
 
     private func applyMirroring(to previewLayer: AVCaptureVideoPreviewLayer) {

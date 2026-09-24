@@ -280,7 +280,8 @@ struct OnboardingView: View {
 
             // Weird Film row
             HStack(spacing: 10) {
-                ForEach(weirdFilters) { filter in
+                // Five fixed-size tiles is all that fits on the smallest iPhones.
+                ForEach(weirdFilters.prefix(5)) { filter in
                     ZStack {
                         if let preview = filterPreviews[filter.name] {
                             Image(uiImage: preview)
