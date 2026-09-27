@@ -131,10 +131,10 @@
 "FREE" = "GRATIS";
 "Custom color" = "Eigene Farbe";
 "Share as Story" = "Als Story teilen";
-"10 FILM STOCKS" = "10 FILME";
+"%d FILM STOCKS" = "%d FILME";
 "Shoot on\nreal film looks" = "Fotografiere\nmit echtem Film-Look";
 "From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop." = "Von warmen Goldtönen bis zu Infrarot und VHS-Horror. Film wählen, auslösen und zusehen, wie dein Polaroid entwickelt wird.";
-"10 Film Stocks" = "10 Filme";
+"%d Film Stocks" = "%d Filme";
 "Colored Frames" = "Farbige Rahmen";
 "Any border color, on any polaroid" = "Jede Rahmenfarbe für jedes Polaroid";
 "Date Stamp" = "Datumsstempel";
@@ -151,8 +151,8 @@
 "You're on a roll" = "Du bist in Fahrt";
 "Take your polaroids further with every film stock, frame and font." = "Hol mehr aus deinen Polaroids heraus – mit allen Filmen, Rahmen und Schriften.";
 "Shoot with %@" = "Fotografiere mit %@";
-"Unlock all 10 film stocks and keep every look." = "Schalte alle 10 Filme frei und behalte jeden Look.";
-"This is your last photo on %@. Unlock all 10 film stocks and keep every look." = "Das ist dein letztes Foto auf %@. Schalte alle 10 Filme frei und behalte jeden Look.";
+"Unlock all %d film stocks and keep every look." = "Schalte alle %d Filme frei und behalte jeden Look.";
+"This is your last photo on %1$@. Unlock all %2$d film stocks and keep every look." = "Das ist dein letztes Foto auf %1$@. Schalte alle %2$d Filme frei und behalte jeden Look.";
 "Welcome to Premium" = "Willkommen bei Premium";
 "Every film stock, frame and font is now yours. Thank you for supporting Poly." = "Alle Filme, Rahmen und Schriften gehören jetzt dir. Danke, dass du Poly unterstützt.";
 "Start Shooting" = "Jetzt fotografieren";

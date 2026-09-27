@@ -1,11 +1,13 @@
 # What's New — Italian (it-IT)
 
-**Version 1.1.0**
+**Version 1.0.6**
 
 ```
-Poly 1.1 è l'aggiornamento più grande di sempre.
+Poly 1.0.6 è l'aggiornamento più grande di sempre.
 
 • Prova prima di acquistare: guarda ogni pellicola dal vivo nel mirino
+• 3 nuove pellicole: RÖDA, LILJA e SKIFT (Premium)
+• Obiettivi vintage: GLIMT, KORN e LEKA, da abbinare a qualsiasi pellicola (Premium)
 • Nuovi formati istantanei: Quadrato, Largo e Mini (Premium)
 • Widget Ricordi: una foto di questo giorno nella schermata Home (Premium)
 • Timbro data retrò e fogli di stampa A4 (Premium)

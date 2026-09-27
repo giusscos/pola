@@ -131,10 +131,10 @@
 "FREE" = "GRATIS";
 "Custom color" = "Colore personalizzato";
 "Share as Story" = "Condividi come storia";
-"10 FILM STOCKS" = "10 PELLICOLE";
+"%d FILM STOCKS" = "%d PELLICOLE";
 "Shoot on\nreal film looks" = "Scatta con\nveri look pellicola";
 "From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop." = "Dai toni caldi e dorati all'infrarosso e all'horror VHS. Scegli una pellicola, scatta e guarda il tuo polaroid svilupparsi.";
-"10 Film Stocks" = "10 pellicole";
+"%d Film Stocks" = "%d pellicole";
 "Colored Frames" = "Cornici colorate";
 "Any border color, on any polaroid" = "Qualsiasi colore di cornice, su ogni polaroid";
 "Date Stamp" = "Timbro data";
@@ -151,8 +151,8 @@
 "You're on a roll" = "Sei in vena";
 "Take your polaroids further with every film stock, frame and font." = "Porta i tuoi polaroid oltre con tutte le pellicole, cornici e caratteri.";
 "Shoot with %@" = "Scatta con %@";
-"Unlock all 10 film stocks and keep every look." = "Sblocca tutte le 10 pellicole e tieni ogni look.";
-"This is your last photo on %@. Unlock all 10 film stocks and keep every look." = "Questa è la tua ultima foto su %@. Sblocca tutte le 10 pellicole e tieni ogni look.";
+"Unlock all %d film stocks and keep every look." = "Sblocca tutte le %d pellicole e tieni ogni look.";
+"This is your last photo on %1$@. Unlock all %2$d film stocks and keep every look." = "Questa è la tua ultima foto su %1$@. Sblocca tutte le %2$d pellicole e tieni ogni look.";
 "Welcome to Premium" = "Benvenuto in Premium";
 "Every film stock, frame and font is now yours. Thank you for supporting Poly." = "Tutte le pellicole, cornici e caratteri ora sono tuoi. Grazie per supportare Poly.";
 "Start Shooting" = "Inizia a scattare";

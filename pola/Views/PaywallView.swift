@@ -41,14 +41,14 @@ enum PremiumFeature: CaseIterable {
 
     var title: String {
         switch self {
-        case .filmStocks:   "10 Film Stocks"
-        case .frameColors:  "Colored Frames"
-        case .frameFormats: "Frame Formats"
-        case .captionStyle: "Caption Style"
-        case .dateStamp:    "Date Stamp"
-        case .widget:       "Memories Widget"
-        case .printSheets:  "Print Sheets"
-        case .cleanExports: "Clean Exports"
+        case .filmStocks:   String(format: NSLocalizedString("%d Film Stocks", comment: ""), allFilters.count)
+        case .frameColors:  NSLocalizedString("Colored Frames", comment: "")
+        case .frameFormats: NSLocalizedString("Frame Formats", comment: "")
+        case .captionStyle: NSLocalizedString("Caption Style", comment: "")
+        case .dateStamp:    NSLocalizedString("Date Stamp", comment: "")
+        case .widget:       NSLocalizedString("Memories Widget", comment: "")
+        case .printSheets:  NSLocalizedString("Print Sheets", comment: "")
+        case .cleanExports: NSLocalizedString("Clean Exports", comment: "")
         }
     }
 
@@ -308,8 +308,8 @@ struct PaywallView: View {
                     .multilineTextAlignment(.center)
 
                 Text(verbatim: previewImage == nil
-                     ? NSLocalizedString("Unlock all 10 film stocks and keep every look.", comment: "")
-                     : String(format: NSLocalizedString("This is your last photo on %@. Unlock all 10 film stocks and keep every look.", comment: ""), filter.name))
+                     ? String(format: NSLocalizedString("Unlock all %d film stocks and keep every look.", comment: ""), allFilters.count)
+                     : String(format: NSLocalizedString("This is your last photo on %1$@. Unlock all %2$d film stocks and keep every look.", comment: ""), filter.name, allFilters.count))
                     .font(.system(size: 15))
                     .foregroundStyle(.white.opacity(0.55))
                     .multilineTextAlignment(.center)
@@ -343,7 +343,7 @@ struct PaywallView: View {
                             .foregroundStyle(f.color)
                     }
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(LocalizedStringKey(f.title))
+                        Text(verbatim: f.title)
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.white)
                             .lineLimit(1)

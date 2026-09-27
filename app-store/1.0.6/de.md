@@ -1,4 +1,4 @@
-# Poly 1.1.0 — Deutsch (de-DE)
+# Poly 1.0.6 — Deutsch (de-DE)
 
 Copy each block into the matching App Store Connect field. Limits are checked by `app-store/check_lengths.py`.
 
@@ -15,11 +15,11 @@ Filmlooks, die sich entwickeln
 ## Promotional Text *(170)*
 Use this one while the free trial is live:
 ```
-Neu: Quadrat-, Breit- und Mini-Format, das Erinnerungs-Widget mit Fotos von diesem Tag und Teilen für Storys. Teste Premium 7 Tage gratis.
+Neu: Vintage-Objektive, 3 weitere Filme, Quadrat-, Breit- und Mini-Format und das Erinnerungs-Widget mit Fotos von diesem Tag. Teste Premium 7 Tage gratis.
 ```
 Use this one if the trial isn't live:
 ```
-Neu: Quadrat-, Breit- und Mini-Format, das Erinnerungs-Widget mit Fotos von diesem Tag und Teilen für Storys. Alle Filme, immer dabei.
+Neu: Vintage-Objektive, 3 weitere Filme, Quadrat-, Breit- und Mini-Format und das Erinnerungs-Widget mit Fotos von diesem Tag. Alle Filme, immer dabei.
 ```
 
 ## Description *(4000)*
@@ -28,8 +28,11 @@ Poly verwandelt dein iPhone in eine Sofortbildkamera.
 
 Drück auf den Auslöser und sieh zu, wie dein Bild aus der Kamera gleitet und sich langsam entwickelt – ganz wie das Original. Schüttle dein iPhone, um es zu beschleunigen. Füge eine handschriftliche Bildunterschrift hinzu, dreh den Abzug um und sieh, wo er entstanden ist, und bewahre alles in einer Mediathek auf, die sich wie ein Schuhkarton voller Fotos anfühlt.
 
-10 FILME
-Von warmen Goldtönen und verblasstem 70er-Sepia bis zu Infrarot, Wärmebild, Cyanotypie, Nachtsicht und VHS-Horror. Teste jeden Film live im Sucher, bevor du auslöst.
+13 FILME
+Von warmen Goldtönen und verblasstem 70er-Sepia über lavendelfarbene Sofortbilder bis zu Infrarot, Wärmebild, Cyanotypie, Nachtsicht, RGB-Glitch und VHS-Horror. Teste jeden Film live im Sucher, bevor du auslöst.
+
+VINTAGE-OBJEKTIVE
+Kombiniere jeden Film mit einem billigen Plastikobjektiv, grobem Korn oder einer abgenutzten Spielzeugkamera mit Lichtlecks.
 
 SOFORTBILD-FORMATE
 Fotografiere klassisch, quadratisch, breit oder mini. Der Sucher zeigt dir genau, was auf dem Abzug landet. Wähle jede beliebige Rahmenfarbe oder passe sie an deinen Film an.
@@ -51,7 +54,7 @@ Kein Konto, keine Werbung, kein Tracking. Deine Fotos bleiben in deiner Mediathe
 
 POLY PREMIUM
 Für immer gratis: die Kamera, Video, Zeitraffer, der Film und die Rahmenfarbe SOLVA und deine gesamte Mediathek.
-Premium schaltet alle Filme, Rahmenfarben und Formate frei, dazu Schriften für Bildunterschriften, den Datumsstempel, das Erinnerungs-Widget, Druckbögen und Exporte ohne Logo. Wähle ein Monats- oder Jahresabo (neue Abonnenten können mit einem Gratis-Testzeitraum starten) oder einen einmaligen Kauf auf Lebenszeit.
+Premium schaltet alle Filme, Objektive, Rahmenfarben und Formate frei, dazu Schriften für Bildunterschriften, den Datumsstempel, das Erinnerungs-Widget, Druckbögen und Exporte ohne Logo. Wähle ein Monats- oder Jahresabo (neue Abonnenten können mit einem Gratis-Testzeitraum starten) oder einen einmaligen Kauf auf Lebenszeit.
 
 Die Zahlung wird deinem Apple Account belastet. Abos verlängern sich automatisch, wenn sie nicht mindestens 24 Stunden vor Ende des aktuellen Zeitraums gekündigt werden. Du kannst sie jederzeit in den Einstellungen deines Apple Accounts verwalten oder kündigen.
 
@@ -67,9 +70,11 @@ vintage,analog,foto,filter,rahmen,einwegkamera,90er,datum,körnung,zeitraffer,wi
 
 ## What's New
 ```
-Poly 1.1 ist unser bisher größtes Update.
+Poly 1.0.6 ist unser bisher größtes Update.
 
 • Erst testen, dann kaufen: Sieh dir jeden Film live im Sucher an
+• 3 neue Filme: RÖDA, LILJA und SKIFT (Premium)
+• Vintage-Objektive: GLIMT, KORN und LEKA, kombinierbar mit jedem Film (Premium)
 • Neue Sofortbild-Formate: Quadrat, Breit und Mini (Premium)
 • Erinnerungs-Widget: ein Foto von diesem Tag auf deinem Home-Bildschirm (Premium)
 • Retro-Datumsstempel und A4-Druckbögen (Premium)
@@ -83,7 +88,7 @@ Poly 1.1 ist unser bisher größtes Update.
 | # | Headline | Subline |
 |---|----------|---------|
 | 1 | Sofortbild auf dem iPhone | Auslösen, drucken, entwickeln lassen. |
-| 2 | 10 Filme | Von Goldtönen bis Infrarot und VHS. |
+| 2 | 13 Filme | Dazu 3 Vintage-Objektive zum Kombinieren. |
 | 3 | Erst sehen, dann auslösen | Jeder Film live im Sucher. |
 | 4 | Klassisch, Quadrat, Breit, Mini | Echte Sofortbild-Formate, jede Farbe. |
 | 5 | Erlebe diesen Tag neu | Erinnerungen auf dem Home-Bildschirm. |

@@ -1,11 +1,13 @@
 # What's New — German (de-DE)
 
-**Version 1.1.0**
+**Version 1.0.6**
 
 ```
-Poly 1.1 ist unser bisher größtes Update.
+Poly 1.0.6 ist unser bisher größtes Update.
 
 • Erst testen, dann kaufen: Sieh dir jeden Film live im Sucher an
+• 3 neue Filme: RÖDA, LILJA und SKIFT (Premium)
+• Vintage-Objektive: GLIMT, KORN und LEKA, kombinierbar mit jedem Film (Premium)
 • Neue Sofortbild-Formate: Quadrat, Breit und Mini (Premium)
 • Erinnerungs-Widget: ein Foto von diesem Tag auf deinem Home-Bildschirm (Premium)
 • Retro-Datumsstempel und A4-Druckbögen (Premium)

@@ -1,4 +1,4 @@
-# Poly 1.1.0 — English (en-US)
+# Poly 1.0.6 — English (en-US)
 
 Copy each block into the matching App Store Connect field. Limits are checked by `app-store/check_lengths.py`.
 
@@ -15,11 +15,11 @@ Retro film looks that develop
 ## Promotional Text *(170, can change without a new build)*
 Use this one while the free trial is live:
 ```
-New: Square, Wide and Mini formats, a Memories widget that brings back this day, and Stories-ready sharing. Try Premium free for 7 days.
+New: vintage lenses, 3 more film stocks, Square, Wide and Mini formats, and a Memories widget that brings back this day. Try Premium free for 7 days.
 ```
 Use this one if the trial isn't live:
 ```
-New: Square, Wide and Mini formats, a Memories widget that brings back this day, and Stories-ready sharing. Every film stock, now in your pocket.
+New: vintage lenses, 3 more film stocks, Square, Wide and Mini formats, and a Memories widget that brings back this day. Every film stock, now in your pocket.
 ```
 
 ## Description *(4000)*
@@ -28,8 +28,11 @@ Poly turns your iPhone into an instant film camera.
 
 Press the shutter and watch your shot slide out and slowly develop, just like the real thing. Shake your phone to speed it up. Add a handwritten caption, flip the print over to see where it was taken, and keep every shot in a library that feels like a shoebox of prints.
 
-10 FILM STOCKS
-From warm golden-hour tones and faded 70s sepia to infrared, thermal, cyanotype, night vision and VHS horror. Preview any stock live in the viewfinder before you shoot.
+13 FILM STOCKS
+From warm golden-hour tones and faded 70s sepia to lavender instant prints, infrared, thermal, cyanotype, night vision, RGB glitch and VHS horror. Preview any stock live in the viewfinder before you shoot.
+
+VINTAGE LENSES
+Put a cheap plastic lens, coarse grain or a worn toy camera with light leaks on top of any film stock.
 
 INSTANT FORMATS
 Shoot Classic, Square, Wide or Mini. The viewfinder shows exactly what will end up in the print. Pick any frame color, or match it to your film.
@@ -51,7 +54,7 @@ No account, no ads, no tracking. Your photos stay in your library and your iClou
 
 POLY PREMIUM
 Free forever: the camera, video, time lapse, the SOLVA film stock and frame color, and your whole library.
-Premium unlocks every film stock, frame color and format, caption fonts, the date stamp, the Memories widget, print sheets and logo-free exports. Choose monthly, yearly (new subscribers can start with a free trial) or a one-time lifetime purchase.
+Premium unlocks every film stock, lens, frame color and format, caption fonts, the date stamp, the Memories widget, print sheets and logo-free exports. Choose monthly, yearly (new subscribers can start with a free trial) or a one-time lifetime purchase.
 
 Payment is charged to your Apple Account. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period. Manage or cancel them anytime in your Apple Account settings.
 
@@ -68,9 +71,11 @@ vintage,analog,photo,filter,frame,disposable,90s,date stamp,grain,timelapse,widg
 
 ## What's New *(4000)*
 ```
-Poly 1.1 is our biggest update yet.
+Poly 1.0.6 is our biggest update yet.
 
 • Try before you buy: preview any film stock live in the viewfinder
+• 3 new film stocks: RÖDA, LILJA and SKIFT (Premium)
+• Vintage lenses: GLIMT, KORN and LEKA, on top of any film stock (Premium)
 • New instant formats: Square, Wide and Mini (Premium)
 • Memories widget: a photo from this day on your Home Screen (Premium)
 • Retro date stamp and A4 print sheets (Premium)
@@ -86,7 +91,7 @@ Headline ≤ 31 characters, subline ≤ 45 characters. See `README.md` for which
 | # | Headline | Subline |
 |---|----------|---------|
 | 1 | Instant film. On iPhone. | Shoot, watch it print, see it develop. |
-| 2 | 10 film stocks | From golden hour to infrared and VHS. |
+| 2 | 13 film stocks | Plus 3 vintage lenses to stack on top. |
 | 3 | See it before you shoot | Preview every stock live in the viewfinder. |
 | 4 | Classic, Square, Wide, Mini | Real instant sizes, any frame color. |
 | 5 | Relive this day | Memories right on your Home Screen. |

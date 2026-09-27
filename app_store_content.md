@@ -1,6 +1,6 @@
 # poly. — App Store Content (1.0.x, superseded)
 
-> **Superseded by [`app-store/1.1.0/`](app-store/1.1.0/README.md).** Kept for reference. Its subtitle and keywords use the "Polaroid" trademark, so don't copy them forward.
+> **Superseded by [`app-store/1.0.6/`](app-store/1.0.6/README.md).** Kept for reference. Its subtitle and keywords use the "Polaroid" trademark, so don't copy them forward.
 
 All copy organised by language. Each section maps to an App Store Connect field or a screenshot overlay.
 
