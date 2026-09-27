@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks App Store Connect field limits for every language file of a release.
 
-Usage: python3 app-store/check_lengths.py app-store/1.1.0
+Usage: python3 app-store/check_lengths.py app-store/1.0.6
 """
 import re
 import sys
@@ -61,7 +61,7 @@ def check(path: Path) -> list[str]:
 
 
 def main() -> int:
-    release = Path(sys.argv[1] if len(sys.argv) > 1 else "app-store/1.1.0")
+    release = Path(sys.argv[1] if len(sys.argv) > 1 else "app-store/1.0.6")
     failed = False
     for path in sorted(release.glob("*.md")):
         if path.name == "README.md":

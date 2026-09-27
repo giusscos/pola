@@ -1,11 +1,13 @@
 # What's New — Spanish (es-ES)
 
-**Version 1.1.0**
+**Version 1.0.6**
 
 ```
-Poly 1.1 es nuestra mayor actualización hasta ahora.
+Poly 1.0.6 es nuestra mayor actualización hasta ahora.
 
 • Prueba antes de comprar: mira cada película en directo en el visor
+• 3 películas nuevas: RÖDA, LILJA y SKIFT (Premium)
+• Lentes vintage: GLIMT, KORN y LEKA, combinables con cualquier película (Premium)
 • Nuevos formatos instantáneos: Cuadrado, Ancho y Mini (Premium)
 • Widget Recuerdos: una foto de este día en tu pantalla de inicio (Premium)
 • Fecha retro impresa y hojas de impresión A4 (Premium)

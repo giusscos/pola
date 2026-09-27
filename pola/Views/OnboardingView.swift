@@ -17,7 +17,7 @@ struct OnboardingView: View {
                 featurePage(
                     pageIndex: 1,
                     color: Color(red: 1.0, green: 0.78, blue: 0.2),
-                    badge: "10 FILM STOCKS",
+                    badge: String(format: NSLocalizedString("%d FILM STOCKS", comment: ""), allFilters.count),
                     title: "Shoot on\nreal film looks",
                     description: "From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop.",
                     visual: AnyView(filterVisual)
@@ -196,7 +196,7 @@ struct OnboardingView: View {
 
                 VStack(spacing: 14) {
                     // Premium badge
-                    Text(LocalizedStringKey(badge))
+                    Text(verbatim: badge)
                         .font(.system(size: 11, weight: .bold).width(.expanded))
                         .foregroundStyle(color)
                         .padding(.horizontal, 14)

@@ -131,10 +131,10 @@
 "FREE" = "FREE";
 "Custom color" = "Custom color";
 "Share as Story" = "Share as Story";
-"10 FILM STOCKS" = "10 FILM STOCKS";
+"%d FILM STOCKS" = "%d FILM STOCKS";
 "Shoot on\nreal film looks" = "Shoot on\nreal film looks";
 "From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop." = "From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop.";
-"10 Film Stocks" = "10 Film Stocks";
+"%d Film Stocks" = "%d Film Stocks";
 "Colored Frames" = "Colored Frames";
 "Any border color, on any polaroid" = "Any border color, on any polaroid";
 "Date Stamp" = "Date Stamp";
@@ -151,8 +151,8 @@
 "You're on a roll" = "You're on a roll";
 "Take your polaroids further with every film stock, frame and font." = "Take your polaroids further with every film stock, frame and font.";
 "Shoot with %@" = "Shoot with %@";
-"Unlock all 10 film stocks and keep every look." = "Unlock all 10 film stocks and keep every look.";
-"This is your last photo on %@. Unlock all 10 film stocks and keep every look." = "This is your last photo on %@. Unlock all 10 film stocks and keep every look.";
+"Unlock all %d film stocks and keep every look." = "Unlock all %d film stocks and keep every look.";
+"This is your last photo on %1$@. Unlock all %2$d film stocks and keep every look." = "This is your last photo on %1$@. Unlock all %2$d film stocks and keep every look.";
 "Welcome to Premium" = "Welcome to Premium";
 "Every film stock, frame and font is now yours. Thank you for supporting Poly." = "Every film stock, frame and font is now yours. Thank you for supporting Poly.";
 "Start Shooting" = "Start Shooting";

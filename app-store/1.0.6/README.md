@@ -1,27 +1,27 @@
-# Poly 1.1.0 — App Store release kit
+# Poly 1.0.6 — App Store release kit
 
-Everything App Store Connect needs for 1.1.0, in English (`en.md`), German (`de.md`), Spanish (`es.md`), French (`fr.md`) and Italian (`it.md`). Each file has: App Name, Subtitle, Promotional Text, Description, Keywords, What's New, screenshot captions and In-App Purchase metadata.
+Everything App Store Connect needs for 1.0.6, in English (`en.md`), German (`de.md`), Spanish (`es.md`), French (`fr.md`) and Italian (`it.md`). Each file has: App Name, Subtitle, Promotional Text, Description, Keywords, What's New, screenshot captions and In-App Purchase metadata.
 
 Check limits after any edit:
 ```bash
-python3 app-store/check_lengths.py app-store/1.1.0
+python3 app-store/check_lengths.py app-store/1.0.6
 ```
 
-The build is already set to **1.1.0** (`MARKETING_VERSION` for the app and the widget).
+The build is already set to **1.0.6** (`MARKETING_VERSION` for the app and the widget).
 
 ---
 
-## What changed vs. the 1.0.x listing (`app_store_content.md`)
+## What changed vs. the current listing (`app_store_content.md`)
 
-| Field | 1.0.x | 1.1.0 | Why |
+| Field | Current | 1.0.6 | Why |
 |---|---|---|---|
 | App Name | `poly.` | `Poly - Instant Film Camera` (localized) | The name is the strongest search signal; `poly.` alone ranks for nothing. The brand is written **Poly** everywhere in the listing, matching the Home Screen name. |
 | Subtitle | `Authentic Polaroid Camera` | `Retro film looks that develop` | "Polaroid" is a registered trademark. Using it in metadata can get the update rejected (App Review 2.3.7 / 5.2.1). |
 | Keywords | included `polaroid`, repeated words from the name | no trademarks; no words already in name/subtitle | Apple indexes name and subtitle words already, so repeating them wastes bytes. |
-| Description | 5 film stocks, "watermark-free" | 10 stocks, formats, widget, date stamp, print sheets, Stories, privacy, full subscription terms | Matches what the app does now. Includes the auto-renew wording App Review expects. |
+| Description | 5 film stocks, "watermark-free" | 13 stocks, 3 lenses, formats, widget, date stamp, print sheets, Stories, privacy, full subscription terms | Matches what the app does now. Includes the auto-renew wording App Review expects. |
 | "Ektar" (Kodak) | in onboarding copy | "golden tones" | Also a third-party trademark; fixed in the app too. |
 
-> **Still worth deciding:** the app UI uses "polaroid" as a common noun ("your polaroids"). That's lower risk than metadata, but if you ever get a trademark complaint, "print" or "instant" are drop-in replacements. Store metadata for 1.1.0 is already clean.
+> **Still worth deciding:** the app UI uses "polaroid" as a common noun ("your polaroids"). That's lower risk than metadata, but if you ever get a trademark complaint, "print" or "instant" are drop-in replacements. Store metadata for 1.0.6 is already clean.
 
 ---
 
@@ -33,7 +33,7 @@ Upload the same order in every language. Only the caption text changes (from eac
 | # | Caption theme | What to capture | Tips |
 |---|---|---|---|
 | 1 | Instant film on iPhone | The **print animation**: polaroid mid-development over the camera | Take it about 5 s after the shutter so the image is half developed. Use the SOLVA stock. |
-| 2 | 10 film stocks | **Filters sheet** at the large detent | Scroll so Classic Film and Weird Film (with NEW badges) are both visible. Premium account, so there are no locks. |
+| 2 | 13 film stocks | **Filters sheet** at the large detent | Show the Lens row plus the Instant and Weird Film sections with their NEW badges. Premium account, so there are no locks. |
 | 3 | See it before you shoot | **Camera** with a Weird Film stock selected and the "Previewing …" banner | Use a free account for this one so the banner shows. A bright outdoor scene reads best. |
 | 4 | Classic, Square, Wide, Mini | **Library** in 2 columns with one polaroid of each format and a few frame colors | Seed shots in each format. Mix white, SOLVA and VYLUR frames. |
 | 5 | Relive this day | **Home Screen** with the medium Memories widget ("1 YEAR AGO TODAY") | Needs a photo dated exactly one year ago; the simulator is easiest. |
@@ -49,7 +49,7 @@ Upload the same order in every language. Only the caption text changes (from eac
 
 ## App Store Connect checklist
 
-- [ ] New version **1.1.0**; paste each field from the language files (5 localizations).
+- [ ] New version **1.0.6**; paste each field from the language files (5 localizations).
 - [ ] Upload screenshots (8 per language, same order).
 - [ ] **Promotional Text:** use the "trial live" version only once the free trial is approved. You can change this field anytime without review.
 - [ ] **Subscriptions:**

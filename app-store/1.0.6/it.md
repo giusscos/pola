@@ -1,4 +1,4 @@
-# Poly 1.1.0 — Italiano (it)
+# Poly 1.0.6 — Italiano (it)
 
 Copy each block into the matching App Store Connect field. Limits are checked by `app-store/check_lengths.py`.
 
@@ -15,11 +15,11 @@ Look pellicola che si sviluppa
 ## Promotional Text *(170)*
 Use this one while the free trial is live:
 ```
-Novità: formati Quadrato, Largo e Mini, il widget Ricordi che ti riporta a questo giorno e la condivisione per le Storie. Prova Premium gratis per 7 giorni.
+Novità: obiettivi vintage, 3 nuove pellicole, formati Quadrato, Largo e Mini e il widget Ricordi che ti riporta a questo giorno. Prova Premium gratis per 7 giorni.
 ```
 Use this one if the trial isn't live:
 ```
-Novità: formati Quadrato, Largo e Mini, il widget Ricordi che ti riporta a questo giorno e la condivisione per le Storie. Tutte le pellicole, in tasca.
+Novità: obiettivi vintage, 3 nuove pellicole, formati Quadrato, Largo e Mini e il widget Ricordi che ti riporta a questo giorno. Tutte le pellicole, in tasca.
 ```
 
 ## Description *(4000)*
@@ -28,8 +28,11 @@ Poly trasforma il tuo iPhone in una fotocamera a sviluppo istantaneo.
 
 Premi il pulsante e guarda lo scatto uscire dalla fotocamera e svilupparsi piano piano, proprio come una vera istantanea. Scuoti il telefono per accelerare. Aggiungi una didascalia scritta a mano, gira la stampa per vedere dove l'hai scattata e conserva tutto in una libreria che sembra una scatola di foto.
 
-10 PELLICOLE
-Dai toni caldi dell'ora d'oro al seppia sbiadito anni '70, fino a infrarosso, termico, cianotipia, visione notturna e horror VHS. Prova ogni pellicola dal vivo nel mirino prima di scattare.
+13 PELLICOLE
+Dai toni caldi dell'ora d'oro al seppia sbiadito anni '70, fino a istantanee color lavanda, infrarosso, termico, cianotipia, visione notturna, glitch RGB e horror VHS. Prova ogni pellicola dal vivo nel mirino prima di scattare.
+
+OBIETTIVI VINTAGE
+Abbina a qualsiasi pellicola un obiettivo di plastica economico, una grana grossa o una vecchia fotocamera giocattolo con infiltrazioni di luce.
 
 FORMATI ISTANTANEI
 Scatta in Classico, Quadrato, Largo o Mini: il mirino ti mostra esattamente cosa finirà nella stampa. Scegli qualsiasi colore per la cornice, o abbinalo alla pellicola.
@@ -51,7 +54,7 @@ Nessun account, nessuna pubblicità, nessun tracciamento. Le tue foto restano ne
 
 POLY PREMIUM
 Gratis per sempre: la fotocamera, video, time lapse, la pellicola e la cornice SOLVA e tutta la tua libreria.
-Premium sblocca tutte le pellicole, i colori e i formati delle cornici, i caratteri delle didascalie, il timbro data, il widget Ricordi, i fogli di stampa e le esportazioni senza logo. Scegli l'abbonamento mensile, annuale (i nuovi abbonati possono iniziare con una prova gratuita) o l'acquisto una tantum a vita.
+Premium sblocca tutte le pellicole, gli obiettivi, i colori e i formati delle cornici, i caratteri delle didascalie, il timbro data, il widget Ricordi, i fogli di stampa e le esportazioni senza logo. Scegli l'abbonamento mensile, annuale (i nuovi abbonati possono iniziare con una prova gratuita) o l'acquisto una tantum a vita.
 
 Il pagamento viene addebitato sul tuo Account Apple. Gli abbonamenti si rinnovano automaticamente se non vengono annullati almeno 24 ore prima della fine del periodo in corso. Puoi gestirli o annullarli in qualsiasi momento dalle impostazioni del tuo Account Apple.
 
@@ -67,9 +70,11 @@ vintage,analogica,foto,filtro,cornice,usa e getta,anni 90,data,grana,timelapse,w
 
 ## What's New
 ```
-Poly 1.1 è l'aggiornamento più grande di sempre.
+Poly 1.0.6 è l'aggiornamento più grande di sempre.
 
 • Prova prima di acquistare: guarda ogni pellicola dal vivo nel mirino
+• 3 nuove pellicole: RÖDA, LILJA e SKIFT (Premium)
+• Obiettivi vintage: GLIMT, KORN e LEKA, da abbinare a qualsiasi pellicola (Premium)
 • Nuovi formati istantanei: Quadrato, Largo e Mini (Premium)
 • Widget Ricordi: una foto di questo giorno nella schermata Home (Premium)
 • Timbro data retrò e fogli di stampa A4 (Premium)
@@ -83,7 +88,7 @@ Poly 1.1 è l'aggiornamento più grande di sempre.
 | # | Headline | Subline |
 |---|----------|---------|
 | 1 | Pellicola istantanea su iPhone | Scatta, guarda la stampa, falla sviluppare. |
-| 2 | 10 pellicole | Dall'ora d'oro all'infrarosso e al VHS. |
+| 2 | 13 pellicole | E 3 obiettivi vintage da abbinare. |
 | 3 | Guarda prima di scattare | Ogni pellicola dal vivo nel mirino. |
 | 4 | Classico, Quadrato, Largo, Mini | Veri formati istantanei, ogni colore. |
 | 5 | Rivivi questo giorno | I tuoi ricordi nella schermata Home. |

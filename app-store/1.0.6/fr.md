@@ -1,4 +1,4 @@
-# Poly 1.1.0 — Français (fr-FR)
+# Poly 1.0.6 — Français (fr-FR)
 
 Copy each block into the matching App Store Connect field. Limits are checked by `app-store/check_lengths.py`.
 
@@ -15,11 +15,11 @@ Des looks film qui se révèlent
 ## Promotional Text *(170)*
 Use this one while the free trial is live:
 ```
-Nouveau : formats Carré, Large et Mini, le widget Souvenirs qui vous ramène à ce jour et le partage en story. Essayez Premium gratuitement 7 jours.
+Nouveau : objectifs vintage, 3 pellicules inédites, formats Carré, Large et Mini et le widget Souvenirs qui vous ramène à ce jour. Essayez Premium gratuitement 7 jours.
 ```
 Use this one if the trial isn't live:
 ```
-Nouveau : formats Carré, Large et Mini, le widget Souvenirs qui vous ramène à ce jour et le partage en story. Toutes les pellicules dans votre poche.
+Nouveau : objectifs vintage, 3 pellicules inédites, formats Carré, Large et Mini et le widget Souvenirs qui vous ramène à ce jour. Toutes les pellicules dans votre poche.
 ```
 
 ## Description *(4000)*
@@ -28,8 +28,11 @@ Poly transforme votre iPhone en appareil photo instantané.
 
 Appuyez sur le déclencheur et regardez votre photo sortir de l'appareil puis se révéler lentement, comme une vraie. Secouez votre iPhone pour accélérer. Ajoutez une légende manuscrite, retournez le tirage pour voir où il a été pris et gardez tout dans une bibliothèque qui ressemble à une boîte à chaussures pleine de photos.
 
-10 PELLICULES
-Des tons chauds de l'heure dorée et du sépia délavé des années 70 à l'infrarouge, la thermographie, le cyanotype, la vision nocturne et l'horreur VHS. Testez chaque pellicule en direct dans le viseur avant de déclencher.
+13 PELLICULES
+Des tons chauds de l'heure dorée et du sépia délavé des années 70 aux instantanés lavande, à l'infrarouge, la thermographie, le cyanotype, la vision nocturne, le glitch RVB et l'horreur VHS. Testez chaque pellicule en direct dans le viseur avant de déclencher.
+
+OBJECTIFS VINTAGE
+Associez n'importe quelle pellicule à un objectif en plastique bon marché, à un grain épais ou à un vieil appareil jouet avec ses fuites de lumière.
 
 FORMATS INSTANTANÉS
 Photographiez en Classique, Carré, Large ou Mini : le viseur vous montre exactement ce qui figurera sur le tirage. Choisissez n'importe quelle couleur de cadre, ou accordez-la à votre pellicule.
@@ -51,7 +54,7 @@ Pas de compte, pas de pub, aucun pistage. Vos photos restent dans votre biblioth
 
 POLY PREMIUM
 Gratuit pour toujours : l'appareil photo, la vidéo, l'accéléré, la pellicule et le cadre SOLVA et toute votre bibliothèque.
-Premium débloque toutes les pellicules, couleurs et formats de cadre, les polices de légende, la date incrustée, le widget Souvenirs, les planches d'impression et les exports sans logo. Choisissez l'abonnement mensuel, annuel (les nouveaux abonnés peuvent commencer par un essai gratuit) ou l'achat unique à vie.
+Premium débloque toutes les pellicules, les objectifs, les couleurs et formats de cadre, les polices de légende, la date incrustée, le widget Souvenirs, les planches d'impression et les exports sans logo. Choisissez l'abonnement mensuel, annuel (les nouveaux abonnés peuvent commencer par un essai gratuit) ou l'achat unique à vie.
 
 Le paiement est débité de votre compte Apple. Les abonnements se renouvellent automatiquement sauf résiliation au moins 24 heures avant la fin de la période en cours. Gérez-les ou résiliez-les à tout moment dans les réglages de votre compte Apple.
 
@@ -67,9 +70,11 @@ vintage,argentique,photo,filtre,cadre,jetable,années 90,grain,accéléré,widge
 
 ## What's New
 ```
-Poly 1.1 est notre plus grosse mise à jour.
+Poly 1.0.6 est notre plus grosse mise à jour.
 
 • Essayez avant d'acheter : chaque pellicule en direct dans le viseur
+• 3 nouvelles pellicules : RÖDA, LILJA et SKIFT (Premium)
+• Objectifs vintage : GLIMT, KORN et LEKA, à associer à n'importe quelle pellicule (Premium)
 • Nouveaux formats instantanés : Carré, Large et Mini (Premium)
 • Widget Souvenirs : une photo de ce jour sur votre écran d'accueil (Premium)
 • Date rétro incrustée et planches d'impression A4 (Premium)
@@ -83,7 +88,7 @@ Poly 1.1 est notre plus grosse mise à jour.
 | # | Headline | Subline |
 |---|----------|---------|
 | 1 | L'instantané sur iPhone | Déclenchez, regardez-le se révéler. |
-| 2 | 10 pellicules | De l'heure dorée à l'infrarouge et au VHS. |
+| 2 | 13 pellicules | Et 3 objectifs vintage à combiner. |
 | 3 | Voyez avant de déclencher | Chaque pellicule en direct dans le viseur. |
 | 4 | Classique, Carré, Large, Mini | De vrais formats, toutes les couleurs. |
 | 5 | Revivez ce jour | Vos souvenirs sur l'écran d'accueil. |
