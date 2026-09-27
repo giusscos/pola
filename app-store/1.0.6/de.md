@@ -96,6 +96,16 @@ Poly 1.0.6 ist unser bisher größtes Update.
 | 7 | Erlebe ==diesen Tag== neu | Erinnerungen auf dem Home-Bildschirm. |
 | 8 | Gemacht für ==Storys== | In 9:16 teilen oder A4 drucken. |
 
+## Screenshot captions (ByJo style)
+
+| # | Title | Subtitle |
+|---|-------|----------|
+| 1 | Sofortbild | direkt auf dem iPhone |
+| 2 | 13 Filme | und 3 Vintage-Objektive |
+| 3 | Jedes Format | Klassisch, Quadrat, Breit, Mini |
+| 4 | Live entwickelt | Schütteln macht's schneller |
+| 5 | Beschriften | mit Notiz und Datumsstempel |
+
 ## In-App Purchases
 | Field | Value |
 |-------|-------|

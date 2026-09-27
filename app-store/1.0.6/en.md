@@ -99,6 +99,17 @@ Headline ≤ 31 characters, subline ≤ 45 characters. `==word==` marks the hook
 | 7 | ==Relive== this day | Memories right on your Home Screen. |
 | 8 | Made for ==Stories== | Share in 9:16 or print A4 sheets at home. |
 
+## Screenshot captions (ByJo style)
+The set to upload. Title ≤ 16 characters (the orange line), subtitle ≤ 32. See `README.md` for the capture behind each one.
+
+| # | Title | Subtitle |
+|---|-------|----------|
+| 1 | Instant film | right on your iPhone |
+| 2 | 13 film stocks | and 3 vintage lenses |
+| 3 | Every format | Classic, Square, Wide, Mini |
+| 4 | Watch it develop | shake to go faster |
+| 5 | Write on it | captions and date stamps |
+
 ## In-App Purchases
 | Field | Value |
 |-------|-------|

@@ -34,6 +34,35 @@ Upload the same order in every language. Only the caption text changes (from eac
 
 The first 3 appear in search results, so they're the most colorful, instantly readable shots. The print-developing capture is mostly dark, so it comes 4th.
 
+
+### ByJo-style set (the one to upload)
+
+5 slides in the "App Store 1.0.6 · B (ByJo style)" sections on the Poly page: `#EBEBEB` background, a centered title in SF Compact Rounded Bold 156 px in brand orange, a Semibold 96 px subtitle under it, and one iPhone 17 Pro running off the bottom. Captions are in each language file under **Screenshot captions (ByJo style)**; the checker keeps each line short enough to stay on one line. Frame names like `B/de/02-film-stocks` export into `B/<language>/`, in upload order.
+
+| # | Capture | What it shows |
+|---|---|---|
+| 1 | Camera | Viewfinder on the sunset with FLÄRN selected |
+| 2 | Filters sheet | Scrolled to Instant Film and Weird Film, NEW badges visible |
+| 3 | Library | 2 columns of seeded prints: every format, several frame colors, date stamps |
+| 4 | Print developing | Half-developed print with the caption card and "Shake to develop faster" |
+| 5 | Print detail | "Big Sur" with its caption and date stamp |
+
+The first 3 show up in search results, so they each look different: the camera, the most colorful screen, then the result.
+
+**Retaking the captures.** Debug builds on the simulator have a still-photo camera feed, a Premium switch and a seeded library (`pola/Managers/SimulatorFeed.swift`, compiled out of device builds). Use a simulator that is **not** signed in to an Apple Account, so nothing syncs to your real library. Install a Debug build, copy JPGs into the app's `Documents/SimulatorFeed/` (they're used in name order), then:
+
+```bash
+xcrun simctl spawn booted defaults write com.giusscos.pola SimulatorPremium -bool YES
+xcrun simctl spawn booted defaults write com.giusscos.pola SeedScreenshotLibrary -bool YES
+xcrun simctl spawn booted defaults write com.giusscos.pola hasSeenOnboarding -bool YES
+xcrun simctl spawn booted defaults write com.giusscos.pola dateStampEnabled -bool YES
+xcrun simctl status_bar booted override --time "9:41" --batteryState discharging --batteryLevel 100
+```
+
+Launch the app: the library is filled once with 8 prints. Save each screen with `xcrun simctl io booted screenshot <file>.png`.
+
+### First set (8-slide plan)
+
 | # | Caption theme | What to capture | Tips |
 |---|---|---|---|
 | 1 | 13 film stocks | **Filters sheet** at the large detent | Show the Lens row plus the Instant and Weird Film sections with their NEW badges. Premium account, so there are no locks. |

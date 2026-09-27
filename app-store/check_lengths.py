@@ -10,6 +10,7 @@ from pathlib import Path
 CHAR_LIMITS = {"App Name": 30, "Subtitle": 30, "Promotional Text": 170, "Description": 4000, "What's New": 4000}
 KEYWORD_BYTES = 100
 HEADLINE_MAX, SUBLINE_MAX = 31, 45   # our own screenshot layout limits, not Apple's
+TITLE_B_MAX, SUBTITLE_B_MAX = 16, 32  # ByJo-style set: one line each at 156 / 96 px
 IAP_NAME_MAX, IAP_DESC_MAX = 30, 45
 
 
@@ -53,6 +54,12 @@ def check(path: Path) -> list[str]:
             problems.append(f"Screenshot headline too long ({len(headline)}): {headline}")
         if len(subline) > SUBLINE_MAX:
             problems.append(f"Screenshot subline too long ({len(subline)}): {subline}")
+
+    for title, subtitle in re.findall(r"^\| \d+ \| (.*?) \| (.*?) \|$", sections.get("Screenshot captions (ByJo style)", ""), re.M):
+        if len(title) > TITLE_B_MAX:
+            problems.append(f"ByJo-style title too long ({len(title)}): {title}")
+        if len(subtitle) > SUBTITLE_B_MAX:
+            problems.append(f"ByJo-style subtitle too long ({len(subtitle)}): {subtitle}")
 
     for label, value in re.findall(r"^\| (.*?) \| (.*?) \|$", sections.get("In-App Purchases", ""), re.M):
         limit = IAP_NAME_MAX if "display name" in label else IAP_DESC_MAX if "description" in label else None

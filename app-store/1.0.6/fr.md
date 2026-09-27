@@ -96,6 +96,16 @@ Poly 1.0.6 est notre plus grosse mise à jour.
 | 7 | ==Revivez== ce jour | Vos souvenirs sur l'écran d'accueil. |
 | 8 | Fait pour les ==stories== | Partagez en 9:16 ou imprimez en A4. |
 
+## Screenshot captions (ByJo style)
+
+| # | Title | Subtitle |
+|---|-------|----------|
+| 1 | L'instantané | directement sur iPhone |
+| 2 | 13 pellicules | et 3 objectifs vintage |
+| 3 | Tous formats | Classique, Carré, Large, Mini |
+| 4 | Elle se révèle | secouez pour accélérer |
+| 5 | Écrivez dessus | légendes et date incrustée |
+
 ## In-App Purchases
 | Field | Value |
 |-------|-------|
