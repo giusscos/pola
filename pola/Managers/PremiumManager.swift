@@ -184,8 +184,16 @@ final class PremiumManager {
         activeProductID = tx?.productID
         expirationDate = tx?.expirationDate
         willAutoRenew = autoRenew
-        isPremium = tx != nil
+        isPremium = tx != nil || Self.simulatorPremium
     }
+
+    #if targetEnvironment(simulator)
+    /// StoreKit testing only works when launched from Xcode; for screenshots run
+    /// `xcrun simctl spawn booted defaults write com.giusscos.pola SimulatorPremium -bool YES`.
+    private static var simulatorPremium: Bool { UserDefaults.standard.bool(forKey: "SimulatorPremium") }
+    #else
+    private static let simulatorPremium = false
+    #endif
 
     private func activeSubscriptionTransaction() async -> StoreKit.Transaction? {
         guard let subscription = products.first(where: { $0.subscription != nil })?.subscription,

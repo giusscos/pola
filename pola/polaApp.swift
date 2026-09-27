@@ -30,6 +30,9 @@ struct polaApp: App {
             // Fall back to local-only storage if CloudKit is unavailable
             container = try! ModelContainer(for: PolaroidEntry.self)
         }
+        #if targetEnvironment(simulator)
+        SimulatorFeed.seedLibraryIfRequested(in: container.mainContext)
+        #endif
     }
 
     var body: some Scene {

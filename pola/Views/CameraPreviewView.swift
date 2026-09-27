@@ -10,6 +10,9 @@ struct CameraPreviewView: UIViewRepresentable {
     func makeUIView(context: Context) -> PreviewView {
         let view = PreviewView()
         view.previewLayer.videoGravity = .resizeAspectFill
+        #if targetEnvironment(simulator)
+        view.showSimulatorFeed()
+        #endif
         attach(to: view)
         return view
     }
@@ -52,5 +55,21 @@ struct CameraPreviewView: UIViewRepresentable {
         var previewLayer: AVCaptureVideoPreviewLayer {
             layer as! AVCaptureVideoPreviewLayer
         }
+
+        #if targetEnvironment(simulator)
+        private let feedView = UIImageView()
+
+        func showSimulatorFeed() {
+            feedView.contentMode = .scaleAspectFill
+            feedView.clipsToBounds = true
+            feedView.image = SimulatorFeed.shared.current
+            feedView.frame = bounds
+            feedView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            addSubview(feedView)
+            NotificationCenter.default.addObserver(forName: SimulatorFeed.didAdvance, object: nil, queue: .main) { [weak self] _ in
+                self?.feedView.image = SimulatorFeed.shared.current
+            }
+        }
+        #endif
     }
 }

@@ -177,13 +177,11 @@ final class PolaroidPrintAnimationVC: UIViewController {
     }
 
     private func buildCaptionCard() {
-        doneBtn.setTitle("Done", for: .normal)
-        doneBtn.setTitleColor(.white, for: .normal)
         doneBtn.addTarget(self, action: #selector(doneTapped), for: .touchUpInside)
         doneBtn.translatesAutoresizingMaskIntoConstraints = false
 
         if captionEnabled {
-            // Blurred card with text field + Done button
+            // Blurred card: text field and a round checkmark button side by side
             captionCard.layer.cornerRadius = 16
             captionCard.clipsToBounds = true
             captionCard.alpha = 0
@@ -192,7 +190,7 @@ final class PolaroidPrintAnimationVC: UIViewController {
 
             let cv = captionCard.contentView
 
-            captionField.placeholder = "Add a caption..."
+            captionField.placeholder = NSLocalizedString("Add a caption...", comment: "")
             captionField.font = .systemFont(ofSize: 15)
             captionField.backgroundColor = .systemGray6
             captionField.layer.cornerRadius = 10
@@ -203,11 +201,22 @@ final class PolaroidPrintAnimationVC: UIViewController {
             captionField.rightViewMode = .always
             captionField.returnKeyType = .done
             captionField.addTarget(self, action: #selector(returnTapped), for: .editingDidEndOnExit)
-            captionField.translatesAutoresizingMaskIntoConstraints = false
-            cv.addSubview(captionField)
 
-            doneBtn.titleLabel?.font = .boldSystemFont(ofSize: 15)
-            cv.addSubview(doneBtn)
+            var config = UIButton.Configuration.filled()
+            config.image = UIImage(systemName: "checkmark",
+                                   withConfiguration: UIImage.SymbolConfiguration(pointSize: 16, weight: .bold))
+            config.cornerStyle = .capsule
+            config.baseBackgroundColor = .tintColor
+            config.baseForegroundColor = .black
+            doneBtn.configuration = config
+            doneBtn.accessibilityLabel = NSLocalizedString("Done", comment: "")
+
+            let row = UIStackView(arrangedSubviews: [captionField, doneBtn])
+            row.axis = .horizontal
+            row.spacing = 10
+            row.alignment = .center
+            row.translatesAutoresizingMaskIntoConstraints = false
+            cv.addSubview(row)
 
             let bottom = captionCard.bottomAnchor.constraint(
                 equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
@@ -217,17 +226,19 @@ final class PolaroidPrintAnimationVC: UIViewController {
                 captionCard.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
                 captionCard.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
                 bottom,
-                captionField.topAnchor.constraint(equalTo: cv.topAnchor, constant: 16),
-                captionField.leadingAnchor.constraint(equalTo: cv.leadingAnchor, constant: 16),
-                captionField.trailingAnchor.constraint(equalTo: cv.trailingAnchor, constant: -16),
+                row.topAnchor.constraint(equalTo: cv.topAnchor, constant: 12),
+                row.leadingAnchor.constraint(equalTo: cv.leadingAnchor, constant: 12),
+                row.trailingAnchor.constraint(equalTo: cv.trailingAnchor, constant: -12),
+                row.bottomAnchor.constraint(equalTo: cv.bottomAnchor, constant: -12),
                 captionField.heightAnchor.constraint(equalToConstant: 44),
-                doneBtn.topAnchor.constraint(equalTo: captionField.bottomAnchor, constant: 10),
-                doneBtn.trailingAnchor.constraint(equalTo: cv.trailingAnchor, constant: -16),
-                doneBtn.bottomAnchor.constraint(equalTo: cv.bottomAnchor, constant: -16),
+                doneBtn.widthAnchor.constraint(equalToConstant: 44),
+                doneBtn.heightAnchor.constraint(equalToConstant: 44),
                 shakeHint.bottomAnchor.constraint(equalTo: captionCard.topAnchor, constant: -12),
             ])
         } else {
             // Standalone "Done" button — no card
+            doneBtn.setTitle(NSLocalizedString("Done", comment: ""), for: .normal)
+            doneBtn.setTitleColor(.white, for: .normal)
             doneBtn.titleLabel?.font = .boldSystemFont(ofSize: 17)
             doneBtn.alpha = 0
             view.addSubview(doneBtn)
@@ -537,7 +548,7 @@ final class MultiPolaroidPrintAnimationVC: UIViewController {
         }
 
         // Done button
-        doneBtn.setTitle("Done", for: .normal)
+        doneBtn.setTitle(NSLocalizedString("Done", comment: ""), for: .normal)
         doneBtn.titleLabel?.font = .boldSystemFont(ofSize: 17)
         doneBtn.alpha = 0
         doneBtn.translatesAutoresizingMaskIntoConstraints = false

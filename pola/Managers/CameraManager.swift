@@ -318,11 +318,15 @@ final class CameraManager: NSObject {
     }
 
     func capturePhoto() {
+        #if targetEnvironment(simulator)
+        capturedImage = SimulatorFeed.shared.capture()
+        #else
         sessionQueue.async { [weak self] in
             guard let self else { return }
             let settings = AVCapturePhotoSettings()
             photoOutput.capturePhoto(with: settings, delegate: self)
         }
+        #endif
     }
 
     func startVideoRecording() {

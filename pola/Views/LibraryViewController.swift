@@ -13,6 +13,8 @@ final class LibraryViewController: UICollectionViewController {
         didSet {
             guard isViewLoaded else { return }
             entriesByID = Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0) })
+            // The last photo on the selected stock was deleted or re-filmed.
+            if !categoryNames.contains(selectedCategory) { selectedCategory = "All" }
             applySnapshot(animated: !oldValue.isEmpty)
             // Select and the options menu only exist when there are photos.
             if entries.isEmpty != oldValue.isEmpty { updateNavigationBarButtons() }
@@ -94,12 +96,17 @@ final class LibraryViewController: UICollectionViewController {
         return width / CGFloat(columnCount) / 0.75 * traitCollection.displayScale
     }
 
-    private let categoryNames = ["All"] + allFilters.map(\.name)
+    /// "All" plus the film stocks at least one photo was shot on, in catalogue order.
+    /// Frame colors share the stock names, so they're deliberately not counted.
+    private var categoryNames: [String] {
+        let used = Set(entries.compactMap(\.filterName))
+        return ["All"] + allFilters.map(\.name).filter(used.contains)
+    }
 
     private var filteredEntries: [PolaroidEntry] {
         var result = entries
         if selectedCategory != "All" {
-            result = result.filter { $0.packName == selectedCategory || $0.filterName == selectedCategory }
+            result = result.filter { $0.filterName == selectedCategory }
         }
         let text = searchController.searchBar.text ?? ""
         if !text.isEmpty {
@@ -334,7 +341,11 @@ final class LibraryViewController: UICollectionViewController {
         } else {
             var items: [UIBarButtonItem] = []
             if !entries.isEmpty {
-                items.append(UIBarButtonItem(image: UIImage(systemName: "ellipsis"), menu: makeOptionsMenu()))
+                // Rebuilt on every open so checkmarks and the film list are never stale.
+                let menu = UIMenu(children: [UIDeferredMenuElement.uncached { [weak self] completion in
+                    completion(self?.makeOptionsMenu() ?? [])
+                }])
+                items.append(UIBarButtonItem(image: UIImage(systemName: "ellipsis"), menu: menu))
                 items.append(UIBarButtonItem(title: NSLocalizedString("Select", comment: ""), style: .plain,
                                              target: self, action: #selector(toggleSelectMode)))
             }
@@ -342,75 +353,97 @@ final class LibraryViewController: UICollectionViewController {
         }
     }
 
-    private func makeOptionsMenu() -> UIMenu {
-        let filterActions = categoryNames.map { name in
-            UIAction(title: name, image: UIImage(systemName: selectedCategory == name ? "checkmark" : "tag")) { [weak self] _ in
-                guard let self else { return }
-                self.selectedCategory = (self.selectedCategory == name && name != "All") ? "All" : name
-                self.applySnapshot()
-                self.updateNavigationTitle()
-                self.updateNavigationBarButtons()
-            }
-        }
-        let filterIcon = selectedCategory == "All" ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill"
-        let filterMenu = UIMenu(title: NSLocalizedString("Filter", comment: ""),
-                                image: UIImage(systemName: filterIcon), children: filterActions)
+    private func makeOptionsMenu() -> [UIMenuElement] {
+        var elements: [UIMenuElement] = []
 
-        let sortActions: [UIAction] = [
-            UIAction(title: NSLocalizedString("Newest First", comment: ""),
-                     image: UIImage(systemName: sortNewest ? "checkmark" : "arrow.up")) { [weak self] _ in
+        let names = categoryNames
+        if names.count > 1 {
+            let filterActions = names.map { name in
+                UIAction(title: name == "All" ? NSLocalizedString("All", comment: "Library filter") : name,
+                         image: UIImage(systemName: name == "All" ? "photo.on.rectangle" : "camera.filters"),
+                         state: selectedCategory == name ? .on : .off) { [weak self] _ in
+                    guard let self else { return }
+                    self.selectedCategory = (self.selectedCategory == name && name != "All") ? "All" : name
+                    self.applySnapshot()
+                }
+            }
+            let filterIcon = selectedCategory == "All" ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill"
+            elements.append(UIMenu(title: NSLocalizedString("Filter", comment: ""),
+                                   image: UIImage(systemName: filterIcon), children: filterActions))
+        }
+
+        elements.append(UIMenu(title: NSLocalizedString("Sort", comment: ""),
+                               image: UIImage(systemName: "arrow.up.arrow.down"), children: [
+            UIAction(title: NSLocalizedString("Newest First", comment: ""), image: UIImage(systemName: "arrow.up"),
+                     state: sortNewest ? .on : .off) { [weak self] _ in
                 self?.sortNewest = true; self?.applySnapshot()
             },
-            UIAction(title: NSLocalizedString("Oldest First", comment: ""),
-                     image: UIImage(systemName: !sortNewest ? "checkmark" : "arrow.down")) { [weak self] _ in
+            UIAction(title: NSLocalizedString("Oldest First", comment: ""), image: UIImage(systemName: "arrow.down"),
+                     state: sortNewest ? .off : .on) { [weak self] _ in
                 self?.sortNewest = false; self?.applySnapshot()
-            }
-        ]
-        let sortMenu = UIMenu(title: NSLocalizedString("Sort", comment: ""),
-                              image: UIImage(systemName: "arrow.up.arrow.down"), children: sortActions)
+            },
+        ]))
 
         let col = columnCount
-        let gridMenu = UIMenu(title: NSLocalizedString("Grid", comment: ""),
-                              image: UIImage(systemName: "square.grid.2x2"), children: [
-            UIAction(title: NSLocalizedString("1 Column", comment: ""),
-                     image: UIImage(systemName: col == 1 ? "checkmark" : "rectangle.grid.1x2")) { [weak self] _ in self?.columnCount = 1 },
-            UIAction(title: NSLocalizedString("2 Columns", comment: ""),
-                     image: UIImage(systemName: col == 2 ? "checkmark" : "square.grid.2x2")) { [weak self] _ in self?.columnCount = 2 },
-            UIAction(title: NSLocalizedString("3 Columns", comment: ""),
-                     image: UIImage(systemName: col == 3 ? "checkmark" : "square.grid.3x2")) { [weak self] _ in self?.columnCount = 3 }
-        ])
+        elements.append(UIMenu(title: NSLocalizedString("Grid", comment: ""),
+                               image: UIImage(systemName: "square.grid.2x2"), children: [
+            UIAction(title: NSLocalizedString("1 Column", comment: ""), image: UIImage(systemName: "rectangle.grid.1x2"),
+                     state: col == 1 ? .on : .off) { [weak self] _ in self?.columnCount = 1 },
+            UIAction(title: NSLocalizedString("2 Columns", comment: ""), image: UIImage(systemName: "square.grid.2x2"),
+                     state: col == 2 ? .on : .off) { [weak self] _ in self?.columnCount = 2 },
+            UIAction(title: NSLocalizedString("3 Columns", comment: ""), image: UIImage(systemName: "square.grid.3x2"),
+                     state: col == 3 ? .on : .off) { [weak self] _ in self?.columnCount = 3 },
+        ]))
 
-        let fontMenuElement: UIMenuElement
-        let weightMenuElement: UIMenuElement
-        if premium.isPremium {
-            let storedFont = UserDefaults.standard.string(forKey: "polaroidFont") ?? PolaroidFont.handwriting.rawValue
-            fontMenuElement = UIMenu(title: NSLocalizedString("Caption Font", comment: ""),
-                                     image: UIImage(systemName: "textformat"),
-                                     children: PolaroidFont.allCases.map { font in
-                UIAction(title: font.displayName,
-                         image: UIImage(systemName: storedFont == font.rawValue ? "checkmark" : "textformat")) { [weak self] _ in
-                    UserDefaults.standard.set(font.rawValue, forKey: "polaroidFont")
-                    self?.reconfigureVisible()
-                }
-            })
-            let storedWeight = UserDefaults.standard.string(forKey: "polaroidFontWeight") ?? PolaroidFontWeight.regular.rawValue
-            weightMenuElement = UIMenu(title: NSLocalizedString("Font Weight", comment: ""),
-                                       image: UIImage(systemName: "bold"),
-                                       children: PolaroidFontWeight.allCases.map { w in
-                UIAction(title: w.displayName,
-                         image: UIImage(systemName: storedWeight == w.rawValue ? "checkmark" : "bold")) { [weak self] _ in
-                    UserDefaults.standard.set(w.rawValue, forKey: "polaroidFontWeight")
-                    self?.reconfigureVisible()
-                }
-            })
-        } else {
-            fontMenuElement = UIAction(title: NSLocalizedString("Caption Font", comment: ""),
-                                       image: UIImage(systemName: "lock.fill")) { [weak self] _ in self?.showPaywall(.feature(.captionStyle)) }
-            weightMenuElement = UIAction(title: NSLocalizedString("Font Weight", comment: ""),
-                                         image: UIImage(systemName: "lock.fill")) { [weak self] _ in self?.showPaywall(.feature(.captionStyle)) }
+        guard premium.isPremium else {
+            elements.append(UIAction(title: NSLocalizedString("Caption Font", comment: ""),
+                                     image: UIImage(systemName: "lock.fill")) { [weak self] _ in self?.showPaywall(.feature(.captionStyle)) })
+            elements.append(UIAction(title: NSLocalizedString("Font Weight", comment: ""),
+                                     image: UIImage(systemName: "lock.fill")) { [weak self] _ in self?.showPaywall(.feature(.captionStyle)) })
+            return elements
         }
 
-        return UIMenu(children: [filterMenu, sortMenu, gridMenu, fontMenuElement, weightMenuElement])
+        let defaults = UserDefaults.standard
+        let currentFont = PolaroidFont(rawValue: defaults.string(forKey: "polaroidFont") ?? "") ?? .handwriting
+        let currentWeight = PolaroidFontWeight(rawValue: defaults.string(forKey: "polaroidFontWeight") ?? "") ?? .regular
+
+        // Each row previews itself: "Aa" drawn in that font, at the current weight.
+        elements.append(UIMenu(title: NSLocalizedString("Caption Font", comment: ""),
+                               image: UIImage(systemName: "textformat"),
+                               children: PolaroidFont.allCases.map { font in
+            UIAction(title: font.displayName,
+                     image: Self.fontPreview(font.uiFont(size: 18, weight: currentWeight)),
+                     state: font == currentFont ? .on : .off) { [weak self] _ in
+                defaults.set(font.rawValue, forKey: "polaroidFont")
+                self?.reconfigureVisible()
+            }
+        }))
+
+        // Handwriting is a single-weight typeface, so weights only apply to the other fonts.
+        let weightMenu = UIMenu(title: NSLocalizedString("Font Weight", comment: ""),
+                                image: UIImage(systemName: "bold"),
+                                children: PolaroidFontWeight.allCases.map { weight in
+            UIAction(title: weight.displayName,
+                     image: Self.fontPreview(currentFont.uiFont(size: 18, weight: weight)),
+                     attributes: currentFont == .handwriting ? .disabled : [],
+                     state: weight == currentWeight ? .on : .off) { [weak self] _ in
+                defaults.set(weight.rawValue, forKey: "polaroidFontWeight")
+                self?.reconfigureVisible()
+            }
+        })
+        if currentFont == .handwriting {
+            weightMenu.subtitle = NSLocalizedString("Not available for Handwriting", comment: "")
+        }
+        elements.append(weightMenu)
+        return elements
+    }
+
+    private static func fontPreview(_ font: UIFont) -> UIImage {
+        let text = NSAttributedString(string: "Aa", attributes: [.font: font])
+        let size = text.size()
+        return UIGraphicsImageRenderer(size: CGSize(width: ceil(size.width), height: ceil(size.height)))
+            .image { _ in text.draw(at: .zero) }
+            .withRenderingMode(.alwaysTemplate)
     }
 
     // MARK: - Select toolbar
