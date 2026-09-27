@@ -90,14 +90,14 @@ Headline ≤ 31 characters, subline ≤ 45 characters. `==word==` marks the hook
 
 | # | Headline | Subline |
 |---|----------|---------|
-| 1 | ==Instant film.== On iPhone. | Shoot, watch it print, see it develop. |
-| 2 | ==13== film stocks | Plus 3 vintage lenses to stack on top. |
-| 3 | See it ==before== you shoot | Preview every stock live in the viewfinder. |
-| 4 | Classic, ==Square, Wide, Mini== | Real instant sizes, any frame color. |
-| 5 | ==Relive== this day | Memories right on your Home Screen. |
-| 6 | ==Write== on it. ==Flip== it. | Captions, notes and a map on the back. |
-| 7 | Made for ==Stories== | Share in 9:16 or print A4 sheets at home. |
-| 8 | Prints that ==move== | Video and time lapse, framed like film. |
+| 1 | ==13== film stocks | Plus 3 vintage lenses to stack on top. |
+| 2 | Classic, ==Square, Wide, Mini== | Real instant sizes, any frame color. |
+| 3 | Prints that ==move== | Video and time lapse, framed like film. |
+| 4 | ==Instant film.== On iPhone. | Shoot, watch it print, see it develop. |
+| 5 | ==Write== on it. ==Flip== it. | Captions, notes and a map on the back. |
+| 6 | See it ==before== you shoot | Preview every stock live in the viewfinder. |
+| 7 | ==Relive== this day | Memories right on your Home Screen. |
+| 8 | Made for ==Stories== | Share in 9:16 or print A4 sheets at home. |
 
 ## In-App Purchases
 | Field | Value |

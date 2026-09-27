@@ -87,14 +87,14 @@ Poly 1.0.6 ist unser bisher größtes Update.
 ## Screenshot captions
 | # | Headline | Subline |
 |---|----------|---------|
-| 1 | ==Sofortbild== auf dem iPhone | Auslösen, drucken, entwickeln lassen. |
-| 2 | ==13== Filme | Dazu 3 Vintage-Objektive zum Kombinieren. |
-| 3 | Erst ==sehen==, dann auslösen | Jeder Film live im Sucher. |
-| 4 | Klassisch, ==Quadrat, Breit, Mini== | Echte Sofortbild-Formate, jede Farbe. |
-| 5 | Erlebe ==diesen Tag== neu | Erinnerungen auf dem Home-Bildschirm. |
-| 6 | Beschriften. ==Umdrehen.== | Notizen und Karte auf der Rückseite. |
-| 7 | Gemacht für ==Storys== | In 9:16 teilen oder A4 drucken. |
-| 8 | Bilder, die sich ==bewegen== | Video und Zeitraffer im Rahmen. |
+| 1 | ==13== Filme | Dazu 3 Vintage-Objektive zum Kombinieren. |
+| 2 | Klassisch, ==Quadrat, Breit, Mini== | Echte Sofortbild-Formate, jede Farbe. |
+| 3 | Bilder, die sich ==bewegen== | Video und Zeitraffer im Rahmen. |
+| 4 | ==Sofortbild== auf dem iPhone | Auslösen, drucken, entwickeln lassen. |
+| 5 | Beschriften. ==Umdrehen.== | Notizen und Karte auf der Rückseite. |
+| 6 | Erst ==sehen==, dann auslösen | Jeder Film live im Sucher. |
+| 7 | Erlebe ==diesen Tag== neu | Erinnerungen auf dem Home-Bildschirm. |
+| 8 | Gemacht für ==Storys== | In 9:16 teilen oder A4 drucken. |
 
 ## In-App Purchases
 | Field | Value |

@@ -27,21 +27,25 @@ The build is already set to **1.0.6** (`MARKETING_VERSION` for the app and the w
 
 ## Screenshots
 
-Required size: **6.9" iPhone** (1320 × 2868, or 1290 × 2796). App Store Connect scales it down for smaller iPhones. The app is iPhone-only, so no iPad set is needed.
+Size: **6.5" iPhone, 1242 × 2688**, the same as the previous set. App Store Connect accepts 6.5" in place of 6.9" and scales it for other iPhones. The app is iPhone-only, so no iPad set is needed.
+
+**Figma:** the slides live on the Poly page, in the "App Store 1.0.6" sections (one per language). The English slides are the master components; the other languages are linked copies with only the text changed, so swap a capture or adjust a layout in the English master and every language updates. Frame names like `de/02-formats` export into one folder per language, in upload order. Slides 6–8 aren't built yet (no captures).
 Upload the same order in every language. Only the caption text changes (from each language file).
+
+The first 3 appear in search results, so they're the most colorful, instantly readable shots. The print-developing capture is mostly dark, so it comes 4th.
 
 | # | Caption theme | What to capture | Tips |
 |---|---|---|---|
-| 1 | Instant film on iPhone | The **print animation**: polaroid mid-development over the camera | Take it about 5 s after the shutter so the image is half developed. Use the SOLVA stock. |
-| 2 | 13 film stocks | **Filters sheet** at the large detent | Show the Lens row plus the Instant and Weird Film sections with their NEW badges. Premium account, so there are no locks. |
-| 3 | See it before you shoot | **Camera** with a Weird Film stock selected and the "Previewing …" banner | Use a free account for this one so the banner shows. A bright outdoor scene reads best. |
-| 4 | Classic, Square, Wide, Mini | **Library** in 2 columns with one polaroid of each format and a few frame colors | Seed shots in each format. Mix white, SOLVA and VYLUR frames. |
-| 5 | Relive this day | **Home Screen** with the medium Memories widget ("1 YEAR AGO TODAY") | Needs a photo dated exactly one year ago; the simulator is easiest. |
-| 6 | Write on it. Flip it. | **Detail view**: one screenshot of the front with a caption and date stamp, one of the back with the map, composed side by side | Handwriting font, a real-looking caption such as "sunday market". |
-| 7 | Made for Stories | The **Story export** (9:16 image) shown inside a phone frame, or the share sheet over it | The rendered story image looks great as the hero of this slide. |
-| 8 | Prints that move | **Video polaroid** in the detail view, or a time lapse stack in the library | Add a small ▶ badge in the overlay design to show that it moves. |
+| 1 | 13 film stocks | **Filters sheet** at the large detent | Show the Lens row plus the Instant and Weird Film sections with their NEW badges. Premium account, so there are no locks. |
+| 2 | Classic, Square, Wide, Mini | **Library** in 2 columns with one polaroid of each format and a few frame colors | Seed shots in each format. Mix white, SOLVA and VYLUR frames. |
+| 3 | Prints that move | **Camera** in Video and in Time Lapse mode, shown as two phones | A colorful subject reads best at thumbnail size. |
+| 4 | Instant film on iPhone | The **print animation**: polaroid mid-development over the camera | Take it about 5 s after the shutter so the image is half developed. Use the SOLVA stock. |
+| 5 | Write on it. Flip it. | **Detail view**: one screenshot of the front with a caption and date stamp, one of the back with the map, composed side by side | Handwriting font, a real-looking caption such as "sunday market". |
+| 6 | See it before you shoot | **Camera** with a Weird Film stock selected and the "Previewing …" banner | Use a free account for this one so the banner shows. A bright outdoor scene reads best. |
+| 7 | Relive this day | **Home Screen** with the medium Memories widget ("1 YEAR AGO TODAY") | Needs a photo dated exactly one year ago; the simulator is easiest. |
+| 8 | Made for Stories | The **Story export** (9:16 image) shown inside a phone frame, or the share sheet over it | The rendered story image looks great as the hero of this slide. |
 
-**Layout:** keep the style of the current set: light background, black headline at the top (bold), subline under it at 60% opacity. Keep captions to 2 lines; the checker limits headlines to 31 and sublines to 45 characters (markers not counted).
+**Layout:** keep the style of the current set: light background, black headline at the top (SF Compact Rounded Bold, 128 px), subline under it at 60% opacity. Keep captions to 2 lines; the checker limits headlines to 31 and sublines to 45 characters (markers not counted).
 
 **Hooks:** in the caption tables, `==word==` marks the hook. Set it bold in the brand orange **`#F08A0A`** (the orange of "Pocket" and the "Mode" pill), same weight as the rest of the headline, no underline. Leave the `==` out of the image.
 - One hook per headline. Two only when the headline is two short commands with plain words between them (EN "==Write== on it. ==Flip== it.").

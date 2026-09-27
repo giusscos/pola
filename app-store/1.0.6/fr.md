@@ -87,14 +87,14 @@ Poly 1.0.6 est notre plus grosse mise à jour.
 ## Screenshot captions
 | # | Headline | Subline |
 |---|----------|---------|
-| 1 | ==L'instantané== sur iPhone | Déclenchez, regardez-le se révéler. |
-| 2 | ==13== pellicules | Et 3 objectifs vintage à combiner. |
-| 3 | ==Voyez== avant de déclencher | Chaque pellicule en direct dans le viseur. |
-| 4 | Classique, ==Carré, Large, Mini== | De vrais formats, toutes les couleurs. |
-| 5 | ==Revivez== ce jour | Vos souvenirs sur l'écran d'accueil. |
-| 6 | Écrivez. ==Retournez.== | Légendes, notes et carte au dos. |
-| 7 | Fait pour les ==stories== | Partagez en 9:16 ou imprimez en A4. |
-| 8 | Des tirages qui ==bougent== | Vidéo et accéléré, encadrés. |
+| 1 | ==13== pellicules | Et 3 objectifs vintage à combiner. |
+| 2 | Classique, ==Carré, Large, Mini== | De vrais formats, toutes les couleurs. |
+| 3 | Des tirages qui ==bougent== | Vidéo et accéléré, encadrés. |
+| 4 | ==L'instantané== sur iPhone | Déclenchez, regardez-le se révéler. |
+| 5 | Écrivez. ==Retournez.== | Légendes, notes et carte au dos. |
+| 6 | ==Voyez== avant de déclencher | Chaque pellicule en direct dans le viseur. |
+| 7 | ==Revivez== ce jour | Vos souvenirs sur l'écran d'accueil. |
+| 8 | Fait pour les ==stories== | Partagez en 9:16 ou imprimez en A4. |
 
 ## In-App Purchases
 | Field | Value |
