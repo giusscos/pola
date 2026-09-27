@@ -113,6 +113,6 @@ Poly 1.0.6 è l'aggiornamento più grande di sempre.
 | Monthly — display name | Premium mensile |
 | Monthly — description | Pellicole, formati, widget e altro |
 | Yearly — display name | Premium annuale |
-| Yearly — description | Tutto Premium, con un solo addebito all'anno |
+| Yearly — description | Tutto Premium per un anno intero |
 | Lifetime — display name | Premium a vita |
 | Lifetime — description | Tutto Premium con un unico acquisto |

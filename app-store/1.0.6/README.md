@@ -89,11 +89,11 @@ Launch the app: the library is filled once with 8 prints. Save each screen with 
 
 - [ ] New version **1.0.6**; paste each field from the language files (5 localizations).
 - [ ] Upload screenshots (8 per language, same order).
-- [ ] **Promotional Text:** use the "trial live" version only once the free trial is approved. You can change this field anytime without review.
+- [x] **Promotional Text:** the "trial live" version is set in all 5 languages (the trial started Sep 27, 2026). If you ever end the trial, switch back to the other version; this field changes without review.
 - [ ] **Subscriptions:**
-  - Update display names and descriptions (IAP table in each file) for Monthly, Yearly and Lifetime, in 5 languages.
-  - Add the **1-week free introductory offer** to Yearly, if you're launching the trial.
-  - Subscription group display name: `Poly Premium`.
+  - [x] Display names and descriptions (IAP table in each file) for Monthly, Yearly and Lifetime, in 5 languages, and the group display name `Poly Premium`. They show "Prepare for Submission" until reviewed: on the 1.0.6 version page, select Monthly, Yearly and Lifetime under **In-App Purchases and Subscriptions** before you submit, so they go to review with the app.
+  - [x] **1-week free introductory offer** on Yearly (1 Year Upfront plan), all 175 countries, from Sep 27, 2026, no end date.
+  - [ ] **Billing Grace Period** (16 days, all renewals, production): not on yet. It needs you to accept the grace-period terms in App Store Connect > Subscriptions.
 - [ ] **App Privacy:** unchanged. There's no analytics SDK, and location plus photos stay on device and in the user's iCloud. Confirm "Data Not Collected" is still accurate for your answers.
 - [ ] **Age rating:** unchanged.
 - [ ] **App Review notes** (paste into "Notes"):

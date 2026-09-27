@@ -113,6 +113,6 @@ Poly 1.0.6 ist unser bisher größtes Update.
 | Monthly — display name | Premium monatlich |
 | Monthly — description | Alle Filme, Formate, Widget und mehr |
 | Yearly — display name | Premium jährlich |
-| Yearly — description | Alles aus Premium, einmal im Jahr bezahlt |
+| Yearly — description | Alles aus Premium für ein ganzes Jahr |
 | Lifetime — display name | Premium lebenslang |
 | Lifetime — description | Alles aus Premium, einmaliger Kauf |

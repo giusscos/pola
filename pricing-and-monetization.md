@@ -12,7 +12,7 @@ Current catalogue (`pola/offlineStore.storekit`):
 
 ---
 
-## 1. Free trial on Yearly — code shipped, needs App Store Connect
+## 1. Free trial on Yearly — live since Sep 27, 2026 (1 week free, Yearly upfront, all countries)
 
 The paywall is ready. It checks eligibility with `isEligibleForIntroOffer`. When the selected plan has an eligible free trial, it shows a "7 DAYS FREE" badge, the button reads **"Try 7 days free"**, and the line under it reads *"7 days free, then $19.99/year. Cancel anytime."* (Guideline 3.1.2). Until the offer exists in App Store Connect, the paywall looks exactly as it does today.
 

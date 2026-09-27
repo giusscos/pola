@@ -10,9 +10,7 @@
     ]
   },
   "identifier" : "55DFFB61",
-  "nonRenewingSubscriptions" : [
-
-  ],
+  "nonRenewingSubscriptions" : [],
   "products" : [
     {
       "displayPrice" : "29.99",
@@ -20,28 +18,28 @@
       "internalID" : "6781263765",
       "localizations" : [
         {
-          "description" : "Schalte alle Premium-Funktionen dauerhaft frei.",
-          "displayName" : "Lebenszeit",
+          "description" : "Alles aus Premium, einmaliger Kauf",
+          "displayName" : "Premium lebenslang",
           "locale" : "de"
         },
         {
-          "description" : "Débloquez les fonctionnalités premium pour toujours.",
-          "displayName" : "À vie",
+          "description" : "Tout Premium en un seul achat",
+          "displayName" : "Premium à vie",
           "locale" : "fr"
         },
         {
-          "description" : "Desbloquea todas las funciones premium para siempre.",
-          "displayName" : "De por vida",
+          "description" : "Todo Premium con un único pago",
+          "displayName" : "Premium de por vida",
           "locale" : "es_ES"
         },
         {
-          "description" : "Sblocca tutte le funzioni premium per sempre.",
-          "displayName" : "A vita",
+          "description" : "Tutto Premium con un unico acquisto",
+          "displayName" : "Premium a vita",
           "locale" : "it"
         },
         {
-          "description" : "Unlock all premium features forever",
-          "displayName" : "Lifetime",
+          "description" : "Everything in Premium, one-time purchase",
+          "displayName" : "Premium Lifetime",
           "locale" : "en_US"
         }
       ],
@@ -58,13 +56,11 @@
     "_developerTeamID" : "MA7MBQ947C",
     "_disableDialogs" : false,
     "_failTransactionsEnabled" : false,
-    "_lastSynchronizedDate" : 803396902.30323195,
+    "_lastSynchronizedDate" : 803396902.303232,
     "_locale" : "en_US",
     "_renewalBillingIssuesEnabled" : false,
+    "_storeKitErrors" : [],
     "_storefront" : "USA",
-    "_storeKitErrors" : [
-
-    ],
     "_timeRate" : 0
   },
   "subscriptionGroups" : [
@@ -73,36 +69,34 @@
       "localizations" : [
         {
           "description" : "",
-          "displayName" : "Premium",
+          "displayName" : "Poly Premium",
           "locale" : "it"
         },
         {
           "description" : "",
-          "displayName" : "Premium",
+          "displayName" : "Poly Premium",
           "locale" : "fr"
         },
         {
           "description" : "",
-          "displayName" : "Premium",
+          "displayName" : "Poly Premium",
           "locale" : "de"
         },
         {
           "description" : "",
-          "displayName" : "Premium",
+          "displayName" : "Poly Premium",
           "locale" : "en_US"
         },
         {
           "description" : "",
-          "displayName" : "Premium",
+          "displayName" : "Poly Premium",
           "locale" : "es_ES"
         }
       ],
       "name" : "Premium",
       "subscriptions" : [
         {
-          "adHocOffers" : [
-
-          ],
+          "adHocOffers" : [],
           "billingPlans" : [
             {
               "billingPlanType" : "BILLED_UPFRONT",
@@ -112,40 +106,36 @@
               "isEnabled" : true
             }
           ],
-          "codeOffers" : [
-
-          ],
+          "codeOffers" : [],
           "displayPrice" : "2.99",
           "familyShareable" : false,
           "groupNumber" : 2,
           "internalID" : "6781270859",
-          "introductoryOffers" : [
-
-          ],
+          "introductoryOffers" : [],
           "localizations" : [
             {
-              "description" : "Sblocca tutte le funzioni premium.",
-              "displayName" : "Mensile",
+              "description" : "Pellicole, formati, widget e altro",
+              "displayName" : "Premium mensile",
               "locale" : "it"
             },
             {
-              "description" : "Desbloquea todas las funciones premium.",
-              "displayName" : "Mensual",
+              "description" : "Todas las películas, formatos, widget y más",
+              "displayName" : "Premium mensual",
               "locale" : "es_ES"
             },
             {
-              "description" : "Débloquez toutes les fonctionnalités premium.",
-              "displayName" : "Mensuel",
+              "description" : "Pellicules, formats, widget et plus",
+              "displayName" : "Premium mensuel",
               "locale" : "fr"
             },
             {
-              "description" : "Alle Premium-Funktionen freischalten.",
-              "displayName" : "Monatlich",
+              "description" : "Alle Filme, Formate, Widget und mehr",
+              "displayName" : "Premium monatlich",
               "locale" : "de"
             },
             {
-              "description" : "Unlock all premium features.",
-              "displayName" : "Monthly",
+              "description" : "All film stocks, formats, widget and more",
+              "displayName" : "Premium Monthly",
               "locale" : "en_US"
             }
           ],
@@ -154,14 +144,10 @@
           "referenceName" : "Monthly",
           "subscriptionGroupID" : "22163646",
           "type" : "RecurringSubscription",
-          "winbackOffers" : [
-
-          ]
+          "winbackOffers" : []
         },
         {
-          "adHocOffers" : [
-
-          ],
+          "adHocOffers" : [],
           "billingPlans" : [
             {
               "billingPlanType" : "BILLED_UPFRONT",
@@ -171,40 +157,44 @@
               "isEnabled" : true
             }
           ],
-          "codeOffers" : [
-
-          ],
+          "codeOffers" : [],
           "displayPrice" : "19.99",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "6781272109",
           "introductoryOffers" : [
-
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "internalID" : "7D4A91C2",
+              "numberOfPeriods" : 1,
+              "paymentMode" : "free",
+              "subscriptionPeriod" : "P1W"
+            }
           ],
           "localizations" : [
             {
-              "description" : "Alle Premium-Funktionen freischalten.",
-              "displayName" : "Jährlich",
+              "description" : "Alles aus Premium für ein ganzes Jahr",
+              "displayName" : "Premium jährlich",
               "locale" : "de"
             },
             {
-              "description" : "Unlock all premium features.",
-              "displayName" : "Yearly",
+              "description" : "Everything in Premium, for a full year",
+              "displayName" : "Premium Yearly",
               "locale" : "en_US"
             },
             {
-              "description" : "Débloquez toutes les fonctionnalités premium.",
-              "displayName" : "Annuel",
+              "description" : "Tout Premium pendant un an",
+              "displayName" : "Premium annuel",
               "locale" : "fr"
             },
             {
-              "description" : "Sblocca tutte le funzioni premium.",
-              "displayName" : "Annuale",
+              "description" : "Tutto Premium per un anno intero",
+              "displayName" : "Premium annuale",
               "locale" : "it"
             },
             {
-              "description" : "Desbloquea todas las funciones premium.",
-              "displayName" : "Anual",
+              "description" : "Todo Premium durante un año",
+              "displayName" : "Premium anual",
               "locale" : "es_ES"
             }
           ],
@@ -213,9 +203,7 @@
           "referenceName" : "Yearly",
           "subscriptionGroupID" : "22163646",
           "type" : "RecurringSubscription",
-          "winbackOffers" : [
-
-          ]
+          "winbackOffers" : []
         }
       ]
     }

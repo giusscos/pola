@@ -117,6 +117,6 @@ The set to upload. Title ≤ 16 characters (the orange line), subtitle ≤ 32. S
 | Monthly — display name *(30)* | Premium Monthly |
 | Monthly — description *(45)* | All film stocks, formats, widget and more |
 | Yearly — display name *(30)* | Premium Yearly |
-| Yearly — description *(45)* | Everything in Premium, billed once a year |
+| Yearly — description *(45)* | Everything in Premium, for a full year |
 | Lifetime — display name *(30)* | Premium Lifetime |
 | Lifetime — description *(45)* | Everything in Premium, one-time purchase |
