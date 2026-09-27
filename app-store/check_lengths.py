@@ -42,7 +42,13 @@ def check(path: Path) -> list[str]:
             problems.append(f"Keywords: already in name/subtitle: {repeated}")
 
     for row in re.findall(r"^\| \d+ \| (.*?) \| (.*?) \|$", sections.get("Screenshot captions", ""), re.M):
-        headline, subline = row
+        marked, subline = row
+        # ==word== marks the accent-colored hook; the markers aren't part of the caption.
+        if marked.count("==") == 0 or marked.count("==") % 2:
+            problems.append(f"Screenshot headline needs one ==hook==: {marked}")
+        if "==" in subline:
+            problems.append(f"Screenshot subline shouldn't have a hook: {subline}")
+        headline = marked.replace("==", "")
         if len(headline) > HEADLINE_MAX:
             problems.append(f"Screenshot headline too long ({len(headline)}): {headline}")
         if len(subline) > SUBLINE_MAX:

@@ -41,7 +41,12 @@ Upload the same order in every language. Only the caption text changes (from eac
 | 7 | Made for Stories | The **Story export** (9:16 image) shown inside a phone frame, or the share sheet over it | The rendered story image looks great as the hero of this slide. |
 | 8 | Prints that move | **Video polaroid** in the detail view, or a time lapse stack in the library | Add a small ▶ badge in the overlay design to show that it moves. |
 
-**Layout suggestion:** headline at the top (bold, expanded width, like the paywall title), subline under it at 60% opacity. Use the dark app background (`#0F0F1A`) with the warm gold accent (`#FFCC4D`) for keywords. Keep captions to 2 lines; the checker limits headlines to 31 and sublines to 45 characters.
+**Layout:** keep the style of the current set: light background, black headline at the top (bold), subline under it at 60% opacity. Keep captions to 2 lines; the checker limits headlines to 31 and sublines to 45 characters (markers not counted).
+
+**Hooks:** in the caption tables, `==word==` marks the hook. Set it bold in the brand orange **`#F08A0A`** (the orange of "Pocket" and the "Mode" pill), same weight as the rest of the headline, no underline. Leave the `==` out of the image.
+- One hook per headline. Two only when the headline is two short commands with plain words between them (EN "==Write== on it. ==Flip== it.").
+- Sublines stay plain. An accent there competes with the headline.
+- Each language highlights the word that carries the idea, not a literal match of the English hook.
 
 **App Preview video (optional, big conversion lift for camera apps):** 15–20 s showing shutter → print → shake to develop → flip to map → share as Story. No captions needed.
 

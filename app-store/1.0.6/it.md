@@ -87,14 +87,14 @@ Poly 1.0.6 è l'aggiornamento più grande di sempre.
 ## Screenshot captions
 | # | Headline | Subline |
 |---|----------|---------|
-| 1 | Pellicola istantanea su iPhone | Scatta, guarda la stampa, falla sviluppare. |
-| 2 | 13 pellicole | E 3 obiettivi vintage da abbinare. |
-| 3 | Guarda prima di scattare | Ogni pellicola dal vivo nel mirino. |
-| 4 | Classico, Quadrato, Largo, Mini | Veri formati istantanei, ogni colore. |
-| 5 | Rivivi questo giorno | I tuoi ricordi nella schermata Home. |
-| 6 | Scrivici sopra. Girala. | Didascalie, note e mappa sul retro. |
-| 7 | Pronta per le Storie | Condividi in 9:16 o stampa fogli A4. |
-| 8 | Stampe in movimento | Video e time lapse, in cornice. |
+| 1 | ==Pellicola istantanea== su iPhone | Scatta, guarda la stampa, falla sviluppare. |
+| 2 | ==13== pellicole | E 3 obiettivi vintage da abbinare. |
+| 3 | Guarda ==prima== di scattare | Ogni pellicola dal vivo nel mirino. |
+| 4 | Classico, ==Quadrato, Largo, Mini== | Veri formati istantanei, ogni colore. |
+| 5 | ==Rivivi== questo giorno | I tuoi ricordi nella schermata Home. |
+| 6 | ==Scrivici== sopra. ==Girala.== | Didascalie, note e mappa sul retro. |
+| 7 | Pronta per le ==Storie== | Condividi in 9:16 o stampa fogli A4. |
+| 8 | Stampe in ==movimento== | Video e time lapse, in cornice. |
 
 ## In-App Purchases
 | Field | Value |

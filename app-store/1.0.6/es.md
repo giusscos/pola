@@ -87,14 +87,14 @@ Poly 1.0.6 es nuestra mayor actualización hasta ahora.
 ## Screenshot captions
 | # | Headline | Subline |
 |---|----------|---------|
-| 1 | Foto instantánea en tu iPhone | Dispara, mira cómo sale y se revela. |
-| 2 | 13 películas | Y 3 lentes vintage para combinar. |
-| 3 | Míralo antes de disparar | Cada película en directo en el visor. |
-| 4 | Clásico, Cuadrado, Ancho, Mini | Formatos instantáneos, cualquier color. |
-| 5 | Revive este día | Tus recuerdos en la pantalla de inicio. |
-| 6 | Escribe. Dale la vuelta. | Leyendas, notas y un mapa en el reverso. |
-| 7 | Hecha para Stories | Comparte en 9:16 o imprime hojas A4. |
-| 8 | Fotos que se mueven | Vídeo y time-lapse, con su marco. |
+| 1 | ==Foto instantánea== en tu iPhone | Dispara, mira cómo sale y se revela. |
+| 2 | ==13== películas | Y 3 lentes vintage para combinar. |
+| 3 | Míralo ==antes== de disparar | Cada película en directo en el visor. |
+| 4 | Clásico, ==Cuadrado, Ancho, Mini== | Formatos instantáneos, cualquier color. |
+| 5 | ==Revive== este día | Tus recuerdos en la pantalla de inicio. |
+| 6 | Escribe. ==Dale la vuelta.== | Leyendas, notas y un mapa en el reverso. |
+| 7 | Hecha para ==Stories== | Comparte en 9:16 o imprime hojas A4. |
+| 8 | Fotos que se ==mueven== | Vídeo y time-lapse, con su marco. |
 
 ## In-App Purchases
 | Field | Value |
