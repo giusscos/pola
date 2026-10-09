@@ -238,3 +238,10 @@
 "All" = "Toutes";
 "Add a caption..." = "Ajoutez une légende…";
 "Not available for Handwriting" = "Indisponible pour Manuscrite";
+
+/* Library search and filter titles */
+"Film" = "Pellicule";
+"Weird Film" = "Pellicule bizarre";
+"Search" = "Rechercher";
+"Photos, filters..." = "Photos, filtres...";
+"No photos matching \"%@\"" = "Aucune photo ne correspond à « %@ »";

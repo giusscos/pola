@@ -238,3 +238,10 @@
 "All" = "Todas";
 "Add a caption..." = "Añade una leyenda…";
 "Not available for Handwriting" = "No disponible para Manuscrita";
+
+/* Library search and filter titles */
+"Film" = "Película";
+"Weird Film" = "Película rara";
+"Search" = "Buscar";
+"Photos, filters..." = "Fotos, filtros...";
+"No photos matching \"%@\"" = "No hay fotos que coincidan con «%@»";

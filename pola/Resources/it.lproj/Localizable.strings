@@ -238,3 +238,10 @@
 "All" = "Tutte";
 "Add a caption..." = "Aggiungi una didascalia…";
 "Not available for Handwriting" = "Non disponibile per Scritta a mano";
+
+/* Library search and filter titles */
+"Film" = "Pellicola";
+"Weird Film" = "Pellicola strana";
+"Search" = "Cerca";
+"Photos, filters..." = "Foto, filtri...";
+"No photos matching \"%@\"" = "Nessuna foto corrisponde a \"%@\"";
