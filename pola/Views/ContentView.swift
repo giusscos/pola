@@ -271,6 +271,7 @@ struct ContentView: View {
 
                     if cameraManager.availableZoomOptions.count > 1 {
                         zoomControlRow
+                            .foldAvoiding()
                             .padding(.bottom, 8)
                     }
                 }
@@ -678,6 +679,7 @@ struct ContentView: View {
 
     private var shutterRow: some View {
         shutterButton
+            .foldAvoiding()
     }
 
     private var shutterAccessibilityLabel: LocalizedStringKey {
@@ -888,6 +890,8 @@ struct ContentView: View {
 
                 modePicker
                     .frame(maxWidth: .infinity)
+                    // The selected mode sits in a 90pt capsule at the picker's centre.
+                    .foldAvoiding(coreWidth: 90, strategy: .inset)
 
                 filmButton
                     .frame(width: 72, alignment: .trailing)

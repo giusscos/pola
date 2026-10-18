@@ -100,7 +100,8 @@ final class PolaroidPrintAnimationVC: UIViewController {
         // Dim backdrop
         dimView.backgroundColor = .black
         dimView.alpha = 0
-        dimView.frame = UIScreen.main.bounds
+        dimView.frame = view.bounds
+        dimView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(dimView)
         dimView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(resignCaption)))
 
@@ -536,7 +537,8 @@ final class MultiPolaroidPrintAnimationVC: UIViewController {
     private func buildHierarchy() {
         dimView.backgroundColor = .black
         dimView.alpha = 0
-        dimView.frame = UIScreen.main.bounds
+        dimView.frame = view.bounds
+        dimView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(dimView)
 
         // Cards added in order so card[0] = back, card[last] = front

@@ -86,14 +86,19 @@ final class LibraryViewController: UICollectionViewController {
         }
     }
 
+    /// Wide windows (iPhone Duo unfolded, Split View) get one extra column so photos don't balloon.
+    private var displayedColumnCount: Int {
+        traitCollection.horizontalSizeClass == .regular ? columnCount + 1 : columnCount
+    }
+
     private var cellFontScale: CGFloat {
-        switch columnCount { case 1: return 1.3; case 2: return 1; default: return 0.6 }
+        switch displayedColumnCount { case 1: return 1.3; case 2: return 1; default: return 0.6 }
     }
 
     /// Longest side of a grid photo in pixels; polaroids are taller than wide, hence the 0.75 ratio.
     private var thumbnailPixelSize: CGFloat {
         let width = view.bounds.width > 0 ? view.bounds.width : 430
-        return width / CGFloat(columnCount) / 0.75 * traitCollection.displayScale
+        return width / CGFloat(displayedColumnCount) / 0.75 * traitCollection.displayScale
     }
 
     /// "All" plus the film stocks at least one photo was shot on, in catalogue order.
@@ -137,6 +142,10 @@ final class LibraryViewController: UICollectionViewController {
         entriesByID = Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0) })
         updateNavigationBar()
         applySnapshot(animated: false)
+        registerForTraitChanges([UITraitHorizontalSizeClass.self]) { (self: Self, _) in
+            self.collectionView.collectionViewLayout = self.makeLayout()
+            self.applySnapshot(animated: false)
+        }
     }
 
     // MARK: - Collection view
@@ -149,7 +158,7 @@ final class LibraryViewController: UICollectionViewController {
     }
 
     private func makeLayout() -> UICollectionViewCompositionalLayout {
-        let n = CGFloat(columnCount)
+        let n = CGFloat(displayedColumnCount)
         let itemSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0 / n),
             heightDimension: .fractionalWidth(1.0 / n / 0.75)
@@ -162,7 +171,7 @@ final class LibraryViewController: UICollectionViewController {
         )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
         let section = NSCollectionLayoutSection(group: group)
-        let side: CGFloat = columnCount == 1 ? 60 : 7
+        let side: CGFloat = displayedColumnCount == 1 ? 60 : 7
         section.contentInsets = NSDirectionalEdgeInsets(top: 7, leading: side, bottom: 7, trailing: side)
         return UICollectionViewCompositionalLayout(section: section)
     }

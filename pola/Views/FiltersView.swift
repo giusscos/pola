@@ -512,7 +512,11 @@ struct FiltersView: View {
     // Captured on open so NEW badges stay visible for this visit even though we mark the drop as seen.
     @State private var showNewBadges = false
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 3)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: 12), count: horizontalSizeClass == .regular ? 4 : 3)
+    }
 
     var body: some View {
         NavigationStack {
