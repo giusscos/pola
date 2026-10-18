@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var showOnboarding = false
     @State private var pendingLanguage: String? = nil
     @State private var showLanguageAlert = false
+    @State private var appIcon = AppIconOption.current
 
     @AppStorage("defaultFilter") private var defaultFilter: String = "None"
     @AppStorage("captionPromptEnabled") private var captionPromptEnabled: Bool = true
@@ -248,6 +249,18 @@ struct SettingsView: View {
                 }
 
                 Section("App") {
+                    NavigationLink {
+                        AppIconPicker(selected: $appIcon, onLocked: { presentPaywall(.general) })
+                    } label: {
+                        Label {
+                            Text("App Icon")
+                        } icon: {
+                            Image(appIcon.previewImageName)
+                                .resizable()
+                                .scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        }
+                    }
                     Button {
                         openURL(URL(string: "mailto:hello@giusscos.com")!)
                     } label: {
