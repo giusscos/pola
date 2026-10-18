@@ -245,3 +245,21 @@
 "Search" = "Cerca";
 "Photos, filters..." = "Foto, filtri...";
 "No photos matching \"%@\"" = "Nessuna foto corrisponde a \"%@\"";
+
+/* Double exposure */
+"DOUBLE EXPOSURE" = "DOPPIA";
+"Double Exposure" = "Doppia esposizione";
+"Two shots blended on one polaroid" = "Due scatti fusi in un solo polaroid";
+"Layer two shots into one dreamy polaroid." = "Sovrapponi due scatti in un polaroid da sogno.";
+"Take First Exposure" = "Scatta la prima esposizione";
+"Take Second Exposure" = "Scatta la seconda esposizione";
+"Take the first shot" = "Scatta la prima foto";
+"Line up the second shot" = "Allinea il secondo scatto";
+"Retake" = "Rifai";
+"Discards the first shot" = "Elimina il primo scatto";
+"1st" = "1ª";
+"2nd" = "2ª";
+"Blend balance" = "Bilanciamento fusione";
+"Default blend" = "Fusione predefinita";
+"More of the first shot" = "Più del primo scatto";
+"More of the second shot" = "Più del secondo scatto";

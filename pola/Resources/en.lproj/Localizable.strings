@@ -245,3 +245,21 @@
 "Search" = "Search";
 "Photos, filters..." = "Photos, filters...";
 "No photos matching \"%@\"" = "No photos matching \"%@\"";
+
+/* Double exposure */
+"DOUBLE EXPOSURE" = "DOUBLE";
+"Double Exposure" = "Double Exposure";
+"Two shots blended on one polaroid" = "Two shots blended on one polaroid";
+"Layer two shots into one dreamy polaroid." = "Layer two shots into one dreamy polaroid.";
+"Take First Exposure" = "Take First Exposure";
+"Take Second Exposure" = "Take Second Exposure";
+"Take the first shot" = "Take the first shot";
+"Line up the second shot" = "Line up the second shot";
+"Retake" = "Retake";
+"Discards the first shot" = "Discards the first shot";
+"1st" = "1st";
+"2nd" = "2nd";
+"Blend balance" = "Blend balance";
+"Default blend" = "Default blend";
+"More of the first shot" = "More of the first shot";
+"More of the second shot" = "More of the second shot";

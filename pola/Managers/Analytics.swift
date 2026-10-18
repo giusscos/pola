@@ -12,6 +12,7 @@ enum AnalyticsEvent: String {
     case photoCaptured
     case videoCaptured
     case timelapseCaptured
+    case doubleExposureCaptured
     case lockedFilterPreviewed
     case lockedFilterCaptureBlocked
     case shareCompleted

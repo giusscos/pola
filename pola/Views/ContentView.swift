@@ -7,6 +7,7 @@ enum CameraMode: String, CaseIterable {
     case video = "VIDEO"
     case photo = "PHOTO"
     case timeLapse = "TIME LAPSE"
+    case doubleExposure = "DOUBLE EXPOSURE"
 }
 
 enum ActiveStrip: Equatable {
@@ -47,6 +48,8 @@ struct ContentView: View {
     @State private var countdownValue = 0
     @State private var countdownTask: Task<Void, Never>? = nil
     @State private var shutterScaleTrigger = false
+    /// See `DoubleExposure.balanceRange`; 0 is the default look.
+    @State private var doubleExposureBalance: Double = 0
     @Namespace private var sheetZoom
     @Namespace private var zoomNamespace
     @Environment(PremiumManager.self) private var premium
@@ -119,6 +122,15 @@ struct ContentView: View {
 
     private func presentPaywall(_ context: PaywallContext) {
         paywallContext = context
+    }
+
+    private var isDoubleExposureLocked: Bool {
+        cameraMode == .doubleExposure && !premium.isPremium
+    }
+
+    /// Camera position and zoom stay fixed between the two halves of a double exposure.
+    private var isHoldingFirstExposure: Bool {
+        cameraManager.doubleExposureFirstShot != nil
     }
 
     @ViewBuilder
@@ -217,6 +229,13 @@ struct ContentView: View {
                             .blur(radius: cameraBlurRadius)
                             .saturation(activeFilter?.previewSaturation ?? 1.0)
                             .overlay {
+                                if cameraMode == .doubleExposure, let ghost = cameraManager.doubleExposureFirstShot {
+                                    DoubleExposureGhost(image: ghost, balance: doubleExposureBalance)
+                                        .transition(.opacity)
+                                }
+                            }
+                            .animation(.easeInOut(duration: 0.3), value: isHoldingFirstExposure)
+                            .overlay {
                                 if let tint = activeFilter?.previewTintColor {
                                     // Stronger tint so the filter is visible in the viewfinder
                                     tint.opacity(0.20).blendMode(.multiply)
@@ -266,9 +285,14 @@ struct ContentView: View {
                                     lockedPreviewBanner(name: locked.name, color: locked.color)
                                         .padding(.top, 12)
                                         .transition(.move(edge: .top).combined(with: .opacity))
+                                } else if cameraMode == .doubleExposure {
+                                    doubleExposureBanner
+                                        .padding(.top, 12)
+                                        .transition(.move(edge: .top).combined(with: .opacity))
                                 }
                             }
                             .animation(.spring(duration: 0.4, bounce: 0.2), value: isPreviewingLockedFilter)
+                            .animation(.spring(duration: 0.4, bounce: 0.2), value: cameraMode == .doubleExposure)
                             // Rounded and inset in the wide layout so it clears the display's corners.
                             .clipShape(RoundedRectangle(cornerRadius: usesBottomControls ? 0 : 24))
                         if usesBottomControls {
@@ -312,7 +336,13 @@ struct ContentView: View {
                             ))
                     }
 
-                    if usesBottomControls && cameraManager.availableZoomOptions.count > 1 {
+                    if usesBottomControls && showsBalanceControl {
+                        doubleExposureBalanceControl
+                            .padding(.horizontal, 20)
+                            .foldAvoiding()
+                            .padding(.bottom, 8)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else if usesBottomControls && cameraManager.availableZoomOptions.count > 1 {
                         zoomControlRow
                             .foldAvoiding()
                             .padding(.bottom, 8)
@@ -321,6 +351,7 @@ struct ContentView: View {
                 .animation(.spring(duration: 0.45, bounce: 0.2), value: activeStrip)
                 .animation(.spring(duration: 0.4, bounce: 0.1), value: showCaptionInput)
                 .animation(.spring(duration: 0.4, bounce: 0.1), value: showLocationPrompt)
+                .animation(.spring(duration: 0.4, bounce: 0.1), value: showsBalanceControl)
                 .viewfinderPane(sidePanes)
 
                 if let panes = sidePanes {
@@ -375,6 +406,7 @@ struct ContentView: View {
                         Image(systemName: "arrow.triangle.2.circlepath.camera")
                     }
                     .accessibilityLabel(Text("Flip Camera"))
+                    .disabled(isHoldingFirstExposure)
                 }
             }
         }
@@ -460,6 +492,10 @@ struct ContentView: View {
             if mode == .video {
                 Task { await cameraManager.prepareMicrophone() }
             }
+            if mode != .doubleExposure {
+                cameraManager.discardDoubleExposure()
+                doubleExposureBalance = 0
+            }
         }
         .onChange(of: hasSeenOnboarding) { _, newValue in
             if newValue {
@@ -494,7 +530,11 @@ struct ContentView: View {
                 timelapsePendingEntries.append(entry)
             } else {
                 totalPhotosCount += 1
-                Analytics.track(.photoCaptured, captureAnalytics)
+                Analytics.track(cameraMode == .doubleExposure ? .doubleExposureCaptured : .photoCaptured, captureAnalytics)
+                if cameraMode == .doubleExposure {
+                    // Each double exposure starts from the default balance; Retake keeps it.
+                    doubleExposureBalance = 0
+                }
                 if printAnimationEnabled {
                     printingEntry = entry
                 } else if captionPromptEnabled {
@@ -793,6 +833,7 @@ struct ContentView: View {
         case .photo: "Take Photo"
         case .video: cameraManager.isRecording ? "Stop Recording" : "Start Recording"
         case .timeLapse: cameraManager.isTimelapsing ? "Stop Time Lapse" : "Start Time Lapse"
+        case .doubleExposure: isHoldingFirstExposure ? "Take Second Exposure" : "Take First Exposure"
         }
     }
 
@@ -823,6 +864,23 @@ struct ContentView: View {
                         }
                     }
                     .transition(.scale.combined(with: .opacity))
+                } else if cameraMode == .doubleExposure {
+                    Group {
+                        if isDoubleExposureLocked {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 18, weight: .bold))
+                        } else {
+                            VStack(spacing: 1) {
+                                Image(systemName: "square.on.square")
+                                    .font(.system(size: 13, weight: .bold))
+                                Text(verbatim: isHoldingFirstExposure ? "2/2" : "1/2")
+                                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                                    .contentTransition(.numericText())
+                            }
+                        }
+                    }
+                    .foregroundStyle(.black)
+                    .transition(.scale.combined(with: .opacity))
                 }
 
                 // Timelapse progress ring — animates linearly between each shot
@@ -840,6 +898,7 @@ struct ContentView: View {
             }
             .frame(width: 82, height: 82)
             .animation(.spring(duration: 0.4, bounce: 0.35), value: cameraMode)
+            .animation(.snappy, value: isHoldingFirstExposure)
         }
         .scaleEffect(shutterScaleTrigger ? 0.88 : 1.0)
         .animation(.spring(duration: 0.45, bounce: 0.5), value: shutterScaleTrigger)
@@ -939,8 +998,8 @@ struct ContentView: View {
         }
         .animation(.spring(duration: 0.35, bounce: 0.2), value: cameraManager.currentZoomFactor)
         .sensoryFeedback(.selection, trigger: cameraManager.currentZoomFactor)
-        .disabled(cameraManager.isRecording || cameraManager.isTimelapsing)
-        .opacity((cameraManager.isRecording || cameraManager.isTimelapsing) ? 0.4 : 1.0)
+        .disabled(cameraManager.isRecording || cameraManager.isTimelapsing || isHoldingFirstExposure)
+        .opacity((cameraManager.isRecording || cameraManager.isTimelapsing || isHoldingFirstExposure) ? 0.4 : 1.0)
     }
 
     // MARK: - Bottom row
@@ -1036,7 +1095,12 @@ struct ContentView: View {
                                 .modifier(EdgeFade())
                         }
 
-                        if cameraManager.availableZoomOptions.count > 1 {
+                        // Zoom is locked while the first exposure is held, so the balance takes its place.
+                        if showsBalanceControl {
+                            doubleExposureBalanceControl
+                                .foldAvoiding()
+                                .transition(.opacity)
+                        } else if cameraManager.availableZoomOptions.count > 1 {
                             zoomControlRow
                                 .foldAvoiding()
                         }
@@ -1287,6 +1351,109 @@ struct ContentView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Double exposure
+
+    /// Shows which half of the double exposure is next, with a way to throw the first shot away,
+    /// or the unlock pitch when the mode is locked.
+    @ViewBuilder
+    private var doubleExposureBanner: some View {
+        if isDoubleExposureLocked {
+            Button { presentPaywall(.feature(.doubleExposure)) } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.on.square")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(PremiumFeature.doubleExposure.color)
+                    Text("Double Exposure")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text("Unlock")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color(red: 1.0, green: 0.8, blue: 0.3), in: Capsule())
+                }
+                .padding(.leading, 14)
+                .padding(.trailing, 5)
+                .padding(.vertical, 5)
+                .background(.black.opacity(0.55), in: Capsule())
+            }
+            .buttonStyle(.plain)
+        } else {
+            HStack(spacing: 8) {
+                Text(verbatim: isHoldingFirstExposure ? "2/2" : "1/2")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(PremiumFeature.doubleExposure.color, in: Capsule())
+                    .contentTransition(.numericText())
+                Text(isHoldingFirstExposure ? "Line up the second shot" : "Take the first shot")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                if isHoldingFirstExposure {
+                    Button {
+                        withAnimation(.snappy) { cameraManager.discardDoubleExposure() }
+                    } label: {
+                        Label("Retake", systemImage: "arrow.counterclockwise")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(.white, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(Text("Discards the first shot"))
+                    .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .padding(.leading, 6)
+            .padding(.trailing, isHoldingFirstExposure ? 5 : 14)
+            .padding(.vertical, 5)
+            .background(.black.opacity(0.55), in: Capsule())
+            .animation(.snappy, value: isHoldingFirstExposure)
+            .sensoryFeedback(.impact(weight: .light), trigger: isHoldingFirstExposure)
+        }
+    }
+
+    private var showsBalanceControl: Bool {
+        cameraMode == .doubleExposure && isHoldingFirstExposure
+    }
+
+    private var balanceDescription: LocalizedStringKey {
+        switch doubleExposureBalance {
+        case ..<(-0.05): "More of the first shot"
+        case 0.05...: "More of the second shot"
+        default: "Default blend"
+        }
+    }
+
+    /// Slides the double exposure's weight between the two shots. The middle is the default look,
+    /// and it snaps back there so it's easy to find again.
+    private var doubleExposureBalanceControl: some View {
+        HStack(spacing: 10) {
+            Text("1st")
+            Slider(value: $doubleExposureBalance, in: DoubleExposure.balanceRange, onEditingChanged: { editing in
+                if !editing && abs(doubleExposureBalance) < 0.08 {
+                    doubleExposureBalance = 0
+                }
+            })
+            .tint(PremiumFeature.doubleExposure.color)
+            .accessibilityLabel(Text("Blend balance"))
+            .accessibilityValue(Text(balanceDescription))
+            Text("2nd")
+        }
+        .font(.system(size: 12, weight: .bold, design: .rounded))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 4)
+        .frame(maxWidth: 320)
+        .background(.black.opacity(0.55), in: Capsule())
+        .sensoryFeedback(.selection, trigger: doubleExposureBalance == 0)
+    }
+
     // MARK: - Location opt-in
 
     private var locationPromptCard: some View {
@@ -1427,6 +1594,10 @@ struct ContentView: View {
             presentPaywall(context)
             return
         }
+        if isDoubleExposureLocked {
+            presentPaywall(.feature(.doubleExposure))
+            return
+        }
         if cameraMode == .video && cameraManager.isRecording {
             cameraManager.stopVideoRecording()
             return
@@ -1475,6 +1646,8 @@ struct ContentView: View {
             cameraManager.startVideoRecording()
         case .timeLapse:
             cameraManager.startTimelapse(interval: timelapsInterval, duration: timelapseDuration, saveAsVideo: timelapseSaveAsVideo)
+        case .doubleExposure:
+            cameraManager.captureDoubleExposureShot(balance: doubleExposureBalance)
         }
     }
 
@@ -1494,6 +1667,28 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+}
+
+/// The first half of a double exposure, laid over the live preview so the second shot can be lined up.
+private struct DoubleExposureGhost: View {
+    let image: UIImage
+    /// Tracks the blend balance: a stronger ghost when the first shot will show through more.
+    let balance: Double
+
+    var body: some View {
+        // Matches the 3:4 preview inside the full-width viewfinder frame.
+        Color.clear
+            .aspectRatio(3.0 / 4.0, contentMode: .fit)
+            .overlay {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            }
+            .clipped()
+            .opacity(balance < 0 ? 0.45 - 0.2 * balance : 0.45 - 0.3 * balance)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
 }
 
 /// Dims the parts of the 3:4 viewfinder that the selected film format will crop away.

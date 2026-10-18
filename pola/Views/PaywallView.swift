@@ -7,6 +7,7 @@ enum PremiumFeature: CaseIterable {
     case filmStocks
     case frameColors
     case frameFormats
+    case doubleExposure
     case captionStyle
     case dateStamp
     case widget
@@ -18,6 +19,7 @@ enum PremiumFeature: CaseIterable {
         case .filmStocks:   "camera.filters"
         case .frameColors:  "paintpalette.fill"
         case .frameFormats: "aspectratio.fill"
+        case .doubleExposure: "square.on.square"
         case .captionStyle: "textformat"
         case .dateStamp:    "calendar.badge.clock"
         case .widget:       "apps.iphone"
@@ -31,6 +33,7 @@ enum PremiumFeature: CaseIterable {
         case .filmStocks:   Color(red: 1.0, green: 0.78, blue: 0.2)
         case .frameColors:  Color(red: 1.0, green: 0.45, blue: 0.55)
         case .frameFormats: Color(red: 0.35, green: 0.85, blue: 0.9)
+        case .doubleExposure: Color(red: 0.55, green: 0.6, blue: 1.0)
         case .captionStyle: Color(red: 0.7, green: 0.4, blue: 1.0)
         case .dateStamp:    Color(red: 1.0, green: 0.55, blue: 0.15)
         case .widget:       Color(red: 0.95, green: 0.6, blue: 0.85)
@@ -44,6 +47,7 @@ enum PremiumFeature: CaseIterable {
         case .filmStocks:   String(format: NSLocalizedString("%d Film Stocks", comment: ""), allFilters.count)
         case .frameColors:  NSLocalizedString("Colored Frames", comment: "")
         case .frameFormats: NSLocalizedString("Frame Formats", comment: "")
+        case .doubleExposure: NSLocalizedString("Double Exposure", comment: "")
         case .captionStyle: NSLocalizedString("Caption Style", comment: "")
         case .dateStamp:    NSLocalizedString("Date Stamp", comment: "")
         case .widget:       NSLocalizedString("Memories Widget", comment: "")
@@ -57,6 +61,7 @@ enum PremiumFeature: CaseIterable {
         case .filmStocks:   "Classic Film and Weird Film packs"
         case .frameColors:  "Any border color, on any polaroid"
         case .frameFormats: "Square, Wide and Mini sizes"
+        case .doubleExposure: "Two shots blended on one polaroid"
         case .captionStyle: "6 fonts × 4 weights"
         case .dateStamp:    "Retro date imprint on your shots"
         case .widget:       "A polaroid a day on your Home Screen"
@@ -71,6 +76,7 @@ enum PremiumFeature: CaseIterable {
         case .filmStocks:   "Every film stock, every look."
         case .frameColors:  "Give every polaroid its own color."
         case .frameFormats: "Shoot square, wide or mini."
+        case .doubleExposure: "Layer two shots into one dreamy polaroid."
         case .captionStyle: "Make every caption yours."
         case .dateStamp:    "Stamp the date like a real film camera."
         case .widget:       "Relive a polaroid every day on your Home Screen."

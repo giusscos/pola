@@ -36,6 +36,13 @@ final class CameraManager: NSObject {
     var capturedImage: UIImage? = nil
     var capturedVideoURL: URL? = nil
     var timelapseVideoFrames: [UIImage]? = nil
+    /// First half of a double exposure, held until the second shot is blended onto it.
+    private(set) var doubleExposureFirstShot: UIImage? = nil
+
+    private var isCapturingDoubleExposure = false
+    private var doubleExposureBalance: Double = 0
+    // Set when the double exposure is discarded while one of its shots is still processing.
+    private var dropsInFlightDoubleExposureShot = false
 
     private var timelapseTimer: Timer?
     private var timeLapseSaveAsVideo = false
@@ -319,7 +326,9 @@ final class CameraManager: NSObject {
 
     func capturePhoto() {
         #if targetEnvironment(simulator)
-        capturedImage = SimulatorFeed.shared.capture()
+        if let shot = SimulatorFeed.shared.capture() {
+            deliverPhoto(shot)
+        }
         #else
         sessionQueue.async { [weak self] in
             guard let self else { return }
@@ -327,6 +336,38 @@ final class CameraManager: NSObject {
             photoOutput.capturePhoto(with: settings, delegate: self)
         }
         #endif
+    }
+
+    /// Takes one half of a double exposure: the first shot is held in `doubleExposureFirstShot`,
+    /// the second is blended onto it and delivered through `capturedImage` like a normal photo.
+    func captureDoubleExposureShot(balance: Double) {
+        doubleExposureBalance = balance
+        isCapturingDoubleExposure = true
+        capturePhoto()
+    }
+
+    func discardDoubleExposure() {
+        doubleExposureFirstShot = nil
+        dropsInFlightDoubleExposureShot = isCapturingDoubleExposure
+        isCapturingDoubleExposure = false
+    }
+
+    private func deliverPhoto(_ image: UIImage) {
+        if dropsInFlightDoubleExposureShot {
+            dropsInFlightDoubleExposureShot = false
+            return
+        }
+        guard isCapturingDoubleExposure else {
+            capturedImage = image
+            return
+        }
+        isCapturingDoubleExposure = false
+        guard let first = doubleExposureFirstShot else {
+            doubleExposureFirstShot = image
+            return
+        }
+        doubleExposureFirstShot = nil
+        capturedImage = DoubleExposure.blend(first, image, balance: doubleExposureBalance) ?? image
     }
 
     func startVideoRecording() {
@@ -430,7 +471,7 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
                     finalizeTimelapse()
                 }
             } else {
-                capturedImage = image
+                deliverPhoto(image)
             }
         }
     }
