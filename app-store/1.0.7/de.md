@@ -106,7 +106,7 @@ Poly 1.0.7 bringt Doppelbelichtungen und eine Kamera für das iPhone Duo.
 | 3 | Jedes Format | Klassisch, Quadrat, Breit, Mini |
 | 4 | Live entwickelt | Schütteln macht's schneller |
 | 5 | Beschriften | mit Notiz und Datumsstempel |
-| 6 | Doppelbelichtung | zwei Fotos, ein Abzug |
+| 6 | Doppelbild | zwei Fotos, ein Abzug |
 | 7 | Aufklappen | gemacht fürs iPhone Duo |
 
 ## In-App Purchases

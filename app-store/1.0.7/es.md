@@ -106,7 +106,7 @@ Poly 1.0.7 trae la doble exposición y una cámara pensada para iPhone Duo.
 | 3 | Cada formato | Clásico, Cuadrado, Ancho, Mini |
 | 4 | Mírala revelarse | agita para acelerar |
 | 5 | Escribe en ella | leyendas y fecha impresa |
-| 6 | Doble exposición | dos fotos, una copia |
+| 6 | Doble toma | dos fotos, una copia |
 | 7 | Ábrelo | pensado para iPhone Duo |
 
 ## In-App Purchases
