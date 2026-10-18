@@ -7,10 +7,13 @@ import UIKit
 struct PolaroidPrintAnimationView: UIViewControllerRepresentable {
     let entry: PolaroidEntry
     let captionEnabled: Bool
+    /// Narrower polaroids fit shorter hosts, like the control pane of an unfolded iPhone Duo.
+    var polaroidWidth: CGFloat = 220
     let onComplete: () -> Void
 
     func makeUIViewController(context: Context) -> PolaroidPrintAnimationVC {
-        PolaroidPrintAnimationVC(entry: entry, captionEnabled: captionEnabled, onComplete: onComplete)
+        PolaroidPrintAnimationVC(entry: entry, captionEnabled: captionEnabled,
+                                 polaroidWidth: polaroidWidth, onComplete: onComplete)
     }
     func updateUIViewController(_ uiViewController: PolaroidPrintAnimationVC, context: Context) {}
 }
@@ -44,7 +47,7 @@ final class PolaroidPrintAnimationVC: UIViewController {
     private let impactMedium = UIImpactFeedbackGenerator(style: .medium)
 
     // MARK: Geometry
-    private let polaroidWidth:    CGFloat = 220
+    private let polaroidWidth:    CGFloat
     private let imagePadding:     CGFloat = 8
     private let captionStripH:    CGFloat = 48
     private var imageAreaW:    CGFloat { polaroidWidth - imagePadding * 2 }
@@ -61,9 +64,10 @@ final class PolaroidPrintAnimationVC: UIViewController {
 
     // MARK: Init
 
-    init(entry: PolaroidEntry, captionEnabled: Bool, onComplete: @escaping () -> Void) {
+    init(entry: PolaroidEntry, captionEnabled: Bool, polaroidWidth: CGFloat, onComplete: @escaping () -> Void) {
         self.entry = entry
         self.captionEnabled = captionEnabled
+        self.polaroidWidth = polaroidWidth
         self.onComplete = onComplete
         super.init(nibName: nil, bundle: nil)
     }
@@ -223,9 +227,15 @@ final class PolaroidPrintAnimationVC: UIViewController {
                 equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20)
             cardBottomConstraint = bottom
 
+            // Full width minus margins on phones, capped on wide windows like an unfolded iPhone Duo.
+            let fillWidth = captionCard.widthAnchor.constraint(equalTo: view.widthAnchor, constant: -40)
+            fillWidth.priority = .defaultHigh
+
             NSLayoutConstraint.activate([
-                captionCard.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-                captionCard.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+                captionCard.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+                captionCard.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
+                captionCard.widthAnchor.constraint(lessThanOrEqualToConstant: 520),
+                fillWidth,
                 bottom,
                 row.topAnchor.constraint(equalTo: cv.topAnchor, constant: 12),
                 row.leadingAnchor.constraint(equalTo: cv.leadingAnchor, constant: 12),

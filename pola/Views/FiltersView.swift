@@ -454,6 +454,17 @@ let weirdFilters: [FilmFilter] = [
 
 let allFilters: [FilmFilter] = filmFilters + instantFilters + weirdFilters
 
+/// Every film stock applied to `image`, keyed by stock name. Shared by the Filters sheet and
+/// the camera's film strip so both show the same previews.
+func renderFilmStockPreviews(from image: UIImage) -> [String: UIImage] {
+    var previews: [String: UIImage] = [:]
+    for filter in allFilters {
+        guard let effect = filter.effect else { continue }
+        previews[filter.name] = effect.apply(to: image)
+    }
+    return previews
+}
+
 extension FilmFilter {
     func isLocked(for premium: PremiumManager) -> Bool {
         !isFree && !premium.isPremium
@@ -843,11 +854,7 @@ struct FiltersView: View {
         guard let ref = referenceImage else { return }
         let size = CGSize(width: 240, height: 240)
         let small = ref.preparingThumbnail(of: size) ?? ref
-        var previews: [String: UIImage] = [:]
-        for filter in allFilters {
-            guard let effect = filter.effect else { continue }
-            previews[filter.name] = effect.apply(to: small)
-        }
+        let previews = renderFilmStockPreviews(from: small)
         filterPreviews = previews
 
         let film = filmFilter(named: selectedFilterName)?.effect

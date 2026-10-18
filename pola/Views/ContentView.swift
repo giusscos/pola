@@ -21,6 +21,9 @@ struct ContentView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @Environment(PhotoStore.self) private var store
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var controlPanes: ControlPanes? = nil
+    @State private var filmStockPreviews: [String: UIImage] = [:]
     @Query(sort: \PolaroidEntry.timestamp, order: .reverse) private var allEntries: [PolaroidEntry]
     @State private var pendingEntryID: UUID? = nil
     @State private var pendingCaption: String = ""
@@ -163,6 +166,39 @@ struct ContentView: View {
         }
     }
 
+    /// Wide windows (iPhone Duo unfolded or half-folded) put the viewfinder on the leading edge
+    /// and the controls in a pane beside it instead of below it.
+    private var sidePanes: ControlPanes? {
+        horizontalSizeClass == .regular ? controlPanes : nil
+    }
+
+    private var usesBottomControls: Bool {
+        sidePanes == nil
+    }
+
+    private static func panes(in proxy: GeometryProxy) -> ControlPanes? {
+        let size = proxy.size
+        if let fold = proxy.activeVerticalFold {
+            return ControlPanes(axis: .horizontal, viewfinder: fold.minX, controls: size.width - fold.maxX,
+                                edgeInset: proxy.trailingOcclusionInset)
+        }
+        if let fold = proxy.activeHorizontalFold {
+            return ControlPanes(axis: .vertical, viewfinder: fold.minY, controls: size.height - fold.maxY, edgeInset: 0)
+        }
+        if size.width > size.height {
+            // Full-height 3:4 viewfinder, as long as the controls keep a usable width.
+            let rail = proxy.trailingOcclusionInset
+            let margin = ControlPanes.viewfinderMargin
+            let viewfinder = min((size.height - 2 * margin) * 3 / 4 + 2 * margin,
+                                 size.width - rail - ControlPanes.minimumControlWidth)
+            return ControlPanes(axis: .horizontal, viewfinder: viewfinder, controls: size.width - viewfinder,
+                                edgeInset: rail)
+        }
+        // Portrait: viewfinder over controls, split as the fold would so folding doesn't reflow.
+        let half = (size.height - ControlPanes.nominalFoldGap) / 2
+        return ControlPanes(axis: .vertical, viewfinder: half, controls: half, edgeInset: 0)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -233,8 +269,13 @@ struct ContentView: View {
                                 }
                             }
                             .animation(.spring(duration: 0.4, bounce: 0.2), value: isPreviewingLockedFilter)
-                        Spacer()
+                            // Rounded and inset in the wide layout so it clears the display's corners.
+                            .clipShape(RoundedRectangle(cornerRadius: usesBottomControls ? 0 : 24))
+                        if usesBottomControls {
+                            Spacer()
+                        }
                     }
+                    .viewfinderPane(sidePanes)
                 } else {
                     VStack(spacing: 8) {
                         Image(systemName: "camera.fill")
@@ -247,14 +288,16 @@ struct ContentView: View {
 
                 VStack(spacing: 0) {
                     Spacer()
-                    if showLocationPrompt && printingEntry == nil && !showCaptionInput {
+                    if usesBottomControls && showLocationPrompt && printingEntry == nil && !showCaptionInput {
                         locationPromptCard
+                            .frame(maxWidth: 520)
                             .padding(.horizontal, 20)
                             .padding(.bottom, 12)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    if showCaptionInput && printingEntry == nil {
+                    if usesBottomControls && showCaptionInput && printingEntry == nil {
                         captionInputCard
+                            .frame(maxWidth: 520)
                             .padding(.horizontal, 20)
                             .padding(.bottom, 12)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -269,7 +312,7 @@ struct ContentView: View {
                             ))
                     }
 
-                    if cameraManager.availableZoomOptions.count > 1 {
+                    if usesBottomControls && cameraManager.availableZoomOptions.count > 1 {
                         zoomControlRow
                             .foldAvoiding()
                             .padding(.bottom, 8)
@@ -278,10 +321,28 @@ struct ContentView: View {
                 .animation(.spring(duration: 0.45, bounce: 0.2), value: activeStrip)
                 .animation(.spring(duration: 0.4, bounce: 0.1), value: showCaptionInput)
                 .animation(.spring(duration: 0.4, bounce: 0.1), value: showLocationPrompt)
+                .viewfinderPane(sidePanes)
+
+                if let panes = sidePanes {
+                    let sideBySide = panes.axis == .horizontal
+                    controlPane(axis: panes.axis)
+                        .padding(.trailing, panes.edgeInset)
+                        .frame(width: sideBySide ? panes.controls : nil, height: sideBySide ? nil : panes.controls)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: sideBySide ? .trailing : .bottom)
+                }
+            }
+            // The side layout keeps its shape while typing a caption; the compact one still lifts with the keyboard.
+            .ignoresSafeArea(.keyboard, edges: usesBottomControls ? [] : .all)
+            .onGeometryChange(for: ControlPanes?.self) { proxy in
+                Self.panes(in: proxy)
+            } action: { panes in
+                controlPanes = panes
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                bottomRow
-                    .ignoresSafeArea()
+                if usesBottomControls {
+                    bottomRow
+                        .ignoresSafeArea()
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -356,30 +417,10 @@ struct ContentView: View {
                 .navigationTransition(.zoom(sourceID: "timelapse", in: sheetZoom))
         }
         .overlay {
-            if let entry = printingEntry {
-                PolaroidPrintAnimationView(
-                    entry: entry,
-                    captionEnabled: captionPromptEnabled,
-                    onComplete: {
-                        printingEntry = nil
-                        captureFlowFinished()
-                    }
-                )
-                .ignoresSafeArea()
-                .transition(.opacity)
-            }
-        }
-        .overlay {
-            if !printingEntries.isEmpty {
-                MultiPolaroidPrintAnimationView(
-                    entries: printingEntries,
-                    onComplete: {
-                        printingEntries = []
-                        captureFlowFinished()
-                    }
-                )
-                .ignoresSafeArea()
-                .transition(.opacity)
+            if usesBottomControls, isPrinting {
+                printAnimation()
+                    .ignoresSafeArea()
+                    .transition(.opacity)
             }
         }
         .overlay {
@@ -560,7 +601,8 @@ struct ContentView: View {
                 ForEach(allFilters) { filter in
                     let isSelected = selectedFilterName == filter.name
                     let locked = filter.isLocked(for: premium)
-                    filterCard(filter: filter, isSelected: isSelected, locked: locked) {
+                    filterCard(filter: filter, isSelected: isSelected, locked: locked,
+                               previewImage: filmStockPreviews[filter.name]) {
                         if locked {
                             presentPaywall(.filter(filter.name))
                         } else {
@@ -574,6 +616,65 @@ struct ContentView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 6)
         }
+    }
+
+    // MARK: - Frame format row
+
+    /// Classic / Square / Wide / Mini, as on the Filters sheet; shown in the wide layout's control pane.
+    private var frameFormatRow: some View {
+        HStack(spacing: 8) {
+            ForEach(FrameFormat.allCases) { format in
+                frameFormatChip(format)
+            }
+        }
+        .sensoryFeedback(.selection, trigger: selectedFrameFormatRaw)
+    }
+
+    private func frameFormatChip(_ format: FrameFormat) -> some View {
+        let isSelected = activeFrameFormat == format
+        let locked = !format.isFree && !premium.isPremium
+        return Button {
+            if locked {
+                presentPaywall(.feature(.frameFormats))
+            } else {
+                withAnimation(.snappy) { selectedFrameFormatRaw = format.rawValue }
+            }
+        } label: {
+            VStack(spacing: 5) {
+                ZStack {
+                    // Miniature polaroid in the format's proportions
+                    let height: CGFloat = 34
+                    let width = min(44, height * format.frameAspect)
+                    VStack(spacing: 0) {
+                        Rectangle()
+                            .fill(Color.black.opacity(0.35))
+                            .padding([.horizontal, .top], 2)
+                        Color.clear.frame(height: 6)
+                    }
+                    .frame(width: width, height: width / format.frameAspect)
+                    .background(.white)
+
+                    if locked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(4)
+                            .background(.black.opacity(0.55), in: Circle())
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 48)
+                .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(isSelected ? Color.yellow : .clear, lineWidth: 1.5)
+                )
+
+                Text(LocalizedStringKey(format.displayName))
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(locked ? .white.opacity(0.45) : .white)
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Color strip
@@ -636,13 +737,18 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private func filterCard(filter: FilmFilter, isSelected: Bool, locked: Bool = false, onTap: @escaping () -> Void) -> some View {
+    private func filterCard(filter: FilmFilter, isSelected: Bool, locked: Bool = false,
+                            previewImage: UIImage? = nil, onTap: @escaping () -> Void) -> some View {
         VStack(spacing: 5) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(isSelected ? filter.color.opacity(0.3) : Color.white.opacity(0.12))
 
-                if let imageName = filter.imageName {
+                if let previewImage {
+                    Image(uiImage: previewImage)
+                        .resizable()
+                        .scaledToFill()
+                } else if let imageName = filter.imageName {
                     Image(imageName)
                         .resizable()
                         .scaledToFill()
@@ -839,6 +945,176 @@ struct ContentView: View {
 
     // MARK: - Bottom row
 
+    private var libraryButton: some View {
+        Button { showLibrary = true } label: {
+            let excludeID = printingEntry?.id
+            let recent = Array(allEntries.filter { $0.id != excludeID }.prefix(2))
+
+            TimelineView(.periodic(from: .now, by: 1.0)) { _ in
+                ZStack {
+                    if recent.isEmpty {
+                        Circle()
+                            .fill(.white.opacity(0.15))
+                            .frame(width: 44, height: 44)
+                            .overlay {
+                                Image(systemName: "photo.on.rectangle")
+                                    .font(.system(size: 18))
+                                    .foregroundStyle(.white)
+                            }
+                    }
+                    if recent.count >= 2, let img = recent[1].image {
+                        miniPolaroid(image: img, entry: recent[1])
+                            .rotationEffect(.degrees(-9))
+                            .scaleEffect(0.85)
+                            .opacity(0.85)
+                            .offset(x: -5, y: 4)
+                            .id(recent[1].id)
+                    }
+                    if let front = recent.first, let img = front.image {
+                        miniPolaroid(image: img, entry: front)
+                            .rotationEffect(.degrees(5))
+                            .id(front.id)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .bottom).combined(with: .opacity),
+                                removal: .identity
+                            ))
+                    }
+                }
+                .animation(.spring(duration: 0.5, bounce: 0.4), value: recent.first?.id)
+                .frame(width: 44, height: 44)
+            }
+        }
+        .accessibilityLabel(Text("Library"))
+        .matchedTransitionSource(id: "library", in: sheetZoom)
+    }
+
+    /// Control pane of the wide layout. The modes and shutter row stay pinned to the bottom;
+    /// above them sit the note cards, frame and film options and zoom, or the print animation.
+    private func controlPane(axis: ControlPanes.Axis) -> some View {
+        // Stacked under the viewfinder the pane is short, so the print takes all of it
+        // and a note replaces the option rows while it's up.
+        let stacked = axis == .vertical
+        let showsNote = showCaptionInput || showLocationPrompt
+        return VStack(spacing: 14) {
+            ZStack {
+                if isPrinting {
+                    GeometryReader { geo in
+                        printAnimation(fitting: geo.size.height)
+                    }
+                    .clipped()
+                } else {
+                    VStack(spacing: 14) {
+                        // Notes sit at the top so the caption field stays above the keyboard.
+                        if showLocationPrompt && !showCaptionInput {
+                            locationPromptCard
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                        if showCaptionInput {
+                            captionInputCard
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+
+                        Spacer(minLength: 0)
+
+                        if stacked {
+                            if !showsNote {
+                                // The pane is wide here, so shape and color share a row.
+                                HStack(spacing: 8) {
+                                    frameFormatRow
+                                        .frame(width: 280)
+                                    colorStrip
+                                        .modifier(EdgeFade())
+                                }
+                                filterStrip
+                                    .modifier(EdgeFade())
+                            }
+                        } else {
+                            frameFormatRow
+                            colorStrip
+                                .modifier(EdgeFade())
+                            filterStrip
+                                .modifier(EdgeFade())
+                        }
+
+                        if cameraManager.availableZoomOptions.count > 1 {
+                            zoomControlRow
+                                .foldAvoiding()
+                        }
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .frame(maxHeight: .infinity)
+
+            if !(stacked && isPrinting) {
+                modePicker
+                    .frame(maxWidth: .infinity)
+                    .foldAvoiding(coreWidth: 90, strategy: .inset)
+
+                HStack(spacing: 0) {
+                    libraryButton
+                        .frame(maxWidth: .infinity)
+                    shutterRow
+                    filmButton
+                        .frame(maxWidth: .infinity)
+                }
+                .frame(maxWidth: 440)
+                // The full-screen print blocks the shutter on phones; here it stays visible, so pause it.
+                .disabled(isPrinting)
+                .opacity(isPrinting ? 0.4 : 1)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .frame(maxHeight: .infinity)
+        .background(.black)
+        .animation(.spring(duration: 0.4, bounce: 0.1), value: showCaptionInput)
+        .animation(.spring(duration: 0.4, bounce: 0.1), value: showLocationPrompt)
+        .animation(.easeInOut(duration: 0.2), value: isPrinting)
+        .task {
+            guard filmStockPreviews.isEmpty,
+                  let reference = UIImage(named: "filter_reference") else { return }
+            let thumbnail = reference.preparingThumbnail(of: CGSize(width: 120, height: 120)) ?? reference
+            filmStockPreviews = renderFilmStockPreviews(from: thumbnail)
+        }
+    }
+
+    private var isPrinting: Bool {
+        printingEntry != nil || !printingEntries.isEmpty
+    }
+
+    /// The print-and-develop animation for the latest capture: full screen on phones, inside the
+    /// control pane in the wide layout. `height` shrinks the polaroid so the whole sequence fits.
+    @ViewBuilder
+    private func printAnimation(fitting height: CGFloat? = nil) -> some View {
+        if let entry = printingEntry {
+            PolaroidPrintAnimationView(
+                entry: entry,
+                captionEnabled: captionPromptEnabled,
+                polaroidWidth: height.map(Self.polaroidWidth(fitting:)) ?? 220,
+                onComplete: {
+                    printingEntry = nil
+                    captureFlowFinished()
+                }
+            )
+        } else if !printingEntries.isEmpty {
+            MultiPolaroidPrintAnimationView(
+                entries: printingEntries,
+                onComplete: {
+                    printingEntries = []
+                    captureFlowFinished()
+                }
+            )
+        }
+    }
+
+    /// Widest polaroid whose print sequence (polaroid, shake hint and caption bar, about 216pt
+    /// besides the photo) fits `height`, assuming the tallest 3:4 frame.
+    private static func polaroidWidth(fitting height: CGFloat) -> CGFloat {
+        min(220, max(120, (height - 216) * 0.75 + 16))
+    }
+
     private var bottomRow: some View {
         VStack(spacing: 0) {
             shutterRow
@@ -846,47 +1122,8 @@ struct ContentView: View {
                 .padding(.bottom, 14)
 
             HStack(spacing: 0) {
-            Button { showLibrary = true } label: {
-                let excludeID = printingEntry?.id
-                let recent = Array(allEntries.filter { $0.id != excludeID }.prefix(2))
-
-                TimelineView(.periodic(from: .now, by: 1.0)) { _ in
-                    ZStack {
-                        if recent.isEmpty {
-                            Circle()
-                                .fill(.white.opacity(0.15))
-                                .frame(width: 44, height: 44)
-                                .overlay {
-                                    Image(systemName: "photo.on.rectangle")
-                                        .font(.system(size: 18))
-                                        .foregroundStyle(.white)
-                                }
-                        }
-                        if recent.count >= 2, let img = recent[1].image {
-                            miniPolaroid(image: img, entry: recent[1])
-                                .rotationEffect(.degrees(-9))
-                                .scaleEffect(0.85)
-                                .opacity(0.85)
-                                .offset(x: -5, y: 4)
-                                .id(recent[1].id)
-                        }
-                        if let front = recent.first, let img = front.image {
-                            miniPolaroid(image: img, entry: front)
-                                .rotationEffect(.degrees(5))
-                                .id(front.id)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .bottom).combined(with: .opacity),
-                                    removal: .identity
-                                ))
-                        }
-                    }
-                    .animation(.spring(duration: 0.5, bounce: 0.4), value: recent.first?.id)
-                    .frame(width: 44, height: 44)
-                }
-            }
-            .accessibilityLabel(Text("Library"))
-            .matchedTransitionSource(id: "library", in: sheetZoom)
-            .frame(width: 72, alignment: .leading)
+                libraryButton
+                    .frame(width: 72, alignment: .leading)
 
                 modePicker
                     .frame(maxWidth: .infinity)
@@ -1367,5 +1604,72 @@ private struct PolaGlassEffectModifier: ViewModifier {
         } else {
             content.background(.ultraThinMaterial, in: Circle())
         }
+    }
+}
+
+/// The viewfinder and control panes of the wide camera layout: side by side in landscape
+/// (viewfinder leading), stacked in portrait (viewfinder on top).
+nonisolated private struct ControlPanes: Equatable, Sendable {
+    enum Axis: Equatable, Sendable {
+        case horizontal
+        case vertical
+    }
+
+    static let minimumControlWidth: CGFloat = 340
+    /// Inset of the viewfinder from the display edges and the fold.
+    static let viewfinderMargin: CGFloat = 16
+    /// Roughly the iPhone Duo's fold region, used to split an unfolded portrait screen like a folded one.
+    static let nominalFoldGap: CGFloat = 24
+
+    let axis: Axis
+    /// Width (side by side) or height (stacked) of each pane.
+    let viewfinder: CGFloat
+    let controls: CGFloat
+    /// Part of the control pane covered by system UI along the trailing edge.
+    let edgeInset: CGFloat
+}
+
+private extension View {
+    /// Pins the view to the viewfinder pane of the wide layout. Without panes it lays out as before;
+    /// the modifiers stay in place either way so the camera preview isn't rebuilt on fold changes.
+    func viewfinderPane(_ panes: ControlPanes?) -> some View {
+        padding(panes == nil ? 0 : ControlPanes.viewfinderMargin)
+            .frame(width: panes?.axis == .horizontal ? panes?.viewfinder : nil,
+                   height: panes?.axis == .vertical ? panes?.viewfinder : nil)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: panes == nil ? .center : .topLeading)
+    }
+}
+
+/// Fades a horizontal scroll view's edges, like the mode picker, but only on a side with more
+/// content hidden past it, so items dissolve instead of being cut off at the edge.
+private struct EdgeFade: ViewModifier {
+    nonisolated struct Overflow: Equatable, Sendable {
+        var leading = false
+        var trailing = false
+    }
+
+    /// Matches the strips' 20pt content padding, so the first and last items rest clear of it.
+    var width: CGFloat = 20
+    @State private var overflow = Overflow()
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: Overflow.self) { geometry in
+                Overflow(leading: geometry.visibleRect.minX > 1,
+                         trailing: geometry.visibleRect.maxX < geometry.contentSize.width - 1)
+            } action: { _, newValue in
+                withAnimation(.easeOut(duration: 0.15)) { overflow = newValue }
+            }
+            .mask {
+                HStack(spacing: 0) {
+                    LinearGradient(colors: [overflow.leading ? .clear : .black, .black],
+                                   startPoint: .leading, endPoint: .trailing)
+                        .frame(width: width)
+                    Color.black
+                    LinearGradient(colors: [.black, overflow.trailing ? .clear : .black],
+                                   startPoint: .leading, endPoint: .trailing)
+                        .frame(width: width)
+                }
+            }
     }
 }
