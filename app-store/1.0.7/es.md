@@ -1,0 +1,121 @@
+# Poly 1.0.7 — Español (es-ES)
+
+Copy each block into the matching App Store Connect field. Limits are checked by `app-store/check_lengths.py`.
+
+## App Name *(30)*
+```
+Poly - Cámara instantánea
+```
+
+## Subtitle *(30)*
+```
+Película retro que se revela
+```
+
+## Promotional Text *(170)*
+Use this one while the free trial is live:
+```
+Novedad: la Doble exposición une dos fotos en una copia, una cámara pensada para iPhone Duo y 7 iconos de colores. Prueba Premium gratis 7 días.
+```
+Use this one if the trial isn't live:
+```
+Novedad: la Doble exposición une dos fotos en una copia, una cámara pensada para iPhone Duo y 7 iconos de colores. Todas las películas en tu bolsillo.
+```
+
+## Description *(4000)*
+```
+Poly convierte tu iPhone en una cámara de fotos instantáneas.
+
+Pulsa el disparador y mira cómo la foto sale de la cámara y se revela poco a poco, igual que una de verdad. Agita el móvil para acelerarlo. Añade una leyenda escrita a mano, dale la vuelta a la foto para ver dónde la hiciste y guárdalo todo en una biblioteca que parece una caja llena de fotos.
+
+13 PELÍCULAS
+De los cálidos tonos de la hora dorada y el sepia desvaído de los 70 a las instantáneas lavanda, el infrarrojo, la imagen térmica, la cianotipia, la visión nocturna, el glitch RGB y el terror VHS. Prueba cada película en directo en el visor antes de disparar.
+
+LENTES VINTAGE
+Combina cualquier película con una lente de plástico barata, un grano grueso o una cámara de juguete gastada con fugas de luz.
+
+FORMATOS INSTANTÁNEOS
+Dispara en Clásico, Cuadrado, Ancho o Mini. El visor te muestra exactamente lo que saldrá en la foto. Elige cualquier color de marco o combínalo con tu película.
+
+WIDGET RECUERDOS
+Una foto de este día en años anteriores, directamente en tu pantalla de inicio. ¿Hoy no hay aniversario? Te trae otra de tus favoritas de la biblioteca.
+
+HAZLA TUYA
+Leyendas con 6 fuentes y 4 grosores, una nota más larga en el reverso y una fecha naranja impresa como en las cámaras compactas de los 90.
+
+VÍDEO Y TIME-LAPSE
+Graba fotos en movimiento o fija un intervalo y convierte una tarde entera en un único time-lapse.
+
+DOBLE EXPOSICIÓN
+Superpón dos fotos en una sola copia. Un fantasma de la primera te ayuda a encuadrar la segunda, y un control deslizante equilibra las dos, de onírica a intensa.
+
+PENSADA PARA IPHONE DUO
+Ábrelo y tendrás un visor grande con todos los controles al lado. El disparador evita el pliegue y Poly se adapta a cada forma de sujetarlo.
+
+COMPARTE E IMPRIME
+Guarda fotos limpias en Fotos, comparte una imagen 9:16 pensada para Stories o crea hojas A4 con marcas de corte para imprimir en casa.
+
+TU PRIVACIDAD, PRIMERO
+Sin cuenta, sin anuncios, sin seguimiento. Tus fotos se quedan en tu biblioteca y en tu iCloud, sincronizadas en todos tus dispositivos.
+
+POLY PREMIUM
+Gratis para siempre: la cámara, el vídeo, el time-lapse, la película y el marco SOLVA y toda tu biblioteca.
+Premium desbloquea todas las películas y lentes, los colores y formatos de marco, la doble exposición, las fuentes de leyenda, la fecha impresa, el widget Recuerdos, las hojas de impresión, los iconos de colores y las exportaciones sin logo. Elige la suscripción mensual, la anual (los nuevos suscriptores pueden empezar con una prueba gratuita) o la compra única de por vida.
+
+El pago se carga en tu cuenta de Apple. Las suscripciones se renuevan automáticamente salvo que se cancelen al menos 24 horas antes de que termine el periodo actual. Puedes gestionarlas o cancelarlas en cualquier momento en los ajustes de tu cuenta de Apple.
+
+Términos de uso: https://poly-vintage.com/terms
+Política de privacidad: https://poly-vintage.com/privacy
+```
+> If the free trial isn't live yet, delete "(los nuevos suscriptores pueden empezar con una prueba gratuita)".
+
+## Keywords *(100 bytes)*
+```
+vintage,analógica,foto,filtro,marco,desechable,90s,fecha,grano,timelapse,widget,imprimir,y2k
+```
+
+## What's New
+```
+Poly 1.0.7 trae la doble exposición y una cámara pensada para iPhone Duo.
+
+• Doble exposición: superpón dos fotos en una copia, encuadra la segunda con el fantasma de la primera y equilíbralas con un control deslizante (Premium)
+• iPhone Duo: ábrelo para un visor grande con todos los controles al lado, lejos del pliegue
+• Iconos de la app: elige uno de los 7 colores de película para tu pantalla de inicio (Premium)
+• Cuadrículas de biblioteca y películas más amplias en pantallas anchas y en Split View
+• Pequeñas correcciones y mejoras
+```
+
+## Screenshot captions
+| # | Headline | Subline |
+|---|----------|---------|
+| 1 | ==13== películas | Y 3 lentes vintage para combinar. |
+| 2 | Clásico, ==Cuadrado, Ancho, Mini== | Formatos instantáneos, cualquier color. |
+| 3 | Fotos que se ==mueven== | Vídeo y time-lapse, con su marco. |
+| 4 | ==Foto instantánea== en tu iPhone | Dispara, mira cómo sale y se revela. |
+| 5 | Escribe. ==Dale la vuelta.== | Leyendas, notas y un mapa en el reverso. |
+| 6 | Míralo ==antes== de disparar | Cada película en directo en el visor. |
+| 7 | ==Revive== este día | Tus recuerdos en la pantalla de inicio. |
+| 8 | Hecha para ==Stories== | Comparte en 9:16 o imprime hojas A4. |
+
+## Screenshot captions (ByJo style)
+
+| # | Title | Subtitle |
+|---|-------|----------|
+| 1 | Instantáneas | directo en tu iPhone |
+| 2 | 13 películas | y 3 lentes vintage |
+| 3 | Cada formato | Clásico, Cuadrado, Ancho, Mini |
+| 4 | Mírala revelarse | agita para acelerar |
+| 5 | Escribe en ella | leyendas y fecha impresa |
+| 6 | Doble exposición | dos fotos, una copia |
+| 7 | Ábrelo | pensado para iPhone Duo |
+
+## In-App Purchases
+| Field | Value |
+|-------|-------|
+| Subscription group display name | Poly Premium |
+| Monthly — display name | Premium mensual |
+| Monthly — description | Todas las películas, formatos, widget y más |
+| Yearly — display name | Premium anual |
+| Yearly — description | Todo Premium durante un año |
+| Lifetime — display name | Premium de por vida |
+| Lifetime — description | Todo Premium con un único pago |

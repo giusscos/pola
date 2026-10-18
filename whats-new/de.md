@@ -1,18 +1,13 @@
 # What's New — German (de-DE)
 
-**Version 1.0.6**
+**Version 1.0.7**
 
 ```
-Poly 1.0.6 ist unser bisher größtes Update.
+Poly 1.0.7 bringt Doppelbelichtungen und eine Kamera für das iPhone Duo.
 
-• Erst testen, dann kaufen: Sieh dir jeden Film live im Sucher an
-• 3 neue Filme: RÖDA, LILJA und SKIFT (Premium)
-• Vintage-Objektive: GLIMT, KORN und LEKA, kombinierbar mit jedem Film (Premium)
-• Neue Sofortbild-Formate: Quadrat, Breit und Mini (Premium)
-• Erinnerungs-Widget: ein Foto von diesem Tag auf deinem Home-Bildschirm (Premium)
-• Retro-Datumsstempel und A4-Druckbögen (Premium)
-• Als Story teilen: ein 9:16-Bild, bereit zum Posten
-• Premium-Abzüge sind jetzt standardmäßig ohne Logo
-• Kürzere Einführung – Mikrofon und Standort werden nur abgefragt, wenn du sie brauchst
-• Vollständig übersetzt auf Deutsch, Englisch, Spanisch, Französisch und Italienisch, bessere VoiceOver-Unterstützung und viele kleine Verbesserungen
+• Doppelbelichtung: zwei Aufnahmen auf einem Abzug, die zweite am Geisterbild der ersten ausrichten und per Regler mischen (Premium)
+• iPhone Duo: aufklappen für einen großen Sucher mit allen Bedienelementen daneben, weg vom Falz
+• App-Icons: wähle eine von 7 Filmfarben für deinen Home-Bildschirm (Premium)
+• Größere Raster in Mediathek und Filmauswahl auf breiten Displays und in Split View
+• Kleine Fehlerbehebungen und Verbesserungen
 ```

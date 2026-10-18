@@ -1,18 +1,13 @@
 # What's New — Spanish (es-ES)
 
-**Version 1.0.6**
+**Version 1.0.7**
 
 ```
-Poly 1.0.6 es nuestra mayor actualización hasta ahora.
+Poly 1.0.7 trae la doble exposición y una cámara pensada para iPhone Duo.
 
-• Prueba antes de comprar: mira cada película en directo en el visor
-• 3 películas nuevas: RÖDA, LILJA y SKIFT (Premium)
-• Lentes vintage: GLIMT, KORN y LEKA, combinables con cualquier película (Premium)
-• Nuevos formatos instantáneos: Cuadrado, Ancho y Mini (Premium)
-• Widget Recuerdos: una foto de este día en tu pantalla de inicio (Premium)
-• Fecha retro impresa y hojas de impresión A4 (Premium)
-• Compartir como historia: una imagen 9:16 lista para publicar
-• Las fotos Premium ya no llevan logo por defecto
-• Presentación más corta: el micrófono y la ubicación solo se piden cuando los necesitas
-• Totalmente traducida al español, inglés, alemán, francés e italiano, mejor compatibilidad con VoiceOver y muchas pequeñas mejoras
+• Doble exposición: superpón dos fotos en una copia, encuadra la segunda con el fantasma de la primera y equilíbralas con un control deslizante (Premium)
+• iPhone Duo: ábrelo para un visor grande con todos los controles al lado, lejos del pliegue
+• Iconos de la app: elige uno de los 7 colores de película para tu pantalla de inicio (Premium)
+• Cuadrículas de biblioteca y películas más amplias en pantallas anchas y en Split View
+• Pequeñas correcciones y mejoras
 ```

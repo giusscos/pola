@@ -1,18 +1,13 @@
 # What's New — French (fr-FR)
 
-**Version 1.0.6**
+**Version 1.0.7**
 
 ```
-Poly 1.0.6 est notre plus grosse mise à jour.
+Poly 1.0.7 apporte la double exposition et un appareil pensé pour iPhone Duo.
 
-• Essayez avant d'acheter : chaque pellicule en direct dans le viseur
-• 3 nouvelles pellicules : RÖDA, LILJA et SKIFT (Premium)
-• Objectifs vintage : GLIMT, KORN et LEKA, à associer à n'importe quelle pellicule (Premium)
-• Nouveaux formats instantanés : Carré, Large et Mini (Premium)
-• Widget Souvenirs : une photo de ce jour sur votre écran d'accueil (Premium)
-• Date rétro incrustée et planches d'impression A4 (Premium)
-• Partager en story : une image 9:16 prête à publier
-• Les tirages Premium sont désormais sans logo par défaut
-• Introduction plus courte : le micro et la localisation ne sont demandés que lorsque vous en avez besoin
-• Entièrement traduite en français, anglais, allemand, espagnol et italien, meilleure prise en charge de VoiceOver et de nombreuses petites améliorations
+• Double exposition : superposez deux photos sur un tirage, cadrez la seconde grâce au fantôme de la première et équilibrez-les avec un curseur (Premium)
+• iPhone Duo : dépliez-le pour un grand viseur avec toutes les commandes à côté, loin du pli
+• Icônes d'app : choisissez parmi 7 couleurs de pellicule pour votre écran d'accueil (Premium)
+• Grilles de bibliothèque et de pellicules plus spacieuses sur grand écran et en Split View
+• Petites corrections et améliorations
 ```

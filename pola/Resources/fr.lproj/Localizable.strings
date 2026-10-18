@@ -263,3 +263,19 @@
 "Default blend" = "Mélange par défaut";
 "More of the first shot" = "Plus de la première photo";
 "More of the second shot" = "Plus de la seconde photo";
+
+/* 1.0.7: What's New, app icons */
+"What's New" = "Nouveautés";
+"Poly %@" = "Poly %@";
+"Layer two shots on one print. A ghost of the first helps you line up the second, and a slider balances them." = "Superposez deux photos sur un tirage. Le fantôme de la première aide à cadrer la seconde, et un curseur les équilibre.";
+"Made for iPhone Duo" = "Pensé pour iPhone Duo";
+"Unfold for a big viewfinder with every control beside it, clear of the fold." = "Dépliez-le pour un grand viseur avec toutes les commandes à côté, loin du pli.";
+"App Icons" = "Icônes d'app";
+"Pick one of 7 film-stock colors in Settings → App Icon." = "Choisissez parmi 7 couleurs de pellicule dans Réglages → Icône de l'app.";
+"PREMIUM" = "PREMIUM";
+"App Icon" = "Icône de l'app";
+"Colorful icons are part of Poly Premium." = "Les icônes colorées font partie de Poly Premium.";
+"Couldn't change the icon" = "Impossible de changer l'icône";
+"OK" = "OK";
+"7 film-stock colors for your Home Screen" = "7 couleurs de pellicule pour l'écran d'accueil";
+"Give your Home Screen a splash of film color." = "Une touche de couleur pellicule sur votre écran d'accueil.";

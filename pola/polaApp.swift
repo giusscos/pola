@@ -13,12 +13,18 @@ struct polaApp: App {
     @State private var languageManager: LanguageManager
     @State private var store = PhotoStore()
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @AppStorage(WhatsNew.seenKey) private var lastSeenWhatsNew = ""
+    // Decided once at launch, so finishing onboarding never pops the sheet right after it.
+    @State private var showWhatsNew: Bool
 
     let container: ModelContainer
 
     init() {
         let lm = LanguageManager.shared
         _languageManager = State(wrappedValue: lm)
+        let defaults = UserDefaults.standard
+        _showWhatsNew = State(wrappedValue: defaults.bool(forKey: "hasSeenOnboarding")
+            && defaults.string(forKey: WhatsNew.seenKey) != WhatsNew.version)
 
         do {
             let config = ModelConfiguration(
@@ -49,6 +55,13 @@ struct polaApp: App {
                     OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)
                         .environment(PremiumManager.shared)
                         .environment(languageManager)
+                }
+                // Only for people updating: a fresh install goes through onboarding instead.
+                .sheet(isPresented: $showWhatsNew, onDismiss: { lastSeenWhatsNew = WhatsNew.version }) {
+                    WhatsNewView { showWhatsNew = false }
+                }
+                .onChange(of: hasSeenOnboarding) { _, seen in
+                    if seen { lastSeenWhatsNew = WhatsNew.version }
                 }
         }
         .modelContainer(container)

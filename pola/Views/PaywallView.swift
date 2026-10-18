@@ -13,6 +13,7 @@ enum PremiumFeature: CaseIterable {
     case widget
     case printSheets
     case cleanExports
+    case appIcons
 
     var icon: String {
         switch self {
@@ -25,6 +26,7 @@ enum PremiumFeature: CaseIterable {
         case .widget:       "apps.iphone"
         case .printSheets:  "printer.fill"
         case .cleanExports: "checkmark.shield.fill"
+        case .appIcons:     "app.badge"
         }
     }
 
@@ -39,6 +41,7 @@ enum PremiumFeature: CaseIterable {
         case .widget:       Color(red: 0.95, green: 0.6, blue: 0.85)
         case .printSheets:  Color(red: 0.3, green: 0.65, blue: 1.0)
         case .cleanExports: Color(red: 0.2, green: 0.85, blue: 0.6)
+        case .appIcons:     Color(red: 1.0, green: 0.55, blue: 0.15)
         }
     }
 
@@ -53,6 +56,7 @@ enum PremiumFeature: CaseIterable {
         case .widget:       NSLocalizedString("Memories Widget", comment: "")
         case .printSheets:  NSLocalizedString("Print Sheets", comment: "")
         case .cleanExports: NSLocalizedString("Clean Exports", comment: "")
+        case .appIcons:     NSLocalizedString("App Icons", comment: "")
         }
     }
 
@@ -67,6 +71,7 @@ enum PremiumFeature: CaseIterable {
         case .widget:       "A polaroid a day on your Home Screen"
         case .printSheets:  "A4 layouts ready to print at home"
         case .cleanExports: "No logo on shares and saves"
+        case .appIcons:     "7 film-stock colors for your Home Screen"
         }
     }
 
@@ -82,6 +87,7 @@ enum PremiumFeature: CaseIterable {
         case .widget:       "Relive a polaroid every day on your Home Screen."
         case .printSheets:  "Print your polaroids at home."
         case .cleanExports: "Share your polaroids without the logo."
+        case .appIcons:     "Give your Home Screen a splash of film color."
         }
     }
 }

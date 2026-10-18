@@ -250,7 +250,7 @@ struct SettingsView: View {
 
                 Section("App") {
                     NavigationLink {
-                        AppIconPicker(selected: $appIcon, onLocked: { presentPaywall(.general) })
+                        AppIconPicker(selected: $appIcon, onLocked: { presentPaywall(.feature(.appIcons)) })
                     } label: {
                         Label {
                             Text("App Icon")
