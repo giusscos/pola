@@ -106,12 +106,22 @@ The set to upload. Title ≤ 16 characters (the orange line), subtitle ≤ 32. S
 | # | Title | Subtitle |
 |---|-------|----------|
 | 1 | Instant film | right on your iPhone |
-| 2 | 13 film stocks | and 3 vintage lenses |
-| 3 | Every format | Classic, Square, Wide, Mini |
-| 4 | Watch it develop | shake to go faster |
-| 5 | Write on it | captions and date stamps |
-| 6 | Double exposure | two shots, one print |
-| 7 | Unfold it | made for iPhone Duo |
+| 2 | Double exposure | two shots, one print |
+| 3 | 13 film stocks | and 3 vintage lenses |
+| 4 | Every format | Classic, Square, Wide, Mini |
+| 5 | Watch it develop | shake to go faster |
+| 6 | Write on it | captions and date stamps |
+
+## Screenshot captions (iPhone Duo)
+Inner display, landscape 2853 × 2007. Same style as the ByJo set; see `README.md` for the capture behind each one.
+
+| # | Title | Subtitle |
+|---|-------|----------|
+| 1 | Instant film | now on iPhone Duo |
+| 2 | Double exposure | two shots, one print |
+| 3 | Every control | beside the viewfinder |
+| 4 | Your prints | four across, unfolded |
+| 5 | Folded too | the full camera, closed |
 
 ## In-App Purchases
 | Field | Value |

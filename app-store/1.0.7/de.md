@@ -102,12 +102,22 @@ Poly 1.0.7 bringt Doppelbelichtungen und eine Kamera für das iPhone Duo.
 | # | Title | Subtitle |
 |---|-------|----------|
 | 1 | Sofortbild | direkt auf dem iPhone |
-| 2 | 13 Filme | und 3 Vintage-Objektive |
-| 3 | Jedes Format | Klassisch, Quadrat, Breit, Mini |
-| 4 | Live entwickelt | Schütteln macht's schneller |
-| 5 | Beschriften | mit Notiz und Datumsstempel |
-| 6 | Doppelbild | zwei Fotos, ein Abzug |
-| 7 | Aufklappen | gemacht fürs iPhone Duo |
+| 2 | Doppelbild | zwei Fotos, ein Abzug |
+| 3 | 13 Filme | und 3 Vintage-Objektive |
+| 4 | Jedes Format | Klassisch, Quadrat, Breit, Mini |
+| 5 | Live entwickelt | Schütteln macht's schneller |
+| 6 | Beschriften | mit Notiz und Datumsstempel |
+
+## Screenshot captions (iPhone Duo)
+Inner display, landscape 2853 × 2007. Same style as the ByJo set; see `README.md` for the capture behind each one.
+
+| # | Title | Subtitle |
+|---|-------|----------|
+| 1 | Sofortbild | jetzt auf dem iPhone Duo |
+| 2 | Doppelbild | zwei Fotos, ein Abzug |
+| 3 | Alles im Griff | direkt neben dem Sucher |
+| 4 | Deine Abzüge | vier pro Reihe, aufgeklappt |
+| 5 | Auch zugeklappt | die ganze Kamera |
 
 ## In-App Purchases
 | Field | Value |

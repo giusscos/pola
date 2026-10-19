@@ -102,12 +102,22 @@ Poly 1.0.7 apporte la double exposition et un appareil pensé pour iPhone Duo.
 | # | Title | Subtitle |
 |---|-------|----------|
 | 1 | L'instantané | directement sur iPhone |
-| 2 | 13 pellicules | et 3 objectifs vintage |
-| 3 | Tous formats | Classique, Carré, Large, Mini |
-| 4 | Elle se révèle | secouez pour accélérer |
-| 5 | Écrivez dessus | légendes et date incrustée |
-| 6 | Double expo | deux photos, un tirage |
-| 7 | Dépliez-le | pensé pour iPhone Duo |
+| 2 | Double expo | deux photos, un tirage |
+| 3 | 13 pellicules | et 3 objectifs vintage |
+| 4 | Tous formats | Classique, Carré, Large, Mini |
+| 5 | Elle se révèle | secouez pour accélérer |
+| 6 | Écrivez dessus | légendes et date incrustée |
+
+## Screenshot captions (iPhone Duo)
+Inner display, landscape 2853 × 2007. Same style as the ByJo set; see `README.md` for the capture behind each one.
+
+| # | Title | Subtitle |
+|---|-------|----------|
+| 1 | L'instantané | désormais sur iPhone Duo |
+| 2 | Double expo | deux photos, un tirage |
+| 3 | Tout à portée | à côté du viseur |
+| 4 | Vos tirages | quatre par ligne, déplié |
+| 5 | Même plié | l'appareil complet |
 
 ## In-App Purchases
 | Field | Value |

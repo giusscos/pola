@@ -102,12 +102,22 @@ Poly 1.0.7 porta la doppia esposizione e una fotocamera pensata per iPhone Duo.
 | # | Title | Subtitle |
 |---|-------|----------|
 | 1 | Istantanee | direttamente su iPhone |
-| 2 | 13 pellicole | e 3 obiettivi vintage |
-| 3 | Ogni formato | Classico, Quadrato, Largo, Mini |
-| 4 | Si sviluppa | scuoti per accelerare |
-| 5 | Scrivici sopra | didascalie e timbro data |
-| 6 | Doppio scatto | due scatti, una stampa |
-| 7 | Aprilo | pensato per iPhone Duo |
+| 2 | Doppio scatto | due scatti, una stampa |
+| 3 | 13 pellicole | e 3 obiettivi vintage |
+| 4 | Ogni formato | Classico, Quadrato, Largo, Mini |
+| 5 | Si sviluppa | scuoti per accelerare |
+| 6 | Scrivici sopra | didascalie e timbro data |
+
+## Screenshot captions (iPhone Duo)
+Inner display, landscape 2853 × 2007. Same style as the ByJo set; see `README.md` for the capture behind each one.
+
+| # | Title | Subtitle |
+|---|-------|----------|
+| 1 | Istantanee | ora su iPhone Duo |
+| 2 | Doppio scatto | due scatti, una stampa |
+| 3 | Tutto a portata | accanto al mirino |
+| 4 | Le tue stampe | quattro per riga, aperto |
+| 5 | Anche chiuso | la fotocamera completa |
 
 ## In-App Purchases
 | Field | Value |
