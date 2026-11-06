@@ -19,7 +19,7 @@ The paywall is ready. It checks eligibility with `isEligibleForIntroOffer`. When
 **To switch it on:**
 1. App Store Connect → Subscriptions → Yearly → Introductory Offers → Free, 1 week, all territories.
 2. Re-sync `onlineStore.storekit` in Xcode (Editor → Sync). `offlineStore.storekit` already has the trial for local testing; point the scheme at it to try the flow.
-3. Optional, not built: a local notification 2 days before the trial ends, which reduces refunds.
+3. Built (Nov 6, 2026): a local notification 2 days before the trial ends (`TrialReminder`). The paywall says so under the trial terms. Permission is asked right after a trial starts, and the reminder is removed if the user cancels, converts or switches to Lifetime.
 
 ## 2. Price anchoring on the paywall — shipped
 

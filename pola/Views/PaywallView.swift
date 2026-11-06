@@ -167,6 +167,7 @@ struct PaywallView: View {
                 return
             }
             Analytics.track(.paywallShown, ["context": context.analyticsName])
+            ReviewPrompter.paywallShown()
         }
         .onDisappear {
             if !didUnlock && !premium.isPremium {
@@ -526,7 +527,9 @@ struct PaywallView: View {
             return NSLocalizedString("One-time purchase. Yours forever.", comment: "")
         }
         if hasEligibleTrial(product), let trial = product.freeTrialText {
-            return String(format: NSLocalizedString("%@ free, then %@. Cancel anytime.", comment: ""), trial, product.pricePerPeriodText)
+            let terms = String(format: NSLocalizedString("%@ free, then %@. Cancel anytime.", comment: ""), trial, product.pricePerPeriodText)
+            guard let days = product.freeTrialDays, TrialReminder.canRemind(trialDays: days) else { return terms }
+            return terms + "\n" + NSLocalizedString("We'll remind you 2 days before it ends.", comment: "Paywall, under the free trial terms")
         }
         return String(format: NSLocalizedString("%@. Cancel anytime.", comment: ""), product.pricePerPeriodText)
     }

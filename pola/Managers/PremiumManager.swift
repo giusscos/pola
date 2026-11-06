@@ -104,6 +104,11 @@ final class PremiumManager {
                     await apply(tx)
                     Self.logger.info("Unlocked from purchase result: \(tx.productID)")
                 }
+                if TrialReminder.isFreeTrial(tx) {
+                    await TrialReminder.requestAuthorization()
+                    // A trial that was just bought always auto-renews.
+                    await TrialReminder.sync(transaction: tx, willAutoRenew: true, renewalPrice: product.pricePerPeriodText)
+                }
                 Analytics.track(.purchaseCompleted, ["product": product.id])
                 return true
             case .userCancelled:
@@ -185,6 +190,9 @@ final class PremiumManager {
         expirationDate = tx?.expirationDate
         willAutoRenew = autoRenew
         isPremium = tx != nil || Self.simulatorPremium
+
+        let renewalPrice = products.first { $0.id == tx?.productID }?.pricePerPeriodText
+        await TrialReminder.sync(transaction: tx, willAutoRenew: autoRenew, renewalPrice: renewalPrice)
     }
 
     #if targetEnvironment(simulator)
@@ -225,6 +233,18 @@ extension Product {
     var freeTrialPeriod: Product.SubscriptionPeriod? {
         guard let offer = subscription?.introductoryOffer, offer.paymentMode == .freeTrial else { return nil }
         return offer.period
+    }
+
+    /// Trial length in days (months count as 28), for deciding whether a reminder fits before it ends.
+    var freeTrialDays: Int? {
+        guard let period = freeTrialPeriod else { return nil }
+        switch period.unit {
+        case .day:   return period.value
+        case .week:  return period.value * 7
+        case .month: return period.value * 28
+        case .year:  return period.value * 365
+        @unknown default: return nil
+        }
     }
 
     /// "7 days", "1 month" — used in trial badges and the post-trial disclosure.

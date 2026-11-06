@@ -4,7 +4,6 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(PremiumManager.self) private var premium
     @Environment(LanguageManager.self) private var languageManager
-    @Environment(\.requestReview) private var requestReview
     @Environment(\.openURL) private var openURL
     @State private var paywallContext: PaywallContext? = nil
     @State private var showManageSubscription = false
@@ -267,9 +266,11 @@ struct SettingsView: View {
                         Label("Feedback", systemImage: "envelope")
                             .foregroundStyle(.primary)
                     }
-                    Button { requestReview() } label: {
-                        Label("Rate the App", systemImage: "star.fill")
-                            .foregroundStyle(.primary)
+                    if let writeReviewURL = ReviewPrompter.writeReviewURL {
+                        Button { openURL(writeReviewURL) } label: {
+                            Label("Rate the App", systemImage: "star.fill")
+                                .foregroundStyle(.primary)
+                        }
                     }
                     Button { showOnboarding = true } label: {
                         Label("Show Onboarding", systemImage: "sparkles")

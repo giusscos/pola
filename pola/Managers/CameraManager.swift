@@ -13,6 +13,9 @@ struct ZoomOption: Equatable, Identifiable {
 @Observable
 final class CameraManager: NSObject {
     private(set) var isAuthorized = false
+    /// True once the user has said no to camera access (or it's restricted), as opposed to
+    /// "not asked yet" while `configure()` is still running.
+    private(set) var isAccessDenied = false
     private(set) var isTorchOn = false
     private(set) var currentPosition: AVCaptureDevice.Position = .back
     private(set) var lastCoordinate: CLLocationCoordinate2D? = nil
@@ -56,6 +59,7 @@ final class CameraManager: NSObject {
         let videoGranted = await AVCaptureDevice.requestAccess(for: .video)
         await MainActor.run {
             isAuthorized = videoGranted
+            isAccessDenied = !videoGranted
             locationManager.delegate = self
             locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
             locationStatus = locationManager.authorizationStatus

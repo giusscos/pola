@@ -33,6 +33,8 @@
 
 /* Camera / ContentView */
 "Camera access required" = "Accesso alla fotocamera richiesto";
+"Turn on camera access in Settings to start shooting." = "Consenti l'accesso alla fotocamera nelle Impostazioni per iniziare a scattare.";
+"Open Settings" = "Apri Impostazioni";
 "Add a note..." = "Aggiungi una nota...";
 "Skip" = "Salta";
 "Done" = "Fatto";
@@ -184,6 +186,9 @@
 "One-time purchase. Yours forever." = "Acquisto una tantum. Tuo per sempre.";
 "%@ free, then %@. Cancel anytime." = "%@ gratis, poi %@. Annulla quando vuoi.";
 "%@. Cancel anytime." = "%@. Annulla quando vuoi.";
+"We'll remind you 2 days before it ends." = "Ti avviseremo 2 giorni prima della fine.";
+"Your free trial ends in 2 days" = "La tua prova gratuita termina tra 2 giorni";
+"After that, Poly Premium renews at %@. Cancel anytime in Settings > Apple Account > Subscriptions." = "Poi Poly Premium si rinnova a %@. Annulla quando vuoi in Impostazioni > Account Apple > Abbonamenti.";
 
 /* Previously unlocalized UI, fonts & accessibility */
 "Mirror front camera" = "Specchia fotocamera frontale";

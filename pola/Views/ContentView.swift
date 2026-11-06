@@ -22,6 +22,7 @@ struct ContentView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @Environment(PhotoStore.self) private var store
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var controlPanes: ControlPanes? = nil
     @State private var filmStockPreviews: [String: UIImage] = [:]
@@ -306,8 +307,21 @@ struct ContentView: View {
                             .font(.largeTitle)
                         Text("Camera access required")
                             .font(.headline)
+                        // Without this, someone who tapped "Don't Allow" during onboarding is stuck.
+                        if cameraManager.isAccessDenied,
+                           let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                            Text("Turn on camera access in Settings to start shooting.")
+                                .font(.subheadline)
+                                .multilineTextAlignment(.center)
+                            Button("Open Settings") { openURL(settingsURL) }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.white)
+                                .foregroundStyle(.black)
+                                .padding(.top, 8)
+                        }
                     }
                     .foregroundStyle(.secondary)
+                    .padding(.horizontal, 32)
                 }
 
                 VStack(spacing: 0) {
@@ -1009,6 +1023,8 @@ struct ContentView: View {
             let excludeID = printingEntry?.id
             let recent = Array(allEntries.filter { $0.id != excludeID }.prefix(2))
 
+            // Ticks every second to animate the developing print, so it must use cached thumbnails:
+            // decoding full-resolution photos here kept the camera screen busy the whole time.
             TimelineView(.periodic(from: .now, by: 1.0)) { _ in
                 ZStack {
                     if recent.isEmpty {
@@ -1021,7 +1037,7 @@ struct ContentView: View {
                                     .foregroundStyle(.white)
                             }
                     }
-                    if recent.count >= 2, let img = recent[1].image {
+                    if recent.count >= 2, let img = recent[1].thumbnail(maxPixelSize: 160) {
                         miniPolaroid(image: img, entry: recent[1])
                             .rotationEffect(.degrees(-9))
                             .scaleEffect(0.85)
@@ -1029,7 +1045,7 @@ struct ContentView: View {
                             .offset(x: -5, y: 4)
                             .id(recent[1].id)
                     }
-                    if let front = recent.first, let img = front.image {
+                    if let front = recent.first, let img = front.thumbnail(maxPixelSize: 160) {
                         miniPolaroid(image: img, entry: front)
                             .rotationEffect(.degrees(5))
                             .id(front.id)
