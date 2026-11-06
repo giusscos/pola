@@ -118,6 +118,11 @@
 "Lifetime — yours forever" = "Lifetime — yours forever";
 "%@ · renews %@" = "%@ · renews %@";
 "%@ · ends %@" = "%@ · ends %@";
+"Waiting for approval. Premium unlocks as soon as the purchase is approved." = "Waiting for approval. Premium unlocks as soon as the purchase is approved.";
+"Free trial · ends %@, then %@" = "Free trial · ends %@, then %@";
+"Free trial · ends %@" = "Free trial · ends %@";
+"Lifetime unlocked" = "Lifetime unlocked";
+"Your subscription still renews. Cancel it so you aren't charged again." = "Your subscription still renews. Cancel it so you aren't charged again.";
 "Date stamp" = "Date stamp";
 "Previewing %@" = "Previewing %@";
 "Unlock" = "Unlock";

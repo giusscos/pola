@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
     @State private var paywallContext: PaywallContext? = nil
     @State private var showManageSubscription = false
+    @State private var showCancelSubscriptionAlert = false
     @State private var showOnboarding = false
     @State private var pendingLanguage: String? = nil
     @State private var showLanguageAlert = false
@@ -74,7 +75,13 @@ struct SettingsView: View {
                             }
                             if let lifetime = premium.lifetimeProduct {
                                 Button {
-                                    Task { await premium.purchase(lifetime) }
+                                    // Buying Lifetime doesn't stop the subscription; without this, people get charged twice.
+                                    let hadRenewingSubscription = premium.willAutoRenew
+                                    Task {
+                                        if await premium.purchase(lifetime), hadRenewingSubscription {
+                                            showCancelSubscriptionAlert = true
+                                        }
+                                    }
                                 } label: {
                                     HStack {
                                         Label("Upgrade to Lifetime", systemImage: "infinity")
@@ -308,6 +315,12 @@ struct SettingsView: View {
             PaywallView(context: context, onClose: { paywallContext = nil })
                 .environment(PremiumManager.shared)
         }
+        .alert("Lifetime unlocked", isPresented: $showCancelSubscriptionAlert) {
+            Button("Manage Subscription") { showManageSubscription = true }
+            Button("Not Now", role: .cancel) {}
+        } message: {
+            Text("Your subscription still renews. Cancel it so you aren't charged again.")
+        }
         .manageSubscriptionsSheet(isPresented: $showManageSubscription)
         .onChange(of: showManageSubscription) { _, isShowing in
             if !isShowing {
@@ -341,6 +354,12 @@ extension SettingsView {
         }
         guard let date = premium.expirationDate else { return plan }
         let dateText = date.formatted(date: .abbreviated, time: .omitted)
+        if premium.isInFreeTrial {
+            if premium.willAutoRenew, let price = premium.activeProduct?.pricePerPeriodText {
+                return String(format: NSLocalizedString("Free trial · ends %@, then %@", comment: ""), dateText, price)
+            }
+            return String(format: NSLocalizedString("Free trial · ends %@", comment: ""), dateText)
+        }
         let format = premium.willAutoRenew
             ? NSLocalizedString("%@ · renews %@", comment: "")
             : NSLocalizedString("%@ · ends %@", comment: "")

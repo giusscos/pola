@@ -179,6 +179,13 @@ struct PaywallView: View {
             withAnimation(.spring(duration: 0.5, bounce: 0.2)) { didUnlock = true }
         }
         .task { renderFilterPreview() }
+        .task {
+            // Retry while the paywall is open, so it recovers once the connection is back.
+            while premium.products.isEmpty, !Task.isCancelled {
+                await premium.loadProductsIfNeeded()
+                if premium.products.isEmpty { try? await Task.sleep(for: .seconds(5)) }
+            }
+        }
         .task(id: premium.products.map(\.id)) { await loadTrialEligibility() }
     }
 
@@ -582,6 +589,14 @@ struct PaywallView: View {
 
     private var footerButtons: some View {
         VStack(spacing: 12) {
+            if let notice = premium.purchaseNotice {
+                Text(verbatim: notice)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+            }
+
             if let error = premium.purchaseError {
                 Text(error)
                     .font(.caption)

@@ -118,6 +118,11 @@
 "Lifetime — yours forever" = "Lebenslang – für immer deins";
 "%@ · renews %@" = "%@ · verlängert sich am %@";
 "%@ · ends %@" = "%@ · endet am %@";
+"Waiting for approval. Premium unlocks as soon as the purchase is approved." = "Warte auf Bestätigung. Premium wird freigeschaltet, sobald der Kauf genehmigt ist.";
+"Free trial · ends %@, then %@" = "Gratis-Testphase · endet am %@, danach %@";
+"Free trial · ends %@" = "Gratis-Testphase · endet am %@";
+"Lifetime unlocked" = "Lebenslang freigeschaltet";
+"Your subscription still renews. Cancel it so you aren't charged again." = "Dein Abo verlängert sich weiterhin. Kündige es, damit du nicht erneut belastet wirst.";
 "Date stamp" = "Datumsstempel";
 "Previewing %@" = "Vorschau: %@";
 "Unlock" = "Freischalten";

@@ -20,8 +20,12 @@ final class PremiumManager {
     private(set) var activeProductID: String? = nil
     private(set) var expirationDate: Date? = nil
     private(set) var willAutoRenew = false
+    private(set) var isInFreeTrial = false
     var isPurchasing = false
     var purchaseError: String? = nil
+    /// Not an error: e.g. an Ask to Buy purchase waiting for a parent.
+    var purchaseNotice: String? = nil
+    private var isLoadingProducts = false
 
     static let monthlyID  = "com.pola.premium.monthly"
     static let yearlyID   = "com.pola.premium.yearly"
@@ -33,6 +37,10 @@ final class PremiumManager {
 
     var lifetimeProduct: Product? {
         products.first { $0.id == Self.lifetimeID }
+    }
+
+    var activeProduct: Product? {
+        products.first { $0.id == activeProductID }
     }
 
     var activePlanName: String? {
@@ -71,18 +79,30 @@ final class PremiumManager {
     }
 
     func loadProducts() async {
+        guard !isLoadingProducts else { return }
+        isLoadingProducts = true
+        defer { isLoadingProducts = false }
         do {
             let loaded = try await Product.products(for: Self.productIDs)
             products = loaded.sorted {
                 (Self.productOrder.firstIndex(of: $0.id) ?? 99) < (Self.productOrder.firstIndex(of: $1.id) ?? 99)
             }
-        } catch {}
+        } catch {
+            Self.logger.error("Loading products failed: \(error)")
+        }
+    }
+
+    /// The launch load can fail (offline, StoreKit hiccup), and without products the paywall can't sell anything.
+    func loadProductsIfNeeded() async {
+        guard products.isEmpty else { return }
+        await loadProducts()
     }
 
     @discardableResult
     func purchase(_ product: Product) async -> Bool {
         isPurchasing = true
         purchaseError = nil
+        purchaseNotice = nil
         defer { isPurchasing = false }
         Analytics.track(.purchaseStarted, ["product": product.id])
         do {
@@ -116,7 +136,9 @@ final class PremiumManager {
                 Analytics.track(.purchaseCancelled, ["product": product.id])
                 return false
             case .pending:
+                // Ask to Buy or extra authentication; the approved purchase arrives through Transaction.updates.
                 Self.logger.info("Purchase \(product.id) pending")
+                purchaseNotice = NSLocalizedString("Waiting for approval. Premium unlocks as soon as the purchase is approved.", comment: "")
                 return false
             @unknown default:
                 return false
@@ -143,6 +165,7 @@ final class PremiumManager {
     }
 
     func refreshPurchaseStatus() async {
+        await loadProductsIfNeeded()
         // Purchases, Transaction.updates and scene activation can all refresh at once;
         // only the most recently started refresh may write state, so a stale one can't re-lock.
         refreshGeneration += 1
@@ -189,10 +212,10 @@ final class PremiumManager {
         activeProductID = tx?.productID
         expirationDate = tx?.expirationDate
         willAutoRenew = autoRenew
+        isInFreeTrial = tx.map(TrialReminder.isFreeTrial) ?? false
         isPremium = tx != nil || Self.simulatorPremium
 
-        let renewalPrice = products.first { $0.id == tx?.productID }?.pricePerPeriodText
-        await TrialReminder.sync(transaction: tx, willAutoRenew: autoRenew, renewalPrice: renewalPrice)
+        await TrialReminder.sync(transaction: tx, willAutoRenew: autoRenew, renewalPrice: activeProduct?.pricePerPeriodText)
     }
 
     #if targetEnvironment(simulator)
