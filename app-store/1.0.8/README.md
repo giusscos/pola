@@ -28,7 +28,9 @@ The in-app What's New sheet stays on 1.0.7 (`WhatsNew.version`), so people updat
 
 ## Before submitting
 
-- [ ] In TestFlight with a sandbox account: start the yearly trial and allow notifications. The console shows "Trial reminder scheduled for …", about 5 days ahead.
-- [ ] Buy Lifetime while subscribed: the "Lifetime unlocked" alert opens Manage Subscription.
-- [ ] Deny camera access: Open Settings appears and works.
-- [ ] Create version 1.0.8 in App Store Connect, paste What's New from each language file, select the Xcode Cloud build, submit.
+- [x] Tested on an iPhone 15 Pro (Release build of the same commit, sandbox account), Nov 6, 2026: start the yearly trial and allow notifications. The console shows "Trial reminder scheduled for …", about 5 days ahead.
+- [x] Buy Lifetime while subscribed: the "Lifetime unlocked" alert opens Manage Subscription.
+- [x] Deny camera access: Open Settings appears and works.
+- [x] Version 1.0.8 created in App Store Connect (Nov 6, 2026). What's New is pasted in all 5 languages. Promotional Text came over empty, so the 1.0.7 "trial live" text was pasted back in all 5 languages.
+- [x] Xcode Cloud build 8 (1.0.8) selected. It's also in TestFlight internal testing.
+- [x] Submitted for review on Nov 6, 2026. Release setting: automatically after approval, as in 1.0.7.
