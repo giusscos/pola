@@ -40,3 +40,7 @@ Inner display, landscape **2853 × 2007**, same look as the ByJo set (`#EBEBEB`,
 5. **Folded too:** closed Duo, 2/2 step (`closed-03-double-2of2`)
 
 The captures are in `captures/` (not committed). App Store Connect's iPhone Duo outer-display set (1398 × 2034) isn't built yet; the closed captures are that size if you want one.
+
+## Product Page Optimization test
+
+**Skipped (Nov 6, 2026).** App Store Connect estimated 26 weeks to detect a +50% change at Poly's traffic, and tests stop after 90 days. No test was created and no listing change went live. Reasons, the icon-test setup for later, and what to do instead: `ppo-test.md`.
