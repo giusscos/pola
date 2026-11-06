@@ -1,13 +1,14 @@
 # What's New — Italian (it-IT)
 
-**Version 1.0.7**
+**Version 1.0.8**
 
 ```
-Poly 1.0.7 porta la doppia esposizione e una fotocamera pensata per iPhone Duo.
+Poly 1.0.8 rende più chiara la prova gratuita e sistema qualche dettaglio.
 
-• Doppia esposizione: sovrapponi due scatti in una stampa, allinea il secondo con il fantasma del primo e bilanciali con un cursore (Premium)
-• iPhone Duo: aprilo per un mirino grande con tutti i comandi accanto, lontano dalla piega
-• Icone dell'app: scegli uno dei 7 colori delle pellicole per la schermata Home (Premium)
-• Griglie della libreria e delle pellicole più ampie su schermi larghi e in Split View
-• Piccole correzioni e miglioramenti
+• Promemoria: una notifica 2 giorni prima che finisca la tua prova gratuita
+• Le Impostazioni ora mostrano quando finisce la prova gratuita e quanto costa dopo
+• Accesso alla fotocamera disattivato? Poly ora spiega come riattivarlo, con un pulsante per le Impostazioni
+• Passando ad A vita, Poly ti aiuta ad annullare il vecchio abbonamento, così non paghi mai due volte
+• I prezzi si ricaricano se eri offline all'apertura di Poly
+• Una schermata della fotocamera più leggera e piccole correzioni
 ```
