@@ -344,3 +344,14 @@
 "Printing" = "Stampa in corso";
 "%@ free, then %@." = "%@ gratis, poi %@.";
 "Page %d of %d" = "Pagina %d di %d";
+
+/* What's New 1.0.9 */
+"4 new film stocks" = "4 nuove pellicole";
+"GLÖD night film with a red glow, faded FÖRN, TINN tintype and PRIKK newsprint dots." = "GLÖD, pellicola notturna con alone rosso; FÖRN, sbiadita; TINN, ferrotipo; e PRIKK, retino da giornale.";
+"Give the photos you already have a film stock and a frame, and watch them develop." = "Dai alle foto che hai già una pellicola e una cornice, e guardale svilupparsi.";
+"A faster camera" = "Una fotocamera più veloce";
+"Tap to focus, pinch to zoom, flash, and the volume buttons take the shot." = "Tocca per mettere a fuoco, pizzica per lo zoom, flash, e i tasti del volume scattano.";
+"A tidier library" = "Una libreria più ordinata";
+"Favorites, months, a filter for videos and time lapses, and Undo after deleting." = "Preferiti, mesi, un filtro per video e time lapse, e Annulla dopo l'eliminazione.";
+"Sharper shared prints" = "Stampe condivise più nitide";
+"Prints you save or share are three times the resolution." = "Le stampe che salvi o condividi hanno il triplo della risoluzione.";

@@ -3,7 +3,7 @@ import SwiftUI
 /// Release highlights shown once to people updating from an earlier version.
 /// Bump `version` and `items` together for the next release that has something to show.
 enum WhatsNew {
-    static let version = "1.0.7"
+    static let version = "1.0.9"
     static let seenKey = "lastSeenWhatsNewVersion"
 
     struct Item: Identifiable {
@@ -16,17 +16,22 @@ enum WhatsNew {
     }
 
     static let items: [Item] = [
-        Item(systemImage: "square.on.square", color: Color(red: 0.55, green: 0.6, blue: 1.0),
-             title: "Double Exposure",
-             detail: "Layer two shots on one print. A ghost of the first helps you line up the second, and a slider balances them.",
+        Item(systemImage: "camera.filters", color: Color(red: 0.95, green: 0.36, blue: 0.16),
+             title: "4 new film stocks",
+             detail: "GLÖD night film with a red glow, faded FÖRN, TINN tintype and PRIKK newsprint dots.",
              isPremium: true),
-        Item(systemImage: "rectangle.split.2x1", color: Color(red: 0.35, green: 0.85, blue: 0.9),
-             title: "Made for iPhone Duo",
-             detail: "Unfold for a big viewfinder with every control beside it, clear of the fold."),
-        Item(systemImage: "app.badge", color: Color(red: 1.0, green: 0.55, blue: 0.15),
-             title: "App Icons",
-             detail: "Pick one of 7 film-stock colors in Settings → App Icon.",
-             isPremium: true),
+        Item(systemImage: "photo.badge.plus", color: Color(red: 0.35, green: 0.85, blue: 0.6),
+             title: "Import from Photos",
+             detail: "Give the photos you already have a film stock and a frame, and watch them develop."),
+        Item(systemImage: "camera.aperture", color: Color(red: 1.0, green: 0.8, blue: 0.3),
+             title: "A faster camera",
+             detail: "Tap to focus, pinch to zoom, flash, and the volume buttons take the shot."),
+        Item(systemImage: "heart.fill", color: Color(red: 1.0, green: 0.4, blue: 0.5),
+             title: "A tidier library",
+             detail: "Favorites, months, a filter for videos and time lapses, and Undo after deleting."),
+        Item(systemImage: "square.and.arrow.up", color: Color(red: 0.55, green: 0.6, blue: 1.0),
+             title: "Sharper shared prints",
+             detail: "Prints you save or share are three times the resolution."),
     ]
 }
 
