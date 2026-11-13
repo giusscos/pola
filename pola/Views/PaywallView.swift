@@ -227,6 +227,11 @@ struct PaywallView: View {
                     footerButtons
                 }
             }
+            .overlay(alignment: .topTrailing) {
+                if let onClose {
+                    closeButton(onClose)
+                }
+            }
             // Pinned so the purchase button is always visible without scrolling.
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 ctaButton
@@ -241,6 +246,23 @@ struct PaywallView: View {
                     )
             }
         }
+    }
+
+    /// Always-visible way out, in every context; "Continue for Free" stays at the bottom too.
+    private func closeButton(_ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: "xmark")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.75))
+                .frame(width: 32, height: 32)
+                .background(.white.opacity(0.12), in: Circle())
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, 8)
+        .padding(.top, 8)
+        .accessibilityLabel(Text("Close"))
     }
 
     // MARK: - Header
