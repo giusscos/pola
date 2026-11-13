@@ -1,14 +1,15 @@
 # What's New — Italian (it-IT)
 
-**Version 1.0.8**
+**Version 1.0.9**
 
 ```
-Poly 1.0.8 rende più chiara la prova gratuita e sistema qualche dettaglio.
+Poly 1.0.9 porta quattro nuove pellicole, le tue foto e una fotocamera più rapida.
 
-• Promemoria: una notifica 2 giorni prima che finisca la tua prova gratuita
-• Le Impostazioni ora mostrano quando finisce la prova gratuita e quanto costa dopo
-• Accesso alla fotocamera disattivato? Poly ora spiega come riattivarlo, con un pulsante per le Impostazioni
-• Passando ad A vita, Poly ti aiuta ad annullare il vecchio abbonamento, così non paghi mai due volte
-• I prezzi si ricaricano se eri offline all'apertura di Poly
-• Una schermata della fotocamera più leggera e piccole correzioni
+• 4 nuove pellicole: GLÖD, pellicola notturna con alone rosso; FÖRN, sbiadita; TINN, ferrotipo; e PRIKK, retino da giornale (Premium)
+• Importa da Foto: dai alle foto che hai già una pellicola e una cornice, e guardale svilupparsi
+• Tocca per mettere a fuoco, pizzica per lo zoom, flash per le foto, e i tasti del volume scattano
+• Libreria: preferiti, intestazioni per mese, un filtro per video e time lapse, e Annulla dopo l'eliminazione
+• Le stampe che salvi o condividi sono tre volte più nitide
+• Uno scatto più veloce e una libreria più fluida
+• Supporto migliore per VoiceOver, testo più grande e Riduci movimento
 ```

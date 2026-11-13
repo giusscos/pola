@@ -1,14 +1,15 @@
 # What's New — English (en-US)
 
-**Version 1.0.8**
+**Version 1.0.9**
 
 ```
-Poly 1.0.8 makes the free trial clearer and smooths out a few rough edges.
+Poly 1.0.9 brings four new film stocks, your own photos and a quicker camera.
 
-• Trial reminder: get a notification 2 days before your free trial ends
-• Settings now shows when your free trial ends and what it costs after
-• Camera access turned off? Poly now explains how to turn it back on, with a button to Settings
-• Upgrading to Lifetime now helps you cancel your old subscription, so you're never charged twice
-• Prices load again if you were offline when you opened Poly
-• A lighter camera screen and small fixes
+• 4 new film stocks: GLÖD night film with a red glow, faded FÖRN, TINN tintype and PRIKK newsprint dots (Premium)
+• Import from Photos: give the photos you already have a film stock and a frame, and watch them develop
+• Tap to focus, pinch to zoom, flash for photos, and the volume buttons take the shot
+• Library: favorites, month headers, a filter for videos and time lapses, and Undo after deleting
+• Prints you save or share are three times sharper
+• A faster shutter and a smoother library
+• Better support for VoiceOver, larger text and Reduce Motion
 ```
