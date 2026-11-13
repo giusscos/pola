@@ -309,12 +309,7 @@ struct OnboardingView: View {
         guard let ref = UIImage(named: "filter_reference") else { return }
         let size = CGSize(width: 120, height: 120)
         let small = ref.preparingThumbnail(of: size) ?? ref
-        var previews: [String: UIImage] = [:]
-        for filter in allFilters {
-            guard let effect = filter.effect else { continue }
-            previews[filter.name] = effect.apply(to: small)
-        }
-        filterPreviews = previews
+        filterPreviews = await renderFilmStockPreviews(from: small)
     }
 
     private func background(topColor: Color, bottomColor: Color) -> some View {

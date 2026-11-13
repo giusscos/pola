@@ -248,12 +248,16 @@ final class CameraManager: NSObject {
     }
 
     func stop() {
+        locationManager.stopUpdatingLocation()
         sessionQueue.async { [weak self] in
             self?.session.stopRunning()
         }
     }
 
     func resume() {
+        if locationStatus == .authorizedWhenInUse || locationStatus == .authorizedAlways {
+            locationManager.startUpdatingLocation()
+        }
         sessionQueue.async { [weak self] in
             guard let self, !session.isRunning else { return }
             session.startRunning()

@@ -191,7 +191,8 @@ nonisolated enum Lens: String, CaseIterable, Identifiable {
 // MARK: - Pipeline
 
 nonisolated enum FilmPipeline {
-    private static let context = CIContext()
+    /// Shared by every Core Image render in the app; creating a context is expensive.
+    static let context = CIContext()
 
     /// Lens optics first, then the film stock's grade, then the lens grain and leaks on the print.
     static func apply(to image: UIImage, film: FilmFilterEffect?, lens: Lens?) -> UIImage {
@@ -232,7 +233,7 @@ struct LensViewfinderHint: View {
         mono.setValue(noise.transformed(by: CGAffineTransform(scaleX: 1.5, y: 1.5)), forKey: kCIInputImageKey)
         mono.setValue(0.0, forKey: kCIInputSaturationKey)
         guard let output = mono.outputImage,
-              let cgImage = CIContext().createCGImage(output, from: CGRect(x: 0, y: 0, width: size, height: size))
+              let cgImage = FilmPipeline.context.createCGImage(output, from: CGRect(x: 0, y: 0, width: size, height: size))
         else { return nil }
         return UIImage(cgImage: cgImage)
     }()

@@ -454,15 +454,33 @@ let weirdFilters: [FilmFilter] = [
 
 let allFilters: [FilmFilter] = filmFilters + instantFilters + weirdFilters
 
-/// Every film stock applied to `image`, keyed by stock name. Shared by the Filters sheet and
-/// the camera's film strip so both show the same previews.
-func renderFilmStockPreviews(from image: UIImage) -> [String: UIImage] {
-    var previews: [String: UIImage] = [:]
-    for filter in allFilters {
-        guard let effect = filter.effect else { continue }
-        previews[filter.name] = effect.apply(to: image)
+/// Every film stock applied to `image`, keyed by stock name. Shared by the Filters sheet,
+/// onboarding and the camera's film strip so all show the same previews. Renders off the main
+/// actor, since these run during sheet and page transitions.
+func renderFilmStockPreviews(from image: UIImage) async -> [String: UIImage] {
+    let stocks = allFilters.compactMap { filter in filter.effect.map { (name: filter.name, effect: $0) } }
+    return await FilmStockPreviews.render(stocks, from: image)
+}
+
+nonisolated enum FilmStockPreviews {
+    @concurrent
+    static func render(_ stocks: [(name: String, effect: FilmFilterEffect)], from image: UIImage) async -> [String: UIImage] {
+        var previews: [String: UIImage] = [:]
+        for stock in stocks {
+            previews[stock.name] = stock.effect.apply(to: image)
+        }
+        return previews
     }
-    return previews
+
+    /// `film` seen through each lens, keyed by lens name.
+    @concurrent
+    static func renderLenses(film: FilmFilterEffect?, from image: UIImage) async -> [String: UIImage] {
+        var previews: [String: UIImage] = [:]
+        for lens in Lens.allCases {
+            previews[lens.name] = FilmPipeline.apply(to: image, film: film, lens: lens)
+        }
+        return previews
+    }
 }
 
 extension FilmFilter {
@@ -854,14 +872,12 @@ struct FiltersView: View {
         guard let ref = referenceImage else { return }
         let size = CGSize(width: 240, height: 240)
         let small = ref.preparingThumbnail(of: size) ?? ref
-        let previews = renderFilmStockPreviews(from: small)
+        let previews = await renderFilmStockPreviews(from: small)
         filterPreviews = previews
 
         let film = filmFilter(named: selectedFilterName)?.effect
-        var lensed: [String: UIImage] = ["": previews[selectedFilterName ?? ""] ?? small]
-        for lens in Lens.allCases {
-            lensed[lens.name] = FilmPipeline.apply(to: small, film: film, lens: lens)
-        }
+        var lensed = await FilmStockPreviews.renderLenses(film: film, from: small)
+        lensed[""] = previews[selectedFilterName ?? ""] ?? small
         lensPreviews = lensed
     }
 }

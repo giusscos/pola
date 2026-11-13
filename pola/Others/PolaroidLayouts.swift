@@ -42,7 +42,7 @@ private func blurredBackground(from image: UIImage, size: CGSize) -> UIImage? {
         y: scaled.extent.midY - size.height / 2
     )
     let crop = CGRect(origin: origin, size: size)
-    guard let cg = CIContext().createCGImage(blurred, from: crop) else { return nil }
+    guard let cg = FilmPipeline.context.createCGImage(blurred, from: crop) else { return nil }
     return UIImage(cgImage: cg)
 }
 

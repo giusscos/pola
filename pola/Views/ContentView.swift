@@ -1167,7 +1167,7 @@ struct ContentView: View {
             guard filmStockPreviews.isEmpty,
                   let reference = UIImage(named: "filter_reference") else { return }
             let thumbnail = reference.preparingThumbnail(of: CGSize(width: 120, height: 120)) ?? reference
-            filmStockPreviews = renderFilmStockPreviews(from: thumbnail)
+            filmStockPreviews = await renderFilmStockPreviews(from: thumbnail)
         }
     }
 
