@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 import UIKit
 import WidgetKit
@@ -8,6 +9,12 @@ enum MemoryWidgetExporter {
     private static let maxMemories = 60
     private static let newestCount = 20
     private static let thumbnailSize = CGSize(width: 500, height: 500)
+
+    /// Fetches the library only when exporting, so the camera screen doesn't have to hold it.
+    static func export(from context: ModelContext, isPremium: Bool) {
+        let entries = (try? context.fetch(FetchDescriptor<PolaroidEntry>())) ?? []
+        export(entries: entries, isPremium: isPremium)
+    }
 
     static func export(entries: [PolaroidEntry], isPremium: Bool) {
         guard let directory = MemorySnapshot.directory else { return }

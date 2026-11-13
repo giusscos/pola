@@ -27,8 +27,10 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var controlPanes: ControlPanes? = nil
     @State private var filmStockPreviews: [String: UIImage] = [:]
-    @Query(sort: \PolaroidEntry.timestamp, order: .reverse) private var allEntries: [PolaroidEntry]
-    @State private var pendingEntryID: UUID? = nil
+    /// Only the newest prints: the library button shows two, one more covers the print in progress.
+    @Query(Self.recentEntriesDescriptor) private var recentEntries: [PolaroidEntry]
+    /// The new print waiting for a caption.
+    @State private var pendingEntry: PolaroidEntry? = nil
     @State private var pendingCaption: String = ""
     @State private var showCaptionInput = false
     @State private var showLibrary = false
@@ -82,6 +84,12 @@ struct ContentView: View {
     @State private var pendingDevelopments = 0
     @AppStorage("printAnimationEnabled") private var printAnimationEnabled: Bool = true
     @AppStorage("frontCameraMirrored") private var frontCameraMirrored: Bool = true
+
+    private static var recentEntriesDescriptor: FetchDescriptor<PolaroidEntry> {
+        var descriptor = FetchDescriptor<PolaroidEntry>(sortBy: [SortDescriptor(\.timestamp, order: .reverse)])
+        descriptor.fetchLimit = 3
+        return descriptor
+    }
 
     private var activeFilter: FilmFilter? {
         filmFilter(named: selectedFilterName)
@@ -487,7 +495,7 @@ struct ContentView: View {
         .sheet(item: $paywallContext) { context in
             PaywallView(
                 context: context,
-                previewImage: context.highlighted == .filmStocks ? allEntries.first?.image : nil,
+                previewImage: context.highlighted == .filmStocks ? recentEntries.first?.thumbnail(maxPixelSize: 1200) : nil,
                 onClose: { paywallContext = nil }
             )
             .environment(PremiumManager.shared)
@@ -535,7 +543,7 @@ struct ContentView: View {
         }
         .onChange(of: premium.isPremium) { _, isPremium in
             if isPremium { applyDefaultFilterIfNeeded() }
-            MemoryWidgetExporter.export(entries: allEntries, isPremium: isPremium)
+            MemoryWidgetExporter.export(from: modelContext, isPremium: isPremium)
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -543,7 +551,7 @@ struct ContentView: View {
                 // Catch renewals, expirations and refunds that happened while the app was in the background.
                 Task { await premium.refreshPurchaseStatus() }
             case .background:
-                MemoryWidgetExporter.export(entries: allEntries, isPremium: premium.isPremium)
+                MemoryWidgetExporter.export(from: modelContext, isPremium: premium.isPremium)
             default:
                 break
             }
@@ -587,7 +595,7 @@ struct ContentView: View {
                     timelapsePendingEntries.append(entry)
                     return
                 }
-                pendingEntryID = entry.id
+                pendingEntry = entry
                 totalPhotosCount += 1
                 Analytics.track(mode == .doubleExposure ? .doubleExposureCaptured : .photoCaptured, captureAnalytics)
                 if mode == .doubleExposure {
@@ -607,7 +615,7 @@ struct ContentView: View {
                 let entry = makeEntry(imageData: jpeg, look: look)
                 entry.videoFilename = store.saveVideo(from: url, id: entry.id)
                 modelContext.insert(entry)
-                pendingEntryID = entry.id
+                pendingEntry = entry
                 totalPhotosCount += 1
                 Analytics.track(.videoCaptured, captureAnalytics)
                 presentNewPrint(entry)
@@ -620,7 +628,7 @@ struct ContentView: View {
             let entry = makeEntry(imageData: video.thumbnailJPEG, look: look, isTimelapse: true)
             entry.videoFilename = store.saveVideo(from: video.url, id: entry.id)
             modelContext.insert(entry)
-            pendingEntryID = entry.id
+            pendingEntry = entry
             Analytics.track(.timelapseCaptured, captureAnalytics)
             presentNewPrint(entry)
         }
@@ -1024,7 +1032,7 @@ struct ContentView: View {
     private var libraryButton: some View {
         Button { showLibrary = true } label: {
             let excludeID = printingEntry?.id
-            let recent = Array(allEntries.filter { $0.id != excludeID }.prefix(2))
+            let recent = Array(recentEntries.filter { $0.id != excludeID }.prefix(2))
 
             // Ticks every second to animate the developing print, so it must use cached thumbnails:
             // decoding full-resolution photos here kept the camera screen busy the whole time.
@@ -1289,12 +1297,9 @@ struct ContentView: View {
     }
 
     private func commitCaption() {
-        if let id = pendingEntryID,
-           let entry = allEntries.first(where: { $0.id == id }) {
-            entry.caption = pendingCaption
-        }
+        pendingEntry?.caption = pendingCaption
         pendingCaption = ""
-        pendingEntryID = nil
+        pendingEntry = nil
         withAnimation { showCaptionInput = false }
         captureFlowFinished()
     }
