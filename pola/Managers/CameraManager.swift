@@ -180,6 +180,7 @@ final class CameraManager: NSObject {
         if session.canAddOutput(movieOutput) {
             session.addOutput(movieOutput)
         }
+        configurePhotoOutputForSpeed()
         let zoomOpts = buildZoomOptions(for: device)
         let initialFactor = startingZoomFactor(for: device)
         try? device.lockForConfiguration()
@@ -188,6 +189,24 @@ final class CameraManager: NSObject {
         DispatchQueue.main.async { [weak self] in
             self?.availableZoomOptions = zoomOpts
             self?.currentZoomFactor = initialFactor
+        }
+    }
+
+    /// Shortest shutter-to-capture time the device offers. Support depends on the active device and
+    /// format, so this runs again after flipping. Each feature must be supported before it is enabled,
+    /// and fast capture prioritization needs responsive capture on.
+    /// Must run inside a session configuration block on sessionQueue, after the outputs are added.
+    private func configurePhotoOutputForSpeed() {
+        // A film-look print doesn't need the slowest, highest-quality processing.
+        photoOutput.maxPhotoQualityPrioritization = .balanced
+        if photoOutput.isZeroShutterLagSupported {
+            photoOutput.isZeroShutterLagEnabled = true
+        }
+        if photoOutput.isResponsiveCaptureSupported {
+            photoOutput.isResponsiveCaptureEnabled = true
+            if photoOutput.isFastCapturePrioritizationSupported {
+                photoOutput.isFastCapturePrioritizationEnabled = true
+            }
         }
     }
 
@@ -294,6 +313,7 @@ final class CameraManager: NSObject {
 
             session.addInput(input)
             select4to3Format(for: device)
+            configurePhotoOutputForSpeed()
             let newZoomOpts = buildZoomOptions(for: device)
             let initialFactor = startingZoomFactor(for: device)
             try? device.lockForConfiguration()
@@ -344,6 +364,7 @@ final class CameraManager: NSObject {
         sessionQueue.async { [weak self] in
             guard let self else { return }
             let settings = AVCapturePhotoSettings()
+            settings.photoQualityPrioritization = .balanced
             photoOutput.capturePhoto(with: settings, delegate: self)
         }
         #endif
