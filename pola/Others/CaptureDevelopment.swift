@@ -1,3 +1,4 @@
+import ImageIO
 import UIKit
 
 /// Film rendering and JPEG encoding for new captures. A 12 MP render takes long enough to freeze
@@ -10,9 +11,20 @@ nonisolated enum CaptureDevelopment {
         let developed = FilmPipeline.apply(to: image, film: film, lens: lens)
         return developed.jpegData(compressionQuality: jpegQuality) ?? Data()
     }
+}
 
-    @concurrent
-    static func developed(_ images: [UIImage], film: FilmFilterEffect?, lens: Lens?) async -> [UIImage] {
-        images.map { FilmPipeline.apply(to: $0, film: film, lens: lens) }
+extension CGImagePropertyOrientation {
+    nonisolated init(_ orientation: UIImage.Orientation) {
+        switch orientation {
+        case .up:            self = .up
+        case .upMirrored:    self = .upMirrored
+        case .down:          self = .down
+        case .downMirrored:  self = .downMirrored
+        case .left:          self = .left
+        case .leftMirrored:  self = .leftMirrored
+        case .right:         self = .right
+        case .rightMirrored: self = .rightMirrored
+        @unknown default:    self = .up
+        }
     }
 }

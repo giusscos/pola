@@ -197,32 +197,24 @@ nonisolated enum FilmPipeline {
     static func apply(to image: UIImage, film: FilmFilterEffect?, lens: Lens?) -> UIImage {
         guard film != nil || lens != nil,
               let input = CIImage(image: image) else { return image }
+        let result = apply(to: input, film: film, lens: lens,
+                           orientation: CGImagePropertyOrientation(image.imageOrientation))
+        guard let cgImage = context.createCGImage(result, from: input.extent) else { return image }
+        return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
+    }
+
+    /// The same chain on a Core Image graph. `orientation` is how the pixels will be displayed.
+    static func apply(to input: CIImage, film: FilmFilterEffect?, lens: Lens?,
+                      orientation: CGImagePropertyOrientation) -> CIImage {
         var result = lens?.applyOptics(to: input) ?? input
         if let film {
             result = film.apply(to: result)
         }
         if let lens {
-            result = lens.applyFinish(to: result, orientation: CGImagePropertyOrientation(image.imageOrientation))
+            result = lens.applyFinish(to: result, orientation: orientation)
         }
-        // Rendering the input's extent keeps blur-based effects from growing the photo.
-        guard let cgImage = context.createCGImage(result, from: input.extent) else { return image }
-        return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
-    }
-}
-
-private extension CGImagePropertyOrientation {
-    nonisolated init(_ orientation: UIImage.Orientation) {
-        switch orientation {
-        case .up:            self = .up
-        case .upMirrored:    self = .upMirrored
-        case .down:          self = .down
-        case .downMirrored:  self = .downMirrored
-        case .left:          self = .left
-        case .leftMirrored:  self = .leftMirrored
-        case .right:         self = .right
-        case .rightMirrored: self = .rightMirrored
-        @unknown default:    self = .up
-        }
+        // Cropping to the input's extent keeps blur-based effects from growing the photo.
+        return result.cropped(to: input.extent)
     }
 }
 

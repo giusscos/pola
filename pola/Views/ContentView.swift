@@ -75,7 +75,8 @@ struct ContentView: View {
     @State private var printingEntries: [PolaroidEntry] = []
     @State private var timelapsePendingEntries: [PolaroidEntry] = []
     @State private var isInTimelapse = false
-    @State private var isProcessingTimelapse = false
+    /// What a "save as video" time lapse is being developed with, for its print.
+    @State private var timelapseLook: CaptureLook? = nil
     /// Tail of the chain that develops captures one at a time, so prints arrive in shooting order.
     @State private var developmentQueue: Task<Void, Never>? = nil
     @State private var pendingDevelopments = 0
@@ -516,7 +517,7 @@ struct ContentView: View {
             }
         }
         .overlay {
-            if isProcessingTimelapse {
+            if cameraManager.isFinishingTimelapseVideo {
                 ProcessingTimeLapseOverlay()
                     .ignoresSafeArea()
                     .transition(.opacity)
@@ -524,7 +525,7 @@ struct ContentView: View {
         }
         .animation(.easeIn(duration: 0.15), value: printingEntry == nil)
         .animation(.easeIn(duration: 0.15), value: printingEntries.isEmpty)
-        .animation(.easeInOut(duration: 0.25), value: isProcessingTimelapse)
+        .animation(.easeInOut(duration: 0.25), value: cameraManager.isFinishingTimelapseVideo)
         .task {
             applyDefaultFilterIfNeeded()
             if hasSeenOnboarding {
@@ -612,26 +613,16 @@ struct ContentView: View {
                 presentNewPrint(entry)
             }
         }
-        .onChange(of: cameraManager.timelapseVideoFrames) { _, frames in
-            guard let frames else { return }
-            cameraManager.timelapseVideoFrames = nil
-            let look = currentLook
-            isProcessingTimelapse = true
-            Task {
-                let processed = await CaptureDevelopment.developed(frames, film: look.film, lens: look.lens)
-                guard let videoURL = await composeVideo(from: processed),
-                      let thumbnail = processed.first?.jpegData(compressionQuality: CaptureDevelopment.jpegQuality) else {
-                    isProcessingTimelapse = false
-                    return
-                }
-                isProcessingTimelapse = false
-                let entry = makeEntry(imageData: thumbnail, look: look, isTimelapse: true)
-                entry.videoFilename = store.saveVideo(from: videoURL, id: entry.id)
-                modelContext.insert(entry)
-                pendingEntryID = entry.id
-                Analytics.track(.timelapseCaptured, captureAnalytics)
-                presentNewPrint(entry)
-            }
+        .onChange(of: cameraManager.finishedTimelapseVideo) { _, video in
+            guard let video else { return }
+            cameraManager.finishedTimelapseVideo = nil
+            let look = timelapseLook ?? currentLook
+            let entry = makeEntry(imageData: video.thumbnailJPEG, look: look, isTimelapse: true)
+            entry.videoFilename = store.saveVideo(from: video.url, id: entry.id)
+            modelContext.insert(entry)
+            pendingEntryID = entry.id
+            Analytics.track(.timelapseCaptured, captureAnalytics)
+            presentNewPrint(entry)
         }
         .onChange(of: cameraManager.isTimelapsing) { _, isActive in
             if isActive {
@@ -1550,80 +1541,6 @@ struct ContentView: View {
         }
     }
 
-    private func composeVideo(from frames: [UIImage]) async -> URL? {
-        guard let first = frames.first else { return nil }
-
-        // Scale to at most 1080p on the longer side, with even pixel dimensions (H.264 requirement)
-        let displaySize = first.size
-        let maxPx: CGFloat = 1080
-        let scale = min(1.0, maxPx / max(displaySize.width, displaySize.height))
-        let size = CGSize(
-            width: floor((displaySize.width * scale) / 2) * 2,
-            height: floor((displaySize.height * scale) / 2) * 2
-        )
-
-        let outputURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString + ".mov")
-        guard let writer = try? AVAssetWriter(outputURL: outputURL, fileType: .mov) else { return nil }
-        let videoSettings: [String: Any] = [
-            AVVideoCodecKey: AVVideoCodecType.h264,
-            AVVideoWidthKey: Int(size.width),
-            AVVideoHeightKey: Int(size.height)
-        ]
-        let input = AVAssetWriterInput(mediaType: .video, outputSettings: videoSettings)
-        input.expectsMediaDataInRealTime = false
-        let adaptor = AVAssetWriterInputPixelBufferAdaptor(
-            assetWriterInput: input,
-            sourcePixelBufferAttributes: [
-                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32ARGB,
-                kCVPixelBufferWidthKey as String: Int(size.width),
-                kCVPixelBufferHeightKey as String: Int(size.height)
-            ]
-        )
-        writer.add(input)
-        writer.startWriting()
-        writer.startSession(atSourceTime: .zero)
-        let fps: Int32 = 5
-        for (i, frame) in frames.enumerated() {
-            let time = CMTime(value: CMTimeValue(i), timescale: fps)
-            if let buf = pixelBuffer(from: frame, size: size) {
-                while !input.isReadyForMoreMediaData {
-                    try? await Task.sleep(nanoseconds: 10_000_000)
-                }
-                adaptor.append(buf, withPresentationTime: time)
-            }
-        }
-        input.markAsFinished()
-        await writer.finishWriting()
-        return writer.error == nil ? outputURL : nil
-    }
-
-    private func pixelBuffer(from image: UIImage, size: CGSize) -> CVPixelBuffer? {
-        // Draw through UIKit so imageOrientation is applied correctly
-        let renderer = UIGraphicsImageRenderer(size: size)
-        let normalized = renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: size))
-        }
-        guard let cgImage = normalized.cgImage else { return nil }
-        var buffer: CVPixelBuffer?
-        CVPixelBufferCreate(kCFAllocatorDefault, Int(size.width), Int(size.height),
-                            kCVPixelFormatType_32ARGB, nil, &buffer)
-        guard let buf = buffer else { return nil }
-        CVPixelBufferLockBaseAddress(buf, [])
-        defer { CVPixelBufferUnlockBaseAddress(buf, []) }
-        guard let ctx = CGContext(
-            data: CVPixelBufferGetBaseAddress(buf),
-            width: Int(size.width),
-            height: Int(size.height),
-            bitsPerComponent: 8,
-            bytesPerRow: CVPixelBufferGetBytesPerRow(buf),
-            space: CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
-        ) else { return nil }
-        ctx.draw(cgImage, in: CGRect(origin: .zero, size: size))
-        return buf
-    }
-
     // MARK: - Shutter actions
 
     private func handleShutter() {
@@ -1687,7 +1604,10 @@ struct ContentView: View {
         case .video:
             cameraManager.startVideoRecording()
         case .timeLapse:
-            cameraManager.startTimelapse(interval: timelapsInterval, duration: timelapseDuration, saveAsVideo: timelapseSaveAsVideo)
+            let look = currentLook
+            timelapseLook = look
+            cameraManager.startTimelapse(interval: timelapsInterval, duration: timelapseDuration,
+                                         saveAsVideo: timelapseSaveAsVideo, film: look.film, lens: look.lens)
         case .doubleExposure:
             cameraManager.captureDoubleExposureShot(balance: doubleExposureBalance)
         }

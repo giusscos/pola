@@ -38,7 +38,10 @@ final class CameraManager: NSObject {
 
     var capturedImage: UIImage? = nil
     var capturedVideoURL: URL? = nil
-    var timelapseVideoFrames: [UIImage]? = nil
+    /// Set when a "save as video" time lapse has been written; the camera screen turns it into a print.
+    var finishedTimelapseVideo: TimelapseVideo? = nil
+    /// True between the last time-lapse frame and the video being ready.
+    private(set) var isFinishingTimelapseVideo = false
     /// First half of a double exposure, held until the second shot is blended onto it.
     private(set) var doubleExposureFirstShot: UIImage? = nil
     /// True while the two halves of a double exposure are being blended, off the main actor.
@@ -51,7 +54,9 @@ final class CameraManager: NSObject {
 
     private var timelapseTimer: Timer?
     private var timeLapseSaveAsVideo = false
-    private var timelapseFrames: [UIImage] = []
+    /// Frames go straight to the video writer instead of piling up in memory.
+    private var timelapseVideoFrames: AsyncStream<UIImage>.Continuation?
+    private var timelapseVideoTask: Task<TimelapseVideo?, Never>?
     private var pendingTimelapsePhotos = 0
     private var timelapseStopped = false
 
@@ -402,12 +407,20 @@ final class CameraManager: NSObject {
         }
     }
 
-    func startTimelapse(interval: Double, duration: Double, saveAsVideo: Bool) {
-        guard !isTimelapsing else { return }
+    /// `film` and `lens` are only used for "save as video", where frames are developed as they arrive.
+    func startTimelapse(interval: Double, duration: Double, saveAsVideo: Bool,
+                        film: FilmFilterEffect?, lens: Lens?) {
+        guard !isTimelapsing, !isFinishingTimelapseVideo else { return }
         isTimelapsing = true
         UIApplication.shared.isIdleTimerDisabled = true
         timeLapseSaveAsVideo = saveAsVideo
-        timelapseFrames = []
+        if saveAsVideo {
+            let (frames, continuation) = AsyncStream.makeStream(of: UIImage.self)
+            timelapseVideoFrames = continuation
+            timelapseVideoTask = Task {
+                await TimelapseVideoWriter.write(frames: frames, film: film, lens: lens)
+            }
+        }
         timelapseMaxPhotos = max(1, Int(duration / interval))
         timelapsePhotoCount = 0
         timelapsePhaseStart = Date()
@@ -443,11 +456,17 @@ final class CameraManager: NSObject {
     private func finalizeTimelapse() {
         isTimelapsing = false
         UIApplication.shared.isIdleTimerDisabled = false
-        if timeLapseSaveAsVideo && !timelapseFrames.isEmpty {
-            timelapseVideoFrames = timelapseFrames
-        }
-        timelapseFrames = []
         timelapseStopped = false
+        guard let frames = timelapseVideoFrames, let task = timelapseVideoTask else { return }
+        timelapseVideoFrames = nil
+        timelapseVideoTask = nil
+        frames.finish()
+        isFinishingTimelapseVideo = true
+        Task {
+            let video = await task.value
+            isFinishingTimelapseVideo = false
+            finishedTimelapseVideo = video
+        }
     }
 }
 
@@ -474,7 +493,7 @@ extension CameraManager: AVCapturePhotoCaptureDelegate {
             if pendingTimelapsePhotos > 0 {
                 pendingTimelapsePhotos -= 1
                 if timeLapseSaveAsVideo {
-                    timelapseFrames.append(image)
+                    timelapseVideoFrames?.yield(image)
                 } else {
                     capturedImage = image
                 }
