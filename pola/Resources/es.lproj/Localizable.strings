@@ -292,3 +292,7 @@
 
 /* Paywall */
 "Close" = "Cerrar";
+
+/* Camera controls */
+"Flash" = "Flash";
+"Auto" = "Automático";

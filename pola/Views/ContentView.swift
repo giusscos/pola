@@ -1,4 +1,5 @@
 import AVFoundation
+import AVKit
 import CoreLocation
 import StoreKit
 import SwiftData
@@ -82,6 +83,8 @@ struct ContentView: View {
     /// Tail of the chain that develops captures one at a time, so prints arrive in shooting order.
     @State private var developmentQueue: Task<Void, Never>? = nil
     @State private var pendingDevelopments = 0
+    @State private var pinchStartZoom: CGFloat = 1
+    @State private var shutterBlink = false
     @AppStorage("printAnimationEnabled") private var printAnimationEnabled: Bool = true
     @AppStorage("frontCameraMirrored") private var frontCameraMirrored: Bool = true
 
@@ -208,6 +211,52 @@ struct ContentView: View {
         }
     }
 
+    /// Torch for video, flash (off / auto / on) for everything else.
+    @ViewBuilder
+    private var lightButton: some View {
+        if cameraMode == .video {
+            Button { cameraManager.toggleTorch() } label: {
+                Image(systemName: cameraManager.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
+                    .foregroundStyle(cameraManager.isTorchOn ? .yellow : .primary)
+            }
+            .accessibilityLabel(Text("Flashlight"))
+            .accessibilityValue(Text(LocalizedStringKey(cameraManager.isTorchOn ? "On" : "Off")))
+        } else {
+            let mode = cameraManager.photoFlashMode
+            Button { cameraManager.cycleFlashMode() } label: {
+                Image(systemName: mode == .on ? "bolt.fill" : mode == .auto ? "bolt.badge.automatic.fill" : "bolt.slash.fill")
+                    .foregroundStyle(mode == .off ? .primary : Color.yellow)
+            }
+            .disabled(!cameraManager.isFlashAvailable)
+            .accessibilityLabel(Text("Flash"))
+            .accessibilityValue(Text(LocalizedStringKey(mode == .on ? "On" : mode == .auto ? "Auto" : "Off")))
+        }
+    }
+
+    private var isZoomLocked: Bool {
+        cameraManager.isRecording || cameraManager.isTimelapsing || isHoldingFirstExposure
+    }
+
+    /// The chip for the lens in use: the largest stop at or below the current zoom, so a pinch
+    /// between stops keeps the nearer lower one selected.
+    private var selectedZoomOption: ZoomOption? {
+        let current = cameraManager.currentZoomFactor
+        return cameraManager.availableZoomOptions.last { $0.factor <= current + 0.01 }
+            ?? cameraManager.availableZoomOptions.first
+    }
+
+    private func zoomLabel(for option: ZoomOption, isSelected: Bool) -> String {
+        let current = cameraManager.currentZoomFactor
+        guard isSelected, abs(current - option.factor) > 0.05 else { return option.name }
+        return String(format: "%.1fx", current * option.displayMultiplier)
+    }
+
+    private var isHardwareShutterEnabled: Bool {
+        cameraManager.isAuthorized && hasSeenOnboarding && !showLibrary && !showSettings
+            && !showFiltersSheet && !showTimeLapseSettings && paywallContext == nil
+            && !isPrinting && !showCaptionInput
+    }
+
     @ViewBuilder
     private var timerDelayButton: some View {
         if cameraMode != .timeLapse {
@@ -277,7 +326,16 @@ struct ContentView: View {
                         CameraPreviewView(
                             session: cameraManager.session,
                             mirrorFrontCamera: frontCameraMirrored,
-                            isFrontCamera: cameraManager.currentPosition == .front
+                            isFrontCamera: cameraManager.currentPosition == .front,
+                            isZoomEnabled: !isZoomLocked,
+                            onFocus: { cameraManager.focus(at: $0) },
+                            onPinch: { scale in
+                                if let scale {
+                                    cameraManager.setZoom(factor: pinchStartZoom * scale)
+                                } else {
+                                    pinchStartZoom = cameraManager.currentZoomFactor
+                                }
+                            }
                         )
                             .aspectRatio(3.0 / 4.0, contentMode: .fit)
                             .frame(maxWidth: .infinity)
@@ -291,6 +349,13 @@ struct ContentView: View {
                                 }
                             }
                             .animation(.easeInOut(duration: 0.3), value: isHoldingFirstExposure)
+                            .overlay {
+                                // Brief blink as the shutter fires, like a mirror flipping.
+                                Color.black
+                                    .opacity(shutterBlink ? 0.8 : 0)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
                             .overlay {
                                 if let tint = activeFilter?.previewTintColor {
                                     // Stronger tint so the filter is visible in the viewfinder
@@ -454,12 +519,7 @@ struct ContentView: View {
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { cameraManager.toggleTorch() } label: {
-                        Image(systemName: cameraManager.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill")
-                            .foregroundStyle(cameraManager.isTorchOn ? .yellow : .primary)
-                    }
-                    .accessibilityLabel(Text("Flashlight"))
-                    .accessibilityValue(Text(LocalizedStringKey(cameraManager.isTorchOn ? "On" : "Off")))
+                    lightButton
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -557,7 +617,22 @@ struct ContentView: View {
             }
         }
         .onOpenURL { handleDeepLink($0) }
+        .sensoryFeedback(.impact(weight: .medium), trigger: cameraManager.shutterCount)
+        .onChange(of: cameraManager.shutterCount) {
+            shutterBlink = true
+            Task {
+                try? await Task.sleep(for: .milliseconds(50))
+                withAnimation(.easeOut(duration: 0.18)) { shutterBlink = false }
+            }
+        }
+        // Volume buttons and Camera Control take a photo, or start and stop a recording.
+        .onCameraCaptureEvent(isEnabled: isHardwareShutterEnabled) { event in
+            if event.phase == .ended { handleShutter() }
+        }
         .onChange(of: cameraMode) { _, mode in
+            if mode != .video {
+                cameraManager.turnTorchOff()
+            }
             if mode == .video {
                 Task { await cameraManager.prepareMicrophone() }
             }
@@ -1002,11 +1077,12 @@ struct ContentView: View {
     private var zoomControlRow: some View {
         HStack(spacing: 6) {
             ForEach(cameraManager.availableZoomOptions) { option in
-                let isSelected = cameraManager.currentZoomFactor == option.factor
+                let isSelected = selectedZoomOption == option
                 Button {
                     cameraManager.switchZoom(to: option)
                 } label: {
-                    Text(option.name)
+                    Text(verbatim: zoomLabel(for: option, isSelected: isSelected))
+                        .monospacedDigit()
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(isSelected ? .black : .white)
                         .padding(.horizontal, 12)
@@ -1022,9 +1098,9 @@ struct ContentView: View {
             }
         }
         .animation(.spring(duration: 0.35, bounce: 0.2), value: cameraManager.currentZoomFactor)
-        .sensoryFeedback(.selection, trigger: cameraManager.currentZoomFactor)
-        .disabled(cameraManager.isRecording || cameraManager.isTimelapsing || isHoldingFirstExposure)
-        .opacity((cameraManager.isRecording || cameraManager.isTimelapsing || isHoldingFirstExposure) ? 0.4 : 1.0)
+        .sensoryFeedback(.selection, trigger: selectedZoomOption?.factor)
+        .disabled(isZoomLocked)
+        .opacity(isZoomLocked ? 0.4 : 1.0)
     }
 
     // MARK: - Bottom row

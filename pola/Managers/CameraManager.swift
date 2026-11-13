@@ -29,6 +29,13 @@ final class CameraManager: NSObject {
     private(set) var timelapsePhotoCount = 0
     private(set) var timelapseMaxPhotos = 0
     private(set) var locationStatus: CLAuthorizationStatus = .notDetermined
+    /// Flash for photos (off / auto / on); video uses the torch instead.
+    private(set) var photoFlashMode: AVCaptureDevice.FlashMode =
+        AVCaptureDevice.FlashMode(rawValue: UserDefaults.standard.integer(forKey: "photoFlashMode")) ?? .off
+    /// False on cameras without a flash, such as the front camera.
+    private(set) var isFlashAvailable = false
+    /// Goes up by one each time a photo is taken, for the shutter haptic and viewfinder blink.
+    private(set) var shutterCount = 0
 
     let session = AVCaptureSession()
     private let sessionQueue = DispatchQueue(label: "com.pola.cameraSession", qos: .userInitiated)
@@ -48,6 +55,7 @@ final class CameraManager: NSObject {
     private(set) var isBlendingDoubleExposure = false
 
     private var isCapturingDoubleExposure = false
+    private var observesSubjectArea = false
     private var doubleExposureBalance: Double = 0
     // Set when the double exposure is discarded while one of its shots is still processing.
     private var dropsInFlightDoubleExposureShot = false
@@ -75,6 +83,13 @@ final class CameraManager: NSObject {
             }
         }
         guard videoGranted else { return }
+        if !observesSubjectArea {
+            observesSubjectArea = true
+            NotificationCenter.default.addObserver(forName: AVCaptureDevice.subjectAreaDidChangeNotification,
+                                               object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.resetFocusToContinuous() }
+            }
+        }
         await withCheckedContinuation { continuation in
             sessionQueue.async { [weak self] in
                 self?.setupSession(position: .back)
@@ -181,6 +196,7 @@ final class CameraManager: NSObject {
             session.addOutput(movieOutput)
         }
         configurePhotoOutputForSpeed()
+        publishFlashAvailability()
         let zoomOpts = buildZoomOptions(for: device)
         let initialFactor = startingZoomFactor(for: device)
         try? device.lockForConfiguration()
@@ -207,6 +223,13 @@ final class CameraManager: NSObject {
             if photoOutput.isFastCapturePrioritizationSupported {
                 photoOutput.isFastCapturePrioritizationEnabled = true
             }
+        }
+    }
+
+    private func publishFlashAvailability() {
+        let available = photoOutput.supportedFlashModes.contains(.on)
+        DispatchQueue.main.async { [weak self] in
+            self?.isFlashAvailable = available
         }
     }
 
@@ -275,6 +298,80 @@ final class CameraManager: NSObject {
         device.unlockForConfiguration()
     }
 
+    /// Off → auto → on → off.
+    func cycleFlashMode() {
+        switch photoFlashMode {
+        case .off: photoFlashMode = .auto
+        case .auto: photoFlashMode = .on
+        default: photoFlashMode = .off
+        }
+        UserDefaults.standard.set(photoFlashMode.rawValue, forKey: "photoFlashMode")
+    }
+
+    func turnTorchOff() {
+        guard isTorchOn else { return }
+        toggleTorch()
+    }
+
+    /// Focuses and meters at a point in device coordinates (0...1, from `captureDevicePointConverted`).
+    /// Returns to continuous autofocus once the scene changes.
+    func focus(at devicePoint: CGPoint) {
+        sessionQueue.async { [weak self] in
+            guard let self, let device = activeVideoDevice, (try? device.lockForConfiguration()) != nil else { return }
+            defer { device.unlockForConfiguration() }
+            if device.isFocusPointOfInterestSupported, device.isFocusModeSupported(.autoFocus) {
+                device.focusPointOfInterest = devicePoint
+                device.focusMode = .autoFocus
+            }
+            if device.isExposurePointOfInterestSupported, device.isExposureModeSupported(.autoExpose) {
+                device.exposurePointOfInterest = devicePoint
+                device.exposureMode = .autoExpose
+            }
+            device.isSubjectAreaChangeMonitoringEnabled = true
+        }
+    }
+
+    private func resetFocusToContinuous() {
+        sessionQueue.async { [weak self] in
+            guard let self, let device = activeVideoDevice, (try? device.lockForConfiguration()) != nil else { return }
+            defer { device.unlockForConfiguration() }
+            let center = CGPoint(x: 0.5, y: 0.5)
+            if device.isFocusPointOfInterestSupported, device.isFocusModeSupported(.continuousAutoFocus) {
+                device.focusPointOfInterest = center
+                device.focusMode = .continuousAutoFocus
+            }
+            if device.isExposurePointOfInterestSupported, device.isExposureModeSupported(.continuousAutoExposure) {
+                device.exposurePointOfInterest = center
+                device.exposureMode = .continuousAutoExposure
+            }
+            device.isSubjectAreaChangeMonitoringEnabled = false
+        }
+    }
+
+    /// Sets the zoom straight away, for pinching. Clamped to the device's range, up to 10× as displayed.
+    func setZoom(factor: CGFloat) {
+        sessionQueue.async { [weak self] in
+            guard let self, let device = activeVideoDevice else { return }
+            let displayCap = 10 / max(device.displayVideoZoomFactorMultiplier, 0.01)
+            let upper = min(device.maxAvailableVideoZoomFactor, max(displayCap, device.minAvailableVideoZoomFactor))
+            let clamped = min(max(factor, device.minAvailableVideoZoomFactor), upper)
+            guard (try? device.lockForConfiguration()) != nil else { return }
+            device.cancelVideoZoomRamp()
+            device.videoZoomFactor = clamped
+            device.unlockForConfiguration()
+            DispatchQueue.main.async { [weak self] in
+                self?.currentZoomFactor = clamped
+            }
+        }
+    }
+
+    /// Must be called on sessionQueue.
+    private var activeVideoDevice: AVCaptureDevice? {
+        session.inputs
+            .compactMap { ($0 as? AVCaptureDeviceInput)?.device }
+            .first { $0.hasMediaType(.video) }
+    }
+
     func toggleAudio() {
         isAudioEnabled.toggle()
         UserDefaults.standard.set(isAudioEnabled, forKey: "videoAudioEnabled")
@@ -318,6 +415,7 @@ final class CameraManager: NSObject {
             session.addInput(input)
             select4to3Format(for: device)
             configurePhotoOutputForSpeed()
+            publishFlashAvailability()
             let newZoomOpts = buildZoomOptions(for: device)
             let initialFactor = startingZoomFactor(for: device)
             try? device.lockForConfiguration()
@@ -360,6 +458,9 @@ final class CameraManager: NSObject {
     }
 
     func capturePhoto() {
+        shutterCount += 1
+        // A flash every few seconds would spoil a time lapse.
+        let flashMode = isTimelapsing ? .off : photoFlashMode
         #if targetEnvironment(simulator)
         if let shot = SimulatorFeed.shared.capture() {
             deliverPhoto(shot)
@@ -369,6 +470,9 @@ final class CameraManager: NSObject {
             guard let self else { return }
             let settings = AVCapturePhotoSettings()
             settings.photoQualityPrioritization = .balanced
+            if photoOutput.supportedFlashModes.contains(flashMode) {
+                settings.flashMode = flashMode
+            }
             photoOutput.capturePhoto(with: settings, delegate: self)
         }
         #endif
