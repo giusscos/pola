@@ -7,8 +7,10 @@ import UIKit
 @MainActor
 func renderPolaroidStory(_ entry: PolaroidEntry) -> UIImage {
     let canvas = CGSize(width: 1080, height: 1920)
-    let polaroid = renderPolaroidFrame(entry)
-    let background = entry.image.flatMap { blurredBackground(from: $0, size: canvas) }
+    let width: CGFloat = 780
+    // Rendered at the size it is drawn, so it is never scaled up or down.
+    let polaroid = renderPolaroidFrame(entry, pixelWidth: width)
+    let background = entry.thumbnail(maxPixelSize: 1200).flatMap { blurredBackground(from: $0, size: canvas) }
 
     let format = UIGraphicsImageRendererFormat()
     format.scale = 1
@@ -21,7 +23,6 @@ func renderPolaroidStory(_ entry: PolaroidEntry) -> UIImage {
         UIColor.black.withAlphaComponent(0.35).setFill()
         cg.fill(CGRect(origin: .zero, size: canvas))
 
-        let width: CGFloat = 780
         let height = width / polaroid.size.width * polaroid.size.height
         cg.saveGState()
         cg.translateBy(x: canvas.width / 2, y: canvas.height / 2 - 40)
@@ -66,11 +67,13 @@ func renderPolaroidPrintSheet(_ entries: [PolaroidEntry]) -> URL? {
     let url = FileManager.default.temporaryDirectory
         .appendingPathComponent("poly-print-sheet-\(Int(Date().timeIntervalSince1970)).pdf")
     let renderer = UIGraphicsPDFRenderer(bounds: page)
-    let frames = entries.map { renderPolaroidFrame($0) }
+    // About 300 dpi at the slot's printed size; rendered one at a time to keep memory flat.
+    let pixelWidth = (cellW / 72 * 300).rounded(.up)
 
     do {
         try renderer.writePDF(to: url) { ctx in
-            for (i, frame) in frames.enumerated() {
+            for (i, entry) in entries.enumerated() {
+                let frame = renderPolaroidFrame(entry, pixelWidth: pixelWidth)
                 let slot = i % (columns * rows)
                 if slot == 0 { ctx.beginPage() }
                 let col = slot % columns

@@ -740,11 +740,22 @@ private func makePolaroidOverlayImage(size: CGSize, imageHole: CGRect, captionRe
     }
 }
 
-// Renders the full polaroid frame (border + caption) as a UIImage for sharing/saving.
+/// Width of shared and saved prints. Shared prints are what other people see of the app, so they
+/// are rendered well above screen resolution.
+nonisolated let polaroidExportPixelWidth: CGFloat = 2400
+
+/// Renders the full polaroid frame (border + caption) as a UIImage for sharing/saving. The cell is
+/// laid out at 270 pt and scaled up, so the caption, watermark and date stamp scale with it.
+/// Returns a JPEG-backed image, so a multi-print export doesn't hold a 30 MB bitmap per print.
 @MainActor
-func renderPolaroidFrame(_ entry: PolaroidEntry) -> UIImage {
+func renderPolaroidFrame(_ entry: PolaroidEntry, pixelWidth: CGFloat = polaroidExportPixelWidth) -> UIImage {
+    let layoutWidth: CGFloat = 270
+    // Small renders (stories, print sheets) don't need the full photo decoded.
+    let photo = pixelWidth >= 1500
+        ? entry.image
+        : entry.thumbnail(maxPixelSize: pixelWidth * 4 / 3 * 1.2)
     let cell = PolaroidPhotoCell(
-        image: entry.image,
+        image: photo,
         developmentProgress: 1.0,
         caption: entry.caption,
         backText: entry.backText,
@@ -756,11 +767,12 @@ func renderPolaroidFrame(_ entry: PolaroidEntry) -> UIImage {
         packColorHex: entry.packColorHex,
         fontScale: 1.7
     )
-    .frame(width: 270, height: (270 / entry.frameFormat.frameAspect).rounded())
+    .frame(width: layoutWidth, height: (layoutWidth / entry.frameFormat.frameAspect).rounded())
 
     let renderer = ImageRenderer(content: cell)
-    renderer.scale = 3.0
-    return renderer.uiImage ?? entry.image ?? UIImage()
+    renderer.scale = pixelWidth / layoutWidth
+    guard let bitmap = renderer.uiImage else { return photo ?? UIImage() }
+    return bitmap.jpegData(compressionQuality: 0.92).flatMap { UIImage(data: $0) } ?? bitmap
 }
 
 // MARK: - Date stamp
