@@ -85,6 +85,12 @@ struct ContentView: View {
     @State private var pendingDevelopments = 0
     @State private var pinchStartZoom: CGFloat = 1
     @State private var shutterBlink = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// VoiceOver returns to the shutter once a print has been put away.
+    @AccessibilityFocusState private var isShutterFocused: Bool
+    @Environment(\.colorSchemeContrast) private var contrast
+    /// Banner text over the viewfinder; grows with Dynamic Type.
+    @ScaledMetric(relativeTo: .footnote) private var bannerFontSize: CGFloat = 13
     @AppStorage("printAnimationEnabled") private var printAnimationEnabled: Bool = true
     @AppStorage("frontCameraMirrored") private var frontCameraMirrored: Bool = true
 
@@ -236,6 +242,19 @@ struct ContentView: View {
         }
     }
 
+    /// Dimmed labels (locked, inactive) stay readable: 0.7 meets 4.5:1 on black, Increase Contrast goes further.
+    private var dimmedTextOpacity: Double {
+        contrast == .increased ? 0.9 : 0.7
+    }
+
+    private func filmStockAccessibilityValue(_ filter: FilmFilter, locked: Bool) -> String {
+        var parts: [String] = []
+        if locked { parts.append(NSLocalizedString("Locked", comment: "")) }
+        if filter.isFree && !premium.isPremium { parts.append(NSLocalizedString("Free", comment: "")) }
+        if filter.isNew && seenDropID < FilmDrops.latestDropID { parts.append(NSLocalizedString("New", comment: "")) }
+        return parts.joined(separator: ", ")
+    }
+
     private var isZoomLocked: Bool {
         cameraManager.isRecording || cameraManager.isTimelapsing || isHoldingFirstExposure
     }
@@ -363,6 +382,7 @@ struct ContentView: View {
                                 if let tint = activeFilter?.previewTintColor {
                                     // Stronger tint so the filter is visible in the viewfinder
                                     tint.opacity(0.20).blendMode(.multiply)
+                                        .accessibilityHidden(true)
                                 }
                             }
                             .overlay {
@@ -375,11 +395,13 @@ struct ContentView: View {
                                         endRadius: 300
                                     )
                                     .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
                                 }
                             }
                             .overlay {
                                 if let lens = selectedLens {
                                     LensViewfinderHint(lens: lens)
+                                        .accessibilityHidden(true)
                                         .transition(.opacity)
                                 }
                             }
@@ -400,6 +422,7 @@ struct ContentView: View {
                             .overlay {
                                 if activeFrameFormat != .classic {
                                     FrameFormatGuide(imageAspect: activeFrameFormat.imageAspect)
+                                        .accessibilityHidden(true)
                                         .transition(.opacity)
                                 }
                             }
@@ -620,6 +643,10 @@ struct ContentView: View {
             }
         }
         .onOpenURL { handleDeepLink($0) }
+        .onChange(of: countdownValue) { _, value in
+            guard isCountingDown, value > 0 else { return }
+            AccessibilityNotification.Announcement("\(value)").post()
+        }
         .sensoryFeedback(.impact(weight: .medium), trigger: cameraManager.shutterCount)
         .onChange(of: cameraManager.shutterCount) {
             shutterBlink = true
@@ -816,10 +843,18 @@ struct ContentView: View {
 
                 Text(LocalizedStringKey(format.displayName))
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(locked ? .white.opacity(0.45) : .white)
+                    .foregroundStyle(locked ? .white.opacity(dimmedTextOpacity) : .white)
+            }
+            .overlay(alignment: .topTrailing) {
+                if isSelected { SelectionCheckmark().offset(x: 4, y: -4) }
             }
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(LocalizedStringKey(format.displayName)))
+        .accessibilityValue(Text(LocalizedStringKey(locked ? "Locked" : "")))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityShowsLargeContentViewer()
     }
 
     // MARK: - Color strip
@@ -846,84 +881,106 @@ struct ContentView: View {
         }
     }
 
-    @ViewBuilder
     private func packCard(pack: PolaPackColor, isSelected: Bool, locked: Bool = false, onTap: @escaping () -> Void) -> some View {
-        VStack(spacing: 5) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? pack.color.opacity(0.3) : Color.white.opacity(0.12))
-
-                Circle()
-                    .fill(pack.color)
-                    .frame(width: 30, height: 30)
-                    .shadow(color: pack.color.opacity(0.5), radius: 4, x: 0, y: 2)
-
-                if locked {
+        Button(action: onTap) {
+            VStack(spacing: 5) {
+                ZStack {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(.black.opacity(0.5))
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.9))
-                }
-            }
-            .frame(width: 60, height: 60)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(isSelected ? pack.color : Color.clear, lineWidth: 1.5)
-            )
+                        .fill(isSelected ? pack.color.opacity(0.3) : Color.white.opacity(0.12))
 
-            Text(pack.name)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(locked ? .white.opacity(0.45) : .white)
-                .lineLimit(1)
+                    Circle()
+                        .fill(pack.color)
+                        .frame(width: 30, height: 30)
+                        .shadow(color: pack.color.opacity(0.5), radius: 4, x: 0, y: 2)
+
+                    if locked {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.black.opacity(0.5))
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                }
+                .frame(width: 60, height: 60)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(isSelected ? pack.color : Color.clear, lineWidth: 1.5)
+                )
+                .overlay(alignment: .topTrailing) {
+                    if isSelected { SelectionCheckmark() }
+                }
+
+                Text(pack.name)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(locked ? .white.opacity(dimmedTextOpacity) : .white)
+                    .lineLimit(1)
+            }
         }
-        .onTapGesture { onTap() }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: pack.name))
+        .accessibilityValue(Text(LocalizedStringKey(locked ? "Locked" : pack.isFree ? "Free" : "")))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityShowsLargeContentViewer {
+            Label { Text(verbatim: pack.name) } icon: { Image(systemName: "circle.fill") }
+        }
     }
 
-    @ViewBuilder
     private func filterCard(filter: FilmFilter, isSelected: Bool, locked: Bool = false,
                             previewImage: UIImage? = nil, onTap: @escaping () -> Void) -> some View {
-        VStack(spacing: 5) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? filter.color.opacity(0.3) : Color.white.opacity(0.12))
-
-                if let previewImage {
-                    Image(uiImage: previewImage)
-                        .resizable()
-                        .scaledToFill()
-                } else if let imageName = filter.imageName {
-                    Image(imageName)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    Circle()
-                        .fill(filter.color)
-                        .frame(width: 22, height: 22)
-                }
-
-                if locked {
+        Button(action: onTap) {
+            VStack(spacing: 5) {
+                ZStack {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(.black.opacity(0.5))
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.9))
-                }
-            }
-            .frame(width: 60, height: 60)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(isSelected ? filter.color : Color.clear, lineWidth: 1.5)
-            )
+                        .fill(isSelected ? filter.color.opacity(0.3) : Color.white.opacity(0.12))
 
-            Text(filter.name)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(locked ? .white.opacity(0.45) : .white)
-                .lineLimit(1)
+                    if let previewImage {
+                        Image(uiImage: previewImage)
+                            .resizable()
+                            .scaledToFill()
+                    } else if let imageName = filter.imageName {
+                        Image(imageName)
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Circle()
+                            .fill(filter.color)
+                            .frame(width: 22, height: 22)
+                    }
+
+                    if locked {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.black.opacity(0.5))
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                }
+                .frame(width: 60, height: 60)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(isSelected ? filter.color : Color.clear, lineWidth: 1.5)
+                )
+                .overlay(alignment: .topTrailing) {
+                    if isSelected { SelectionCheckmark() }
+                }
+
+                Text(filter.name)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(locked ? .white.opacity(dimmedTextOpacity) : .white)
+                    .lineLimit(1)
+            }
         }
-        .onTapGesture { onTap() }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: filter.name))
+        .accessibilityValue(Text(filmStockAccessibilityValue(filter, locked: locked)))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityShowsLargeContentViewer {
+            Label { Text(verbatim: filter.name) } icon: { Image(systemName: "camera.filters") }
+        }
     }
 
     // MARK: - Shutter row
@@ -1002,12 +1059,13 @@ struct ContentView: View {
                 }
             }
             .frame(width: 82, height: 82)
-            .animation(.spring(duration: 0.4, bounce: 0.35), value: cameraMode)
+            .animation(reduceMotion ? nil : .spring(duration: 0.4, bounce: 0.35), value: cameraMode)
             .animation(.snappy, value: isHoldingFirstExposure)
         }
         .scaleEffect(shutterScaleTrigger ? 0.88 : 1.0)
         .animation(.spring(duration: 0.45, bounce: 0.5), value: shutterScaleTrigger)
         .onChange(of: cameraMode) {
+            guard !reduceMotion else { return }
             shutterScaleTrigger = true
             Task {
                 try? await Task.sleep(for: .milliseconds(100))
@@ -1016,64 +1074,80 @@ struct ContentView: View {
         }
         .modifier(PolaGlassEffectModifier())
         .accessibilityLabel(Text(shutterAccessibilityLabel))
+        .accessibilityFocused($isShutterFocused)
     }
 
     private var filmButton: some View {
         let isActive = selectedFilterName != nil || selectedLens != nil
-        return VStack(spacing: 4) {
-            ZStack {
-                Circle()
-                    .fill(isActive ? Color.white.opacity(0.28) : Color.white.opacity(0.12))
-                    .frame(width: 52, height: 52)
-                Image(systemName: "camera.filters")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(isActive ? .white : .white.opacity(0.65))
-                    .scaleEffect(isActive ? 1.08 : 1.0)
-            }
-            .overlay(alignment: .topTrailing) {
-                if seenDropID < FilmDrops.latestDropID {
-                    Circle()
-                        .fill(Color(red: 1.0, green: 0.8, blue: 0.3))
-                        .frame(width: 10, height: 10)
-                        .overlay(Circle().strokeBorder(.black, lineWidth: 1.5))
-                        .offset(x: -2, y: 2)
-                }
-            }
-            Text("FILM")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(isActive ? .white : .white.opacity(0.55))
-        }
-        .matchedTransitionSource(id: "filtersSheet", in: sheetZoom)
-        .onTapGesture {
+        return Button {
             showFiltersSheet = true
+        } label: {
+            VStack(spacing: 4) {
+                ZStack {
+                    Circle()
+                        .fill(isActive ? Color.white.opacity(0.28) : Color.white.opacity(0.12))
+                        .frame(width: 52, height: 52)
+                    Image(systemName: "camera.filters")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(isActive ? .white : .white.opacity(dimmedTextOpacity))
+                        .scaleEffect(isActive ? 1.08 : 1.0)
+                }
+                .overlay(alignment: .topTrailing) {
+                    if seenDropID < FilmDrops.latestDropID {
+                        Circle()
+                            .fill(Color(red: 1.0, green: 0.8, blue: 0.3))
+                            .frame(width: 10, height: 10)
+                            .overlay(Circle().strokeBorder(.black, lineWidth: 1.5))
+                            .offset(x: -2, y: 2)
+                    }
+                }
+                Text("FILM")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(isActive ? .white : .white.opacity(dimmedTextOpacity))
+            }
         }
+        .buttonStyle(.plain)
+        .matchedTransitionSource(id: "filtersSheet", in: sheetZoom)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Filters"))
-        .accessibilityValue(Text(verbatim: selectedFilterName ?? NSLocalizedString("Original", comment: "")))
-        .accessibilityAddTraits(.isButton)
+        .accessibilityValue(Text(verbatim: [
+            selectedFilterName ?? NSLocalizedString("Original", comment: ""),
+            selectedLens?.name,
+            seenDropID < FilmDrops.latestDropID ? NSLocalizedString("New film stocks", comment: "") : nil,
+        ].compactMap { $0 }.joined(separator: ", ")))
+        .accessibilityShowsLargeContentViewer {
+            Label("Filters", systemImage: "camera.filters")
+        }
     }
 
-    @ViewBuilder
     private func stripToggleButton(icon: String, label: String, strip: ActiveStrip) -> some View {
         let isActive = activeStrip == strip
-        VStack(spacing: 4) {
-            ZStack {
-                Circle()
-                    .fill(isActive ? Color.white.opacity(0.28) : Color.white.opacity(0.12))
-                    .frame(width: 52, height: 52)
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(isActive ? .white : .white.opacity(0.65))
-                    .scaleEffect(isActive ? 1.08 : 1.0)
-            }
-            Text(LocalizedStringKey(label))
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(isActive ? .white : .white.opacity(0.55))
-        }
-        .onTapGesture {
-            withAnimation(.spring(duration: 0.45, bounce: 0.2)) {
+        return Button {
+            withAnimation(reduceMotion ? nil : .spring(duration: 0.45, bounce: 0.2)) {
                 activeStrip = activeStrip == strip ? .none : strip
             }
+        } label: {
+            VStack(spacing: 4) {
+                ZStack {
+                    Circle()
+                        .fill(isActive ? Color.white.opacity(0.28) : Color.white.opacity(0.12))
+                        .frame(width: 52, height: 52)
+                    Image(systemName: icon)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(isActive ? .white : .white.opacity(dimmedTextOpacity))
+                        .scaleEffect(isActive ? 1.08 : 1.0)
+                }
+                Text(LocalizedStringKey(label))
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(isActive ? .white : .white.opacity(dimmedTextOpacity))
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(LocalizedStringKey(label)))
+        .accessibilityAddTraits(isActive ? .isSelected : [])
+        .accessibilityShowsLargeContentViewer {
+            Label(LocalizedStringKey(label), systemImage: icon)
         }
     }
 
@@ -1099,7 +1173,17 @@ struct ContentView: View {
                                     .matchedGeometryEffect(id: "zoomSelector", in: zoomNamespace)
                             }
                         }
+                        // 44 pt to tap without changing how the chip looks.
+                        .padding(.vertical, 9)
+                        .contentShape(Rectangle())
+                        .padding(.vertical, -9)
                 }
+                .accessibilityLabel(Text(verbatim: String(
+                    format: NSLocalizedString("Zoom %@ times", comment: "Zoom chip, e.g. Zoom 0.5 times"),
+                    zoomLabel(for: option, isSelected: isSelected).replacingOccurrences(of: "x", with: "")
+                )))
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+                .accessibilityShowsLargeContentViewer()
             }
         }
         .animation(.spring(duration: 0.35, bounce: 0.2), value: cameraManager.currentZoomFactor)
@@ -1267,6 +1351,7 @@ struct ContentView: View {
                 polaroidWidth: height.map(Self.polaroidWidth(fitting:)) ?? 220,
                 onComplete: {
                     printingEntry = nil
+                    isShutterFocused = true
                     captureFlowFinished()
                 }
             )
@@ -1275,6 +1360,7 @@ struct ContentView: View {
                 entries: printingEntries,
                 onComplete: {
                     printingEntries = []
+                    isShutterFocused = true
                     captureFlowFinished()
                 }
             )
@@ -1450,10 +1536,10 @@ struct ContentView: View {
                     .fill(color)
                     .frame(width: 8, height: 8)
                 Text(String(format: NSLocalizedString("Previewing %@", comment: ""), name))
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: bannerFontSize, weight: .semibold))
                     .foregroundStyle(.white)
                 Text("Unlock")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: bannerFontSize - 1, weight: .bold))
                     .foregroundStyle(.black)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
@@ -1463,8 +1549,20 @@ struct ContentView: View {
             .padding(.trailing, 5)
             .padding(.vertical, 5)
             .background(.black.opacity(0.55), in: Capsule())
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .padding(.vertical, -6)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(String(format: NSLocalizedString("Previewing %@", comment: ""), name)))
+        .accessibilityHint(Text("Unlock"))
+        .accessibilityAddTraits(.isButton)
+        .onAppear {
+            AccessibilityNotification.Announcement(
+                String(format: NSLocalizedString("Previewing %@", comment: ""), name)
+            ).post()
+        }
     }
 
     // MARK: - Double exposure
@@ -1480,10 +1578,10 @@ struct ContentView: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(PremiumFeature.doubleExposure.color)
                     Text("Double Exposure")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: bannerFontSize, weight: .semibold))
                         .foregroundStyle(.white)
                     Text("Unlock")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(size: bannerFontSize - 1, weight: .bold))
                         .foregroundStyle(.black)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
@@ -1493,8 +1591,15 @@ struct ContentView: View {
                 .padding(.trailing, 5)
                 .padding(.vertical, 5)
                 .background(.black.opacity(0.55), in: Capsule())
+                .padding(.vertical, 6)
+                .contentShape(Rectangle())
+                .padding(.vertical, -6)
             }
             .buttonStyle(.plain)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("Double Exposure"))
+            .accessibilityHint(Text("Unlock"))
+            .accessibilityAddTraits(.isButton)
         } else {
             HStack(spacing: 8) {
                 Text(verbatim: isHoldingFirstExposure ? "2/2" : "1/2")
@@ -1505,7 +1610,7 @@ struct ContentView: View {
                     .background(PremiumFeature.doubleExposure.color, in: Capsule())
                     .contentTransition(.numericText())
                 Text(isHoldingFirstExposure ? "Line up the second shot" : "Take the first shot")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: bannerFontSize, weight: .semibold))
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -1514,11 +1619,14 @@ struct ContentView: View {
                         withAnimation(.snappy) { cameraManager.discardDoubleExposure() }
                     } label: {
                         Label("Retake", systemImage: "arrow.counterclockwise")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: bannerFontSize - 1, weight: .bold))
                             .foregroundStyle(.black)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
                             .background(.white, in: Capsule())
+                            .padding(.vertical, 10)
+                            .contentShape(Rectangle())
+                            .padding(.vertical, -10)
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint(Text("Discards the first shot"))
@@ -1531,6 +1639,10 @@ struct ContentView: View {
             .background(.black.opacity(0.55), in: Capsule())
             .animation(.snappy, value: isHoldingFirstExposure)
             .sensoryFeedback(.impact(weight: .light), trigger: isHoldingFirstExposure)
+            .onChange(of: isHoldingFirstExposure, initial: true) { _, holding in
+                AccessibilityNotification.Announcement(NSLocalizedString(
+                    holding ? "Line up the second shot" : "Take the first shot", comment: "")).post()
+            }
         }
     }
 

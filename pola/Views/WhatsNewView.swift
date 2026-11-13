@@ -43,7 +43,7 @@ struct WhatsNewView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("What's New")
-                            .font(.system(size: 40, weight: .bold).width(.expanded))
+                            .scaledFont(40, weight: .bold, width: .expanded, relativeTo: .largeTitle)
                             .foregroundStyle(.white)
                         Text(verbatim: String(format: NSLocalizedString("Poly %@", comment: "Version label in What's New"), WhatsNew.version))
                             .font(.headline)

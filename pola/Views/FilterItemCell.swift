@@ -50,6 +50,7 @@ struct FilterItemCell: View {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(color)
                                 .background(.white, in: .circle)
+                                .accessibilityHidden(true)
                         } else if locked {
                             Image(systemName: "lock.fill")
                                 .font(.system(size: 10, weight: .semibold))
@@ -77,8 +78,21 @@ struct FilterItemCell: View {
                 Text(name)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.primary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: name))
+        .accessibilityValue(Text(verbatim: accessibilityStatus))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var accessibilityStatus: String {
+        var parts: [String] = []
+        if locked { parts.append(NSLocalizedString("Locked", comment: "")) }
+        if showFreeBadge { parts.append(NSLocalizedString("Free", comment: "")) }
+        if showNewBadge { parts.append(NSLocalizedString("New", comment: "")) }
+        return parts.joined(separator: ", ")
     }
 }

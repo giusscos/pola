@@ -135,6 +135,12 @@ struct PaywallView: View {
     @State private var trialEligibleIDs: Set<String> = []
 
     private let accent = Color(red: 1.0, green: 0.8, blue: 0.3)
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    /// Secondary text opacity on the dark background: at least 4.5:1, higher with Increase Contrast.
+    private func dimmed(_ opacity: Double) -> Double {
+        contrast == .increased ? max(opacity, 0.85) : opacity
+    }
 
     private var orderedFeatures: [PremiumFeature] {
         guard let first = context.highlighted else { return PremiumFeature.allCases }
@@ -214,6 +220,7 @@ struct PaywallView: View {
                 .frame(width: 320, height: 320)
                 .blur(radius: 80)
                 .offset(y: -200)
+                .accessibilityHidden(true)
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
@@ -230,6 +237,7 @@ struct PaywallView: View {
             .overlay(alignment: .topTrailing) {
                 if let onClose {
                     closeButton(onClose)
+                        .accessibilitySortPriority(1)
                 }
             }
             // Pinned so the purchase button is always visible without scrolling.
@@ -299,13 +307,13 @@ struct PaywallView: View {
             .padding(.bottom, 4)
 
             Text(LocalizedStringKey(headerTitle))
-                .font(.system(size: 30, weight: .bold).width(.expanded))
+                .scaledFont(30, weight: .bold, width: .expanded, relativeTo: .largeTitle)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
 
             Text(LocalizedStringKey(headerSubtitle))
-                .font(.system(size: 16))
-                .foregroundStyle(.white.opacity(0.55))
+                .scaledFont(16, relativeTo: .subheadline)
+                .foregroundStyle(.white.opacity(dimmed(0.7)))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
         }
@@ -345,7 +353,7 @@ struct PaywallView: View {
                 .animation(.easeOut(duration: 0.3), value: filterPreview != nil)
 
                 Text(String(format: NSLocalizedString("Shoot with %@", comment: ""), filter.name))
-                    .font(.system(size: 28, weight: .bold).width(.expanded))
+                    .scaledFont(28, weight: .bold, width: .expanded, relativeTo: .largeTitle)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
 
@@ -353,7 +361,7 @@ struct PaywallView: View {
                      ? String(format: NSLocalizedString("Unlock all %d film stocks and keep every look.", comment: ""), allFilters.count)
                      : String(format: NSLocalizedString("This is your last photo on %1$@. Unlock all %2$d film stocks and keep every look.", comment: ""), filter.name, allFilters.count))
                     .font(.system(size: 15))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.white.opacity(dimmed(0.7)))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -386,19 +394,20 @@ struct PaywallView: View {
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(verbatim: f.title)
-                            .font(.system(size: 14, weight: .semibold))
+                            .scaledFont(14, weight: .semibold, relativeTo: .footnote)
                             .foregroundStyle(.white)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                         Text(LocalizedStringKey(f.subtitle))
                             .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.45))
+                            .foregroundStyle(.white.opacity(dimmed(0.65)))
                             .lineLimit(2, reservesSpace: true)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(12)
+                .accessibilityElement(children: .combine)
                 .background(.white.opacity(isHighlighted ? 0.09 : 0.05), in: RoundedRectangle(cornerRadius: 14))
                 .overlay {
                     if isHighlighted {
@@ -441,7 +450,7 @@ struct PaywallView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
                         Text(verbatim: PremiumManager.planName(for: product.id) ?? product.displayName)
-                            .font(.system(size: 15, weight: .semibold))
+                            .scaledFont(15, weight: .semibold, relativeTo: .subheadline)
                             .foregroundStyle(.white)
                         if hasEligibleTrial(product), let trial = product.freeTrialText {
                             badge(String(format: NSLocalizedString("%@ FREE", comment: ""), trial).uppercased(),
@@ -452,13 +461,13 @@ struct PaywallView: View {
                     }
                     Text(verbatim: planSubtitle(for: product))
                         .font(.system(size: 12))
-                        .foregroundStyle(isYearly && savingsPercent(for: product) != nil ? accent.opacity(0.85) : .white.opacity(0.45))
+                        .foregroundStyle(isYearly && savingsPercent(for: product) != nil ? accent.opacity(0.85) : .white.opacity(dimmed(0.65)))
                 }
 
                 Spacer()
 
                 Text(product.displayPrice)
-                    .font(.system(size: 16, weight: .bold))
+                    .scaledFont(16, weight: .bold, relativeTo: .subheadline)
                     .foregroundStyle(.white)
 
                 ZStack {
@@ -485,7 +494,23 @@ struct PaywallView: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: planAccessibilityLabel(for: product)))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .sensoryFeedback(.selection, trigger: selectedProductID)
+    }
+
+    /// "Yearly, 7 days free, then $19.99 a year" — the whole plan read as one element.
+    private func planAccessibilityLabel(for product: Product) -> String {
+        let name = PremiumManager.planName(for: product.id) ?? product.displayName
+        if hasEligibleTrial(product), let trial = product.freeTrialText {
+            return [name, String(format: NSLocalizedString("%@ free, then %@.", comment: "Plan read by VoiceOver"),
+                                 trial, product.pricePerPeriodText)].joined(separator: ", ")
+        }
+        if product.subscription == nil {
+            return [name, product.displayPrice, planSubtitle(for: product)].joined(separator: ", ")
+        }
+        return [name, product.pricePerPeriodText, planSubtitle(for: product)].joined(separator: ", ")
     }
 
     private func badge(_ text: String, color: Color) -> some View {
@@ -527,7 +552,7 @@ struct PaywallView: View {
             ForEach(["Monthly", "Yearly", "Lifetime"], id: \.self) { name in
                 HStack {
                     Text(LocalizedStringKey(name))
-                        .font(.system(size: 15, weight: .semibold))
+                        .scaledFont(15, weight: .semibold, relativeTo: .subheadline)
                     Spacer()
                     Text("–")
                 }
@@ -569,7 +594,7 @@ struct PaywallView: View {
             if let ctaDisclosure {
                 Text(verbatim: ctaDisclosure)
                     .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(.white.opacity(dimmed(0.7)))
                     .multilineTextAlignment(.center)
                     .contentTransition(.opacity)
                     .animation(.easeInOut(duration: 0.2), value: ctaDisclosure)
@@ -588,7 +613,7 @@ struct PaywallView: View {
                     ProgressView().tint(.black)
                 } else {
                     Text(verbatim: ctaTitle)
-                        .font(.system(size: 17, weight: .bold))
+                        .scaledFont(17, weight: .bold, relativeTo: .body)
                         .foregroundStyle(.black)
                         .contentTransition(.opacity)
                 }
@@ -631,36 +656,46 @@ struct PaywallView: View {
                 Task { await premium.restorePurchases() }
             } label: {
                 Text("Restore Purchases")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .scaledFont(14, weight: .medium, relativeTo: .footnote)
+                    .foregroundStyle(.white.opacity(dimmed(0.65)))
             }
 
             if let onClose {
                 Button(action: onClose) {
                     Text("Continue for Free")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.3))
+                        .scaledFont(13, relativeTo: .footnote)
+                        .foregroundStyle(.white.opacity(dimmed(0.6)))
                         .underline()
+                        .padding(.vertical, 12)
+                        .contentShape(Rectangle())
+                        .padding(.vertical, -12)
                 }
             }
 
             Text("Subscriptions auto-renew unless cancelled. Manage in Settings.")
                 .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.2))
+                .foregroundStyle(.white.opacity(dimmed(0.55)))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 
             HStack(spacing: 16) {
                 if let privacy = URL(string: "https://poly-vintage.com/privacy") {
                     Link("Privacy Policy", destination: privacy)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                        .padding(.vertical, -14)
                 }
                 Text("·")
+                    .accessibilityHidden(true)
                 if let terms = URL(string: "https://poly-vintage.com/terms") {
                     Link("Terms of Use", destination: terms)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                        .padding(.vertical, -14)
                 }
             }
-            .font(.system(size: 11))
-            .foregroundStyle(.white.opacity(0.25))
+            .scaledFont(11, relativeTo: .caption2)
+            .foregroundStyle(.white.opacity(dimmed(0.55)))
         }
         .padding(.top, 20)
         .padding(.bottom, 16)
@@ -729,14 +764,14 @@ private struct PremiumWelcomeView: View {
                 .padding(.bottom, 40)
 
                 Text("Welcome to Premium")
-                    .font(.system(size: 30, weight: .bold).width(.expanded))
+                    .scaledFont(30, weight: .bold, width: .expanded, relativeTo: .largeTitle)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .opacity(appeared ? 1 : 0)
                     .offset(y: appeared ? 0 : 12)
 
                 Text("Every film stock, frame and font is now yours. Thank you for supporting Poly.")
-                    .font(.system(size: 16))
+                    .scaledFont(16, relativeTo: .subheadline)
                     .foregroundStyle(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
@@ -747,7 +782,7 @@ private struct PremiumWelcomeView: View {
 
                 Button(action: onContinue) {
                     Text("Start Shooting")
-                        .font(.system(size: 17, weight: .bold))
+                        .scaledFont(17, weight: .bold, relativeTo: .body)
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity)
                         .frame(height: 54)

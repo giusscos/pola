@@ -9,6 +9,9 @@ struct OnboardingView: View {
     @State private var page = 0
     @State private var appeared = false
     @State private var filterPreviews: [String: UIImage] = [:]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// VoiceOver moves to each page's title when the page changes.
+    @AccessibilityFocusState private var focusedTitle: Int?
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -41,13 +44,20 @@ struct OnboardingView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6).delay(0.1)) { appeared = true }
+            if reduceMotion {
+                appeared = true
+            } else {
+                withAnimation(.easeOut(duration: 0.6).delay(0.1)) { appeared = true }
+            }
         }
         .task {
             await generateFilterPreviews()
         }
         .onChange(of: page) { _, newPage in
             if newPage == Self.paywallPage { Analytics.track(.onboardingCompleted) }
+            if newPage < Self.paywallPage {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { focusedTitle = newPage }
+            }
         }
     }
 
@@ -58,13 +68,14 @@ struct OnboardingView: View {
             HStack {
                 Spacer()
                 Button {
-                    withAnimation(.spring(duration: 0.4, bounce: 0.1)) { page = Self.paywallPage }
+                    withAnimation(reduceMotion ? nil : .spring(duration: 0.4, bounce: 0.1)) { page = Self.paywallPage }
                 } label: {
                     Text("Skip")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.55))
+                        .scaledFont(15, weight: .medium, relativeTo: .subheadline)
+                        .foregroundStyle(.white.opacity(0.75))
                         .padding(.horizontal, 4)
-                        .padding(.vertical, 8)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .padding(.top, 8)
                 .padding(.trailing, 24)
@@ -81,7 +92,7 @@ struct OnboardingView: View {
                     HStack(spacing: 6) {
                         // Wrapped explicitly: a ternary of literals would pick Text(String) and skip localization.
                         Text(LocalizedStringKey(page == 0 ? "Get Started" : "Continue"))
-                            .font(.system(size: 17, weight: .semibold))
+                            .scaledFont(17, weight: .semibold, relativeTo: .body)
                         Image(systemName: "arrow.right")
                             .font(.system(size: 14, weight: .semibold))
                     }
@@ -103,9 +114,12 @@ struct OnboardingView: View {
                 Capsule()
                     .fill(i == page ? Color.white : Color.white.opacity(0.3))
                     .frame(width: i == page ? 22 : 6, height: 6)
-                    .animation(.spring(duration: 0.35, bounce: 0.25), value: page)
+                    .animation(reduceMotion ? nil : .spring(duration: 0.35, bounce: 0.25), value: page)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: String(format: NSLocalizedString("Page %d of %d", comment: ""),
+                                                  page + 1, Self.paywallPage)))
     }
 
     // MARK: - Welcome
@@ -140,6 +154,7 @@ struct OnboardingView: View {
                             .scaledToFit()
                             .frame(width: 96, height: 96)
                             .clipShape(RoundedRectangle(cornerRadius: 22))
+                            .accessibilityHidden(true)
                     } else {
                         Image(systemName: "camera.viewfinder")
                             .font(.system(size: 48, weight: .thin))
@@ -154,11 +169,13 @@ struct OnboardingView: View {
                     Text("Poly.")
                         .font(.system(size: 60, weight: .bold).width(.expanded))
                         .foregroundStyle(.white)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityFocused($focusedTitle, equals: 0)
                         .offset(y: appeared ? 0 : 20)
                         .opacity(appeared ? 1 : 0)
 
                     Text("Authentic instant photos,\ndirect from your camera.")
-                        .font(.system(size: 18, weight: .regular))
+                        .scaledFont(18, weight: .regular, relativeTo: .body)
                         .foregroundStyle(.white.opacity(0.6))
                         .multilineTextAlignment(.center)
                         .lineSpacing(5)
@@ -205,14 +222,16 @@ struct OnboardingView: View {
 
                     // Title
                     Text(LocalizedStringKey(title))
-                        .font(.system(size: 38, weight: .bold))
+                        .scaledFont(38, weight: .bold, relativeTo: .largeTitle)
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityFocused($focusedTitle, equals: pageIndex)
                         .lineSpacing(2)
 
                     // Description
                     Text(LocalizedStringKey(description))
-                        .font(.system(size: 16))
+                        .scaledFont(16, relativeTo: .subheadline)
                         .foregroundStyle(.white.opacity(0.55))
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)
@@ -347,13 +366,15 @@ struct OnboardingView: View {
 
                 VStack(spacing: 14) {
                     Text(LocalizedStringKey(title))
-                        .font(.system(size: 38, weight: .bold))
+                        .scaledFont(38, weight: .bold, relativeTo: .largeTitle)
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityFocused($focusedTitle, equals: 2)
                         .lineSpacing(2)
 
                     Text(LocalizedStringKey(description))
-                        .font(.system(size: 16))
+                        .scaledFont(16, relativeTo: .subheadline)
                         .foregroundStyle(.white.opacity(0.55))
                         .multilineTextAlignment(.center)
                         .lineSpacing(4)

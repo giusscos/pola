@@ -85,6 +85,17 @@ struct CameraPreviewView: UIViewRepresentable {
             focusSquare.alpha = 0
             focusSquare.isUserInteractionEnabled = false
             focusSquare.isAccessibilityElement = false
+            isAccessibilityElement = true
+            accessibilityLabel = NSLocalizedString("Viewfinder", comment: "")
+            accessibilityHint = NSLocalizedString("Double-tap to focus in the center.", comment: "")
+        }
+
+        /// VoiceOver's double-tap focuses on the middle of the frame.
+        override func accessibilityActivate() -> Bool {
+            let center = CGPoint(x: bounds.midX, y: bounds.midY)
+            onFocus?(previewLayer.captureDevicePointConverted(fromLayerPoint: center))
+            showFocusSquare(at: center)
+            return true
         }
 
         required init?(coder: NSCoder) { fatalError() }

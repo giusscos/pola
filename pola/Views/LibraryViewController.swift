@@ -313,6 +313,31 @@ final class LibraryViewController: UICollectionViewController {
             .id("\(id.uuidString)-\(Int(entry.developmentProgress * 100))")
             .aspectRatio(entry.frameFormat.frameAspect, contentMode: .fit)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityAddTraits(selectMode && isSelected ? .isSelected : [])
+            .accessibilityAction(named: Text(selectMode && isSelected ? "Deselect" : "Select")) { [weak self] in
+                guard let self else { return }
+                if !self.isSelectMode { self.isSelectMode = true }
+                self.toggleSelection(id)
+            }
+            .accessibilityAction(named: Text(entry.isFavorite ? "Remove from Favorites" : "Add to Favorites")) {
+                entry.isFavorite.toggle()
+            }
+            .accessibilityAction(named: Text("Edit Caption & Notes")) { [weak self] in
+                self?.editEntry(entry)
+            }
+            .accessibilityAction(named: Text("Share")) { [weak self] in
+                guard let self else { return }
+                Task {
+                    let items = await prepareShareItems(for: [entry], videoDirectory: store.videoDirectory)
+                    self.presentShareSheet(items: items)
+                }
+            }
+            .accessibilityAction(named: Text("Save to Photos")) { [weak self] in
+                Task { await self?.saveToPhotosApp([entry]) }
+            }
+            .accessibilityAction(named: Text("Delete")) { [weak self] in
+                self?.deleteEntries(ids: [id])
+            }
             .overlay(alignment: .bottomTrailing) {
                 if entry.isFavorite {
                     Image(systemName: "heart.fill")
@@ -331,6 +356,7 @@ final class LibraryViewController: UICollectionViewController {
                         .symbolRenderingMode(.palette)
                         .foregroundStyle(.white, .blue)
                         .padding(6)
+                        .accessibilityHidden(true)
                 }
             }
         }
@@ -500,7 +526,11 @@ final class LibraryViewController: UICollectionViewController {
     private lazy var titleStack: UIStackView = {
         let titleLabel = UILabel()
         titleLabel.text = NSLocalizedString("Library", comment: "")
-        titleLabel.font = .systemFont(ofSize: 22, weight: .bold)
+        titleLabel.font = UIFontMetrics(forTextStyle: .title2).scaledFont(for: .systemFont(ofSize: 22, weight: .bold),
+                                                                         maximumPointSize: 34)
+        titleLabel.adjustsFontForContentSizeCategory = true
+        titleLabel.accessibilityTraits = .header
+        subtitleLabel.adjustsFontForContentSizeCategory = true
         subtitleLabel.font = .preferredFont(forTextStyle: .caption1)
         subtitleLabel.textColor = .secondaryLabel
 

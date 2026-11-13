@@ -163,9 +163,18 @@ final class PolaroidPrintAnimationVC: UIViewController {
         icon.setContentHuggingPriority(.required, for: .horizontal)
 
         let lbl = UILabel()
-        lbl.text = "Shake to develop faster"
-        lbl.font = .systemFont(ofSize: 12)
-        lbl.textColor = UIColor.white.withAlphaComponent(0.82)
+        lbl.text = NSLocalizedString("Shake to develop faster", comment: "")
+        lbl.font = .preferredFont(forTextStyle: .footnote)
+        lbl.adjustsFontForContentSizeCategory = true
+        lbl.textColor = UIColor.white.withAlphaComponent(0.9)
+        icon.isAccessibilityElement = false
+
+        // Tapping the hint does what a shake does, for anyone who can't shake the phone.
+        blur.isAccessibilityElement = true
+        blur.accessibilityLabel = NSLocalizedString("Develop faster", comment: "")
+        blur.accessibilityHint = NSLocalizedString("Shake to develop faster", comment: "")
+        blur.accessibilityTraits = .button
+        blur.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(developFaster)))
 
         let stack = UIStackView(arrangedSubviews: [icon, lbl])
         stack.axis = .horizontal
@@ -198,7 +207,8 @@ final class PolaroidPrintAnimationVC: UIViewController {
             let cv = captionCard.contentView
 
             captionField.placeholder = NSLocalizedString("Add a caption...", comment: "")
-            captionField.font = .systemFont(ofSize: 15)
+            captionField.font = .preferredFont(forTextStyle: .body)
+            captionField.adjustsFontForContentSizeCategory = true
             captionField.backgroundColor = .systemGray6
             captionField.layer.cornerRadius = 10
             captionField.clipsToBounds = true
@@ -282,7 +292,31 @@ final class PolaroidPrintAnimationVC: UIViewController {
 
     // MARK: Animation sequence
 
+    private var reduceMotion: Bool { UIAccessibility.isReduceMotionEnabled }
+
     private func startPrint() {
+        polaroidView.isAccessibilityElement = true
+        polaroidView.accessibilityLabel = NSLocalizedString("New print", comment: "")
+        polaroidView.accessibilityValue = NSLocalizedString("Still developing", comment: "")
+        polaroidView.accessibilityCustomActions = [
+            UIAccessibilityCustomAction(name: NSLocalizedString("Develop faster", comment: "")) { [weak self] _ in
+                self?.developFaster()
+                return true
+            }
+        ]
+        UIAccessibility.post(notification: .announcement, argument: NSLocalizedString("Printing", comment: ""))
+        // Reduce Motion: the print fades in where it will develop instead of sliding and springing.
+        if reduceMotion {
+            polaroidView.center = screenCenter
+            polaroidView.alpha = 0
+            UIView.animate(withDuration: 0.35) {
+                self.polaroidView.alpha = 1
+                self.dimView.alpha = 0.55
+            } completion: { _ in
+                self.didReachCenter()
+            }
+            return
+        }
         UIView.animate(
             withDuration: 1.8,
             delay: 0,
@@ -308,16 +342,34 @@ final class PolaroidPrintAnimationVC: UIViewController {
             self.polaroidView.center = self.screenCenter
             self.dimView.alpha = 0.55
         } completion: { _ in
-            self.impactMedium.impactOccurred()
-            self.showCaptionCard()
-            self.startDevelopment()
-            self.startShakeDetection()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { self.revealShakeHint() }
+            self.didReachCenter()
         }
+    }
+
+    private func didReachCenter() {
+        impactMedium.impactOccurred()
+        showCaptionCard()
+        startDevelopment()
+        startShakeDetection()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { self.revealShakeHint() }
+        // VoiceOver lands on the caption field (or Done) once it's on screen.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            UIAccessibility.post(notification: .screenChanged,
+                                 argument: self.captionEnabled ? self.captionField : self.doneBtn)
+        }
+    }
+
+    @objc private func developFaster() {
+        developStart -= 6
+        impactLight.impactOccurred()
     }
 
     private func showCaptionCard() {
         let target: UIView = captionEnabled ? captionCard : doneBtn
+        if reduceMotion {
+            UIView.animate(withDuration: 0.25) { target.alpha = 1 }
+            return
+        }
         target.transform = CGAffineTransform(translationX: 0, y: 50)
         UIView.animate(
             withDuration: 0.45,
@@ -333,6 +385,10 @@ final class PolaroidPrintAnimationVC: UIViewController {
 
     private func revealShakeHint() {
         guard !isDone else { return }
+        if reduceMotion {
+            UIView.animate(withDuration: 0.25) { self.shakeHint.alpha = 1 }
+            return
+        }
         shakeHint.transform = CGAffineTransform(scaleX: 0.88, y: 0.88)
         UIView.animate(
             withDuration: 0.38,
@@ -379,6 +435,14 @@ final class PolaroidPrintAnimationVC: UIViewController {
     }
 
     private func flyToBottom() {
+        if reduceMotion {
+            UIView.animate(withDuration: 0.3) {
+                self.polaroidView.alpha = 0
+            } completion: { _ in
+                self.onComplete()
+            }
+            return
+        }
         let h = view.bounds.height
         let currentX = polaroidView.center.x
         UIView.animate(
@@ -420,7 +484,10 @@ final class PolaroidPrintAnimationVC: UIViewController {
         if progress >= 1.0 {
             displayLink?.invalidate()
             displayLink = nil
+            // The haptic also marks the moment when Reduce Motion has shortened the animation.
             UINotificationFeedbackGenerator().notificationOccurred(.success)
+            polaroidView.accessibilityValue = NSLocalizedString("Developed", comment: "")
+            UIAccessibility.post(notification: .announcement, argument: NSLocalizedString("Developed", comment: ""))
         }
     }
 
@@ -652,6 +719,25 @@ final class MultiPolaroidPrintAnimationVC: UIViewController {
         let printEnd = CGPoint(x: w / 2, y: safeTop + polaroidHeight / 2 + 10)
         let stackCenter = CGPoint(x: w / 2, y: h / 2 - 50)
 
+        UIAccessibility.post(notification: .announcement, argument: NSLocalizedString("Printing", comment: ""))
+        // Reduce Motion: the stack fades in where it ends up instead of printing card by card.
+        if UIAccessibility.isReduceMotionEnabled {
+            for (i, card) in cardViews.enumerated() {
+                let offset = stackOffsets[i % stackOffsets.count]
+                card.center = CGPoint(x: stackCenter.x + offset.0, y: stackCenter.y + offset.1)
+                card.transform = CGAffineTransform(rotationAngle: stackRotations[i % stackRotations.count] * .pi / 180)
+                card.alpha = 0
+            }
+            UIView.animate(withDuration: 0.35) {
+                self.cardViews.forEach { $0.alpha = 1 }
+                self.dimView.alpha = 0.50
+            } completion: { _ in
+                self.impactMedium.impactOccurred()
+                self.showControls()
+            }
+            return
+        }
+
         for card in cardViews {
             card.center    = CGPoint(x: w / 2, y: startY)
             card.transform = .identity
@@ -700,6 +786,13 @@ final class MultiPolaroidPrintAnimationVC: UIViewController {
 
     private func showControls() {
         let targets: [UIView?] = [countBadge, doneBtn]
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            UIAccessibility.post(notification: .screenChanged, argument: self.countBadge ?? self.doneBtn)
+        }
+        if UIAccessibility.isReduceMotionEnabled {
+            UIView.animate(withDuration: 0.25) { targets.compactMap { $0 }.forEach { $0.alpha = 1 } }
+            return
+        }
         for target in targets.compactMap({ $0 }) {
             target.transform = CGAffineTransform(translationX: 0, y: 40)
             UIView.animate(
@@ -728,6 +821,14 @@ final class MultiPolaroidPrintAnimationVC: UIViewController {
             self.countBadge?.alpha = 0
             self.dimView.alpha    = 0
         } completion: { _ in
+            if UIAccessibility.isReduceMotionEnabled {
+                UIView.animate(withDuration: 0.25) {
+                    self.cardViews.forEach { $0.alpha = 0 }
+                } completion: { _ in
+                    self.onComplete()
+                }
+                return
+            }
             UIView.animate(
                 withDuration: 0.38,
                 delay: 0,

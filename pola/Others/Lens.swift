@@ -225,6 +225,7 @@ nonisolated enum FilmPipeline {
 /// darker corners and the light leak.
 struct LensViewfinderHint: View {
     let lens: Lens
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private static let grainTile: UIImage? = {
         let size: CGFloat = 256
@@ -258,7 +259,8 @@ struct LensViewfinderHint: View {
             }
 
             if let tile = Self.grainTile {
-                TimelineView(.periodic(from: .now, by: 1.0 / 12.0)) { context in
+                // Still grain under Reduce Motion.
+                TimelineView(.animation(minimumInterval: 1.0 / 12.0, paused: reduceMotion)) { context in
                     let seed = context.date.timeIntervalSinceReferenceDate
                     let offset = CGSize(
                         width: -CGFloat(Int(seed * 997) % 256),

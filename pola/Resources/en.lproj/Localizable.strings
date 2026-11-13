@@ -323,3 +323,24 @@
 "Film & Frame" = "Film & Frame";
 "Develop" = "Develop";
 "Preview" = "Preview";
+
+/* Accessibility */
+"Camera mode" = "Camera mode";
+"Locked" = "Locked";
+"Free" = "Free";
+"New" = "New";
+"New film stocks" = "New film stocks";
+"Zoom %@ times" = "Zoom %@ times";
+"Viewfinder" = "Viewfinder";
+"Double-tap to focus in the center." = "Double-tap to focus in the center.";
+"Photo" = "Photo";
+"Still developing" = "Still developing";
+"Flip" = "Flip";
+"Deselect" = "Deselect";
+"Develop faster" = "Develop faster";
+"Developed" = "Developed";
+"Shake to develop faster" = "Shake to develop faster";
+"New print" = "New print";
+"Printing" = "Printing";
+"%@ free, then %@." = "%@ free, then %@.";
+"Page %d of %d" = "Page %d of %d";

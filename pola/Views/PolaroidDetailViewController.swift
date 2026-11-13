@@ -160,10 +160,12 @@ final class PolaroidDetailViewController: UIViewController {
         if progress >= 1.0 {
             entry.developmentProgress = 1.0
             UINotificationFeedbackGenerator().notificationOccurred(.success)
+            UIAccessibility.post(notification: .announcement, argument: NSLocalizedString("Developed", comment: ""))
             try? modelContext.save()
             developmentLink?.invalidate()
             developmentLink = nil
             shakeManager.stopAccelerometerUpdates()
+            updateToolbar()
         }
     }
 
@@ -343,6 +345,12 @@ final class PolaroidDetailViewController: UIViewController {
             let playBtn = UIBarButtonItem(image: UIImage(systemName: playIcon), style: .plain,
                                           target: self, action: #selector(togglePlay))
             navigationItem.rightBarButtonItems = [playBtn, loopBtn]
+        } else if let entry = currentEntry, entry.developmentProgress < 1.0 {
+            // The visible alternative to shaking the phone.
+            let developBtn = UIBarButtonItem(image: UIImage(systemName: "wand.and.rays"), style: .plain,
+                                             target: self, action: #selector(developFaster))
+            developBtn.accessibilityLabel = NSLocalizedString("Develop faster", comment: "")
+            navigationItem.rightBarButtonItems = [developBtn]
         } else {
             navigationItem.rightBarButtonItems = []
         }
@@ -366,6 +374,12 @@ final class PolaroidDetailViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    /// Same as one shake: six seconds of development.
+    @objc private func developFaster() {
+        shakeBonus += 6
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
 
     @objc private func toggleFavorite() {
         guard let entry = currentEntry else { return }

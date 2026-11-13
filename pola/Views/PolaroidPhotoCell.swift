@@ -179,6 +179,15 @@ struct PolaroidPhotoCell: View {
         self._showingBack = State(initialValue: false)
     }
 
+    private var accessibilityDescription: String {
+        var parts = [NSLocalizedString(videoURL == nil ? "Photo" : isTimelapse ? "Time Lapse" : "Video", comment: "")]
+        if !caption.isEmpty { parts.append(caption) }
+        if let timestamp { parts.append(timestamp.formatted(date: .abbreviated, time: .shortened)) }
+        if let filterName { parts.append(filterName) }
+        if revealProgress < 1.0 { parts.append(NSLocalizedString("Still developing", comment: "")) }
+        return parts.joined(separator: ", ")
+    }
+
     private var revealProgress: Double {
         animatedExternally ? developmentProgress : localReveal
     }
@@ -209,6 +218,19 @@ struct PolaroidPhotoCell: View {
                     onSingleTap?()
                 })
         )
+        // One element per print: what it is, its caption, date and stock, with flipping as an action
+        // because the double-tap that flips it is taken by VoiceOver.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: accessibilityDescription))
+        .accessibilityValue(Text(verbatim: showingBack
+            ? (backText.isEmpty ? NSLocalizedString("Back of the print", comment: "") : backText)
+            : ""))
+        .accessibilityAddTraits(onSingleTap != nil ? .isButton : .isImage)
+        .accessibilityAction { onSingleTap?() }
+        .accessibilityAction(named: Text("Flip")) {
+            guard revealProgress >= 1.0 else { return }
+            flipCard()
+        }
         .onChange(of: developmentProgress) { _, newValue in
             guard !animatedExternally else { return }
             if newValue >= 1.0 {

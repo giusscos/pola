@@ -562,6 +562,7 @@ struct FiltersView: View {
                     // Pack names are product names and stay in English, like the stock names.
                     Text(verbatim: "Classic Film")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                         .padding(.horizontal, 20)
 
                     filterGrid(for: filmFilters, includeOriginal: true)
@@ -581,6 +582,8 @@ struct FiltersView: View {
                             NewBadge()
                         }
                     }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(.isHeader)
                     .padding(.horizontal, 20)
 
                     Text("Grain and vintage optics, stacked on top of any film.")
@@ -593,12 +596,14 @@ struct FiltersView: View {
 
                     Text("Frame")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                         .padding(.horizontal, 20)
 
                     frameRow
 
                     Text("Format")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                         .padding(.horizontal, 20)
 
                     formatRow
@@ -628,6 +633,8 @@ struct FiltersView: View {
                 NewBadge()
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
         .padding(.horizontal, 20)
     }
 
@@ -766,8 +773,15 @@ struct FiltersView: View {
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(locked ? .secondary : .primary)
             }
+            .overlay(alignment: .topTrailing) {
+                if isSelected { SelectionCheckmark().offset(x: 4, y: -4) }
+            }
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(LocalizedStringKey(format.displayName)))
+        .accessibilityValue(Text(LocalizedStringKey(locked ? "Locked" : "")))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .sensoryFeedback(.selection, trigger: selectedFrameFormatRaw)
     }
 
@@ -812,8 +826,15 @@ struct FiltersView: View {
                     .foregroundStyle(locked ? .secondary : .primary)
                     .lineLimit(1)
             }
+            .overlay(alignment: .topTrailing) {
+                if isSelected { SelectionCheckmark().offset(x: 6, y: -6) }
+            }
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: name ?? NSLocalizedString("Classic", comment: "")))
+        .accessibilityValue(Text(LocalizedStringKey(locked ? "Locked" : "")))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .sensoryFeedback(.selection, trigger: selectedPackName)
     }
 
@@ -879,6 +900,18 @@ struct FiltersView: View {
         var lensed = await FilmStockPreviews.renderLenses(film: film, from: small)
         lensed[""] = previews[selectedFilterName ?? ""] ?? small
         lensPreviews = lensed
+    }
+}
+
+/// Marks the selected item with a shape as well as a coloured border (Differentiate Without Colour).
+struct SelectionCheckmark: View {
+    var body: some View {
+        Image(systemName: "checkmark.circle.fill")
+            .font(.system(size: 16, weight: .semibold))
+            .symbolRenderingMode(.palette)
+            .foregroundStyle(.black, .white)
+            .padding(3)
+            .accessibilityHidden(true)
     }
 }
 

@@ -88,6 +88,40 @@ final class CameraModeSelectorUIView: UIView {
         }
 
         updateButtonStyles(animated: false)
+
+        // One adjustable element for VoiceOver (swipe up/down changes mode), with an action per
+        // mode so Voice Control and VoiceOver can also pick one directly.
+        isAccessibilityElement = true
+        accessibilityTraits = .adjustable
+        accessibilityLabel = NSLocalizedString("Camera mode", comment: "")
+        accessibilityCustomActions = modes.map { mode in
+            UIAccessibilityCustomAction(name: NSLocalizedString(mode.rawValue, comment: "")) { [weak self] _ in
+                self?.selectFromAccessibility(mode)
+                return true
+            }
+        }
+        updateAccessibilityValue()
+    }
+
+    private func updateAccessibilityValue() {
+        accessibilityValue = NSLocalizedString(currentMode.rawValue, comment: "")
+    }
+
+    private func selectFromAccessibility(_ mode: CameraMode) {
+        guard mode != currentMode else { return }
+        setMode(mode, animated: !UIAccessibility.isReduceMotionEnabled)
+        onModeChanged?(mode)
+        selectionFeedback.selectionChanged()
+    }
+
+    override func accessibilityIncrement() {
+        guard let index = modes.firstIndex(of: currentMode), index + 1 < modes.count else { return }
+        selectFromAccessibility(modes[index + 1])
+    }
+
+    override func accessibilityDecrement() {
+        guard let index = modes.firstIndex(of: currentMode), index > 0 else { return }
+        selectFromAccessibility(modes[index - 1])
     }
 
     // MARK: - Haptics
@@ -213,6 +247,7 @@ final class CameraModeSelectorUIView: UIView {
     // MARK: - Button visual state
 
     private func updateButtonStyles(animated: Bool) {
+        updateAccessibilityValue()
         for (i, btn) in buttons.enumerated() {
             let sel   = modes[i] == currentMode
             let scale = CGFloat(sel ? 1.0 : 0.82)

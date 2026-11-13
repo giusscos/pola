@@ -323,3 +323,24 @@
 "Film & Frame" = "Pellicola e cornice";
 "Develop" = "Sviluppa";
 "Preview" = "Anteprima";
+
+/* Accessibility */
+"Camera mode" = "Modalità fotocamera";
+"Locked" = "Bloccato";
+"Free" = "Gratis";
+"New" = "Nuovo";
+"New film stocks" = "Nuove pellicole";
+"Zoom %@ times" = "Zoom %@ volte";
+"Viewfinder" = "Mirino";
+"Double-tap to focus in the center." = "Tocca due volte per mettere a fuoco al centro.";
+"Photo" = "Foto";
+"Still developing" = "In sviluppo";
+"Flip" = "Gira";
+"Deselect" = "Deseleziona";
+"Develop faster" = "Sviluppa più in fretta";
+"Developed" = "Sviluppata";
+"Shake to develop faster" = "Scuoti per sviluppare più in fretta";
+"New print" = "Nuova stampa";
+"Printing" = "Stampa in corso";
+"%@ free, then %@." = "%@ gratis, poi %@.";
+"Page %d of %d" = "Pagina %d di %d";
