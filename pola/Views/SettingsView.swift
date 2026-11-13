@@ -173,10 +173,10 @@ struct SettingsView: View {
 
                     Toggle(isOn: $timelapseSaveAsVideo) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Save as video polaroid")
+                            Text("Save as a video print")
                             Text(verbatim: timelapseSaveAsVideo
                                  ? NSLocalizedString("All frames combined into one video", comment: "")
-                                 : String(format: NSLocalizedString("%d separate photo polaroids", comment: ""), totalTimelapsePhotos))
+                                 : String(format: NSLocalizedString("%d separate photo prints", comment: ""), totalTimelapsePhotos))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -198,7 +198,7 @@ struct SettingsView: View {
                     .pickerStyle(.menu)
                 }
 
-                Section("Polaroid") {
+                Section("Prints") {
                     if premium.isPremium {
                         Picker(selection: $polaroidFontRaw) {
                             ForEach(PolaroidFont.allCases, id: \.rawValue) { font in
@@ -236,7 +236,7 @@ struct SettingsView: View {
                 } header: {
                     Text("iCloud")
                 } footer: {
-                    Text("Your polaroids sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud.")
+                    Text("Your prints sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud.")
                 }
 
                 Section("Privacy") {

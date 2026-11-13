@@ -63,12 +63,12 @@ enum PremiumFeature: CaseIterable {
     var subtitle: String {
         switch self {
         case .filmStocks:   "Classic Film and Weird Film packs"
-        case .frameColors:  "Any border color, on any polaroid"
+        case .frameColors:  "Any border color, on any print"
         case .frameFormats: "Square, Wide and Mini sizes"
-        case .doubleExposure: "Two shots blended on one polaroid"
+        case .doubleExposure: "Two shots blended on one print"
         case .captionStyle: "6 fonts × 4 weights"
         case .dateStamp:    "Retro date imprint on your shots"
-        case .widget:       "A polaroid a day on your Home Screen"
+        case .widget:       "A print a day on your Home Screen"
         case .printSheets:  "A4 layouts ready to print at home"
         case .cleanExports: "No logo on shares and saves"
         case .appIcons:     "7 film-stock colors for your Home Screen"
@@ -79,14 +79,14 @@ enum PremiumFeature: CaseIterable {
     var pitch: String {
         switch self {
         case .filmStocks:   "Every film stock, every look."
-        case .frameColors:  "Give every polaroid its own color."
+        case .frameColors:  "Give every print its own color."
         case .frameFormats: "Shoot square, wide or mini."
-        case .doubleExposure: "Layer two shots into one dreamy polaroid."
+        case .doubleExposure: "Layer two shots into one dreamy print."
         case .captionStyle: "Make every caption yours."
         case .dateStamp:    "Stamp the date like a real film camera."
-        case .widget:       "Relive a polaroid every day on your Home Screen."
-        case .printSheets:  "Print your polaroids at home."
-        case .cleanExports: "Share your polaroids without the logo."
+        case .widget:       "Relive a print every day on your Home Screen."
+        case .printSheets:  "Print your instant photos at home."
+        case .cleanExports: "Share your prints without the logo."
         case .appIcons:     "Give your Home Screen a splash of film color."
         }
     }
@@ -273,7 +273,7 @@ struct PaywallView: View {
 
     private var headerSubtitle: String {
         switch context {
-        case .milestone: "Take your polaroids further with every film stock, frame and font."
+        case .milestone: "Take your prints further with every film stock, frame and font."
         case .feature(let f): f.pitch
         default: "Unlock the full experience"
         }

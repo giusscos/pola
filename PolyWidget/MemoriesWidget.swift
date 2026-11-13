@@ -14,7 +14,7 @@ struct MemoriesWidget: Widget {
             MemoriesWidgetView(entry: entry)
         }
         .configurationDisplayName(Text("Memories"))
-        .description(Text("A polaroid from your library, with photos from this day in past years."))
+        .description(Text("A print from your library, with photos from this day in past years."))
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
@@ -182,7 +182,7 @@ struct MemoriesWidgetView: View {
             Text("Memories")
                 .font(.system(size: 15, weight: .bold).width(.expanded))
                 .foregroundStyle(.white)
-            Text("Unlock Premium to relive a polaroid every day.")
+            Text("Unlock Premium to relive a print every day.")
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
@@ -195,7 +195,7 @@ struct MemoriesWidgetView: View {
             Image(systemName: "camera.fill")
                 .font(.system(size: 24))
                 .foregroundStyle(.white.opacity(0.8))
-            Text("Take your first polaroid to see it here.")
+            Text("Take your first photo to see it here.")
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)

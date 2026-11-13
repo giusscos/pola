@@ -1578,7 +1578,7 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Remember where you shot it?")
                         .font(.headline)
-                    Text("Double-tap a polaroid to flip it and see a map of where it was taken.")
+                    Text("Double-tap a print to flip it and see a map of where it was taken.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -1809,10 +1809,10 @@ private struct TimeLapseSettingsView: View {
                 Section("Output") {
                     Toggle(isOn: $saveAsVideo) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Save as video polaroid")
+                            Text("Save as a video print")
                             Text(verbatim: saveAsVideo
                                  ? NSLocalizedString("All frames combined into one video", comment: "")
-                                 : String(format: NSLocalizedString("%d separate photo polaroids", comment: ""), totalPhotos))
+                                 : String(format: NSLocalizedString("%d separate photo prints", comment: ""), totalPhotos))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

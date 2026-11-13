@@ -19,7 +19,7 @@ struct OnboardingView: View {
                     color: Color(red: 1.0, green: 0.78, blue: 0.2),
                     badge: String(format: NSLocalizedString("%d FILM STOCKS", comment: ""), allFilters.count),
                     title: "Shoot on\nreal film looks",
-                    description: "From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop.",
+                    description: "From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your print develop.",
                     visual: AnyView(filterVisual)
                 ).tag(1)
                 permissionPage(
@@ -157,7 +157,7 @@ struct OnboardingView: View {
                         .offset(y: appeared ? 0 : 20)
                         .opacity(appeared ? 1 : 0)
 
-                    Text("Authentic polaroids,\ndirect from your camera.")
+                    Text("Authentic instant photos,\ndirect from your camera.")
                         .font(.system(size: 18, weight: .regular))
                         .foregroundStyle(.white.opacity(0.6))
                         .multilineTextAlignment(.center)

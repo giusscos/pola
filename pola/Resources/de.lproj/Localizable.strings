@@ -10,7 +10,7 @@
 "None" = "Keiner";
 "Video" = "Video";
 "Record audio" = "Audio aufnehmen";
-"Save as video polaroid" = "Als Video-Polaroid speichern";
+"Save as a video print" = "Als Video-Sofortbild speichern";
 "All frames combined into one video" = "Alle Frames in einem Video zusammengefasst";
 "Time Lapse" = "Zeitraffer";
 "Library" = "Mediathek";
@@ -18,7 +18,7 @@
 "2 Columns" = "2 Spalten";
 "3 Columns" = "3 Spalten";
 "Grid Columns" = "Rasterspalten";
-"Polaroid" = "Polaroid";
+"Prints" = "Sofortbilder";
 "Caption Font" = "Schriftart";
 "Font Weight" = "Schriftstärke";
 "Caption prompt after photo" = "Nach dem Foto nach Bildunterschrift fragen";
@@ -67,18 +67,18 @@
 /* EditPolaroidSheet */
 "Short note..." = "Kurze Notiz...";
 "Caption (front strip)" = "Bildunterschrift (vorderer Streifen)";
-"Back of polaroid" = "Rückseite des Polaroids";
+"Back of the print" = "Rückseite des Sofortbilds";
 "Write something on the back..." = "Schreibe etwas auf die Rückseite...";
 "Show map on back" = "Karte auf der Rückseite anzeigen";
 "Map" = "Karte";
 "Disable to show your note instead of the map." = "Deaktivieren, um deine Notiz statt der Karte anzuzeigen.";
-"Edit Polaroid" = "Polaroid bearbeiten";
+"Edit Print" = "Sofortbild bearbeiten";
 
 /* Onboarding */
 "Get Started" = "Loslegen";
 "Continue" = "Weiter";
 "Poly." = "Poly.";
-"Authentic polaroids,\ndirect from your camera." = "Authentische Polaroids,\ndirekt von deiner Kamera.";
+"Authentic instant photos,\ndirect from your camera." = "Echte Sofortbilder,\ndirekt von deiner Kamera.";
 "Camera\nAccess" = "Kamera-\nzugriff";
 
 /* Paywall */
@@ -105,7 +105,7 @@
 /* Dynamic format strings */
 "Interval: %d s between shots" = "Intervall: %d s zwischen den Aufnahmen";
 "Duration: %@" = "Dauer: %@";
-"%d separate photo polaroids" = "%d separate Foto-Polaroids";
+"%d separate photo prints" = "%d einzelne Sofortbilder";
 "Total frames: %d" = "Gesamt-Frames: %d";
 "Between photos: %d s" = "Zwischen den Fotos: %d s";
 "Total duration: %d s" = "Gesamtdauer: %d s";
@@ -127,11 +127,11 @@
 "Previewing %@" = "Vorschau: %@";
 "Unlock" = "Freischalten";
 "Remember where you shot it?" = "Merken, wo du es aufgenommen hast?";
-"Double-tap a polaroid to flip it and see a map of where it was taken." = "Tippe doppelt auf ein Polaroid, um es umzudrehen und den Aufnahmeort auf einer Karte zu sehen.";
+"Double-tap a print to flip it and see a map of where it was taken." = "Tippe doppelt auf ein Sofortbild, um es umzudrehen und den Aufnahmeort auf einer Karte zu sehen.";
 "Not Now" = "Nicht jetzt";
 "Enable Location" = "Standort aktivieren";
 "Tap any stock to preview it in the viewfinder. SOLVA is on the house." = "Tippe auf einen Film, um ihn im Sucher zu testen. SOLVA geht aufs Haus.";
-"Pick a stock to give your polaroids an analog film look." = "Wähle einen Film für den analogen Look deiner Polaroids.";
+"Pick a stock to give your prints an analog film look." = "Wähle einen Film für den analogen Look deiner Sofortbilder.";
 "Frame" = "Rahmen";
 "Classic" = "Klassisch";
 "NEW" = "NEU";
@@ -140,23 +140,23 @@
 "Share as Story" = "Als Story teilen";
 "%d FILM STOCKS" = "%d FILME";
 "Shoot on\nreal film looks" = "Fotografiere\nmit echtem Film-Look";
-"From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop." = "Von warmen Goldtönen bis zu Infrarot und VHS-Horror. Film wählen, auslösen und zusehen, wie dein Polaroid entwickelt wird.";
+"From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your print develop." = "Von warmen Goldtönen bis zu Infrarot und VHS-Horror. Film wählen, auslösen und zusehen, wie dein Sofortbild entwickelt wird.";
 "%d Film Stocks" = "%d Filme";
 "Colored Frames" = "Farbige Rahmen";
-"Any border color, on any polaroid" = "Jede Rahmenfarbe für jedes Polaroid";
+"Any border color, on any print" = "Jede Rahmenfarbe für jedes Sofortbild";
 "Date Stamp" = "Datumsstempel";
 "Retro date imprint on your shots" = "Retro-Datumsaufdruck auf deinen Fotos";
 "Print Sheets" = "Druckbögen";
 "A4 layouts ready to print at home" = "A4-Layouts zum Ausdrucken zu Hause";
 "No logo on shares and saves" = "Kein Logo beim Teilen und Sichern";
 "Every film stock, every look." = "Jeder Film, jeder Look.";
-"Give every polaroid its own color." = "Gib jedem Polaroid seine eigene Farbe.";
+"Give every print its own color." = "Gib jedem Sofortbild seine eigene Farbe.";
 "Make every caption yours." = "Mach jede Bildunterschrift zu deiner.";
 "Stamp the date like a real film camera." = "Stemple das Datum wie eine echte Filmkamera.";
-"Print your polaroids at home." = "Drucke deine Polaroids zu Hause.";
-"Share your polaroids without the logo." = "Teile deine Polaroids ohne Logo.";
+"Print your instant photos at home." = "Drucke deine Sofortbilder zu Hause.";
+"Share your prints without the logo." = "Teile deine Sofortbilder ohne Logo.";
 "You're on a roll" = "Du bist in Fahrt";
-"Take your polaroids further with every film stock, frame and font." = "Hol mehr aus deinen Polaroids heraus – mit allen Filmen, Rahmen und Schriften.";
+"Take your prints further with every film stock, frame and font." = "Hol mehr aus deinen Sofortbildern heraus – mit allen Filmen, Rahmen und Schriften.";
 "Shoot with %@" = "Fotografiere mit %@";
 "Unlock all %d film stocks and keep every look." = "Schalte alle %d Filme frei und behalte jeden Look.";
 "This is your last photo on %1$@. Unlock all %2$d film stocks and keep every look." = "Das ist dein letztes Foto auf %1$@. Schalte alle %2$d Filme frei und behalte jeden Look.";
@@ -169,8 +169,8 @@
 "Square, Wide and Mini sizes" = "Quadrat, Breit und Mini";
 "Shoot square, wide or mini." = "Fotografiere im Quadrat-, Breit- oder Mini-Format.";
 "Memories Widget" = "Erinnerungs-Widget";
-"A polaroid a day on your Home Screen" = "Täglich ein Foto auf dem Home-Bildschirm";
-"Relive a polaroid every day on your Home Screen." = "Erlebe jeden Tag ein Polaroid auf deinem Home-Bildschirm neu.";
+"A print a day on your Home Screen" = "Täglich ein Foto auf dem Home-Bildschirm";
+"Relive a print every day on your Home Screen." = "Erlebe jeden Tag ein Sofortbild auf deinem Home-Bildschirm neu.";
 "Memories widget" = "Erinnerungs-Widget";
 "Touch and hold your Home Screen, tap Edit, then Add Widget and search for Poly." = "Halte den Home-Bildschirm gedrückt, tippe auf „Bearbeiten“, dann auf „Widget hinzufügen“ und suche nach Poly.";
 "Format" = "Format";
@@ -199,7 +199,7 @@
 "Mirror front camera" = "Frontkamera spiegeln";
 "When enabled, the selfie camera preview and captures appear like a mirror." = "Wenn aktiviert, erscheinen Vorschau und Aufnahmen der Selfie-Kamera gespiegelt.";
 "Print animation" = "Druckanimation";
-"Your polaroids sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud." = "Deine Polaroids werden automatisch über iCloud synchronisiert. Den iCloud-Zugriff verwaltest du unter Einstellungen > Apple Account > iCloud.";
+"Your prints sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud." = "Deine Sofortbilder werden automatisch über iCloud synchronisiert. Den iCloud-Zugriff verwaltest du unter Einstellungen > Apple Account > iCloud.";
 "Rate the App" = "App bewerten";
 "Filters" = "Filter";
 "Original" = "Original";
@@ -259,8 +259,8 @@
 /* Double exposure */
 "DOUBLE EXPOSURE" = "DOPPEL";
 "Double Exposure" = "Doppelbelichtung";
-"Two shots blended on one polaroid" = "Zwei Aufnahmen auf einem Polaroid";
-"Layer two shots into one dreamy polaroid." = "Leg zwei Aufnahmen zu einem verträumten Polaroid übereinander.";
+"Two shots blended on one print" = "Zwei Aufnahmen auf einem Sofortbild";
+"Layer two shots into one dreamy print." = "Leg zwei Aufnahmen zu einem verträumten Sofortbild übereinander.";
 "Take First Exposure" = "Erste Belichtung aufnehmen";
 "Take Second Exposure" = "Zweite Belichtung aufnehmen";
 "Take the first shot" = "Mach die erste Aufnahme";
@@ -296,3 +296,6 @@
 /* Camera controls */
 "Flash" = "Blitz";
 "Auto" = "Auto";
+
+/* Print animation */
+"%d prints" = "%d Sofortbilder";

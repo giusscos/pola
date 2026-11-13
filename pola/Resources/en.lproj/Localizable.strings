@@ -10,7 +10,7 @@
 "None" = "None";
 "Video" = "Video";
 "Record audio" = "Record audio";
-"Save as video polaroid" = "Save as video polaroid";
+"Save as a video print" = "Save as a video print";
 "All frames combined into one video" = "All frames combined into one video";
 "Time Lapse" = "Time Lapse";
 "Library" = "Library";
@@ -18,7 +18,7 @@
 "2 Columns" = "2 Columns";
 "3 Columns" = "3 Columns";
 "Grid Columns" = "Grid Columns";
-"Polaroid" = "Polaroid";
+"Prints" = "Prints";
 "Caption Font" = "Caption Font";
 "Font Weight" = "Font Weight";
 "Caption prompt after photo" = "Caption prompt after photo";
@@ -67,18 +67,18 @@
 /* EditPolaroidSheet */
 "Short note..." = "Short note...";
 "Caption (front strip)" = "Caption (front strip)";
-"Back of polaroid" = "Back of polaroid";
+"Back of the print" = "Back of the print";
 "Write something on the back..." = "Write something on the back...";
 "Show map on back" = "Show map on back";
 "Map" = "Map";
 "Disable to show your note instead of the map." = "Disable to show your note instead of the map.";
-"Edit Polaroid" = "Edit Polaroid";
+"Edit Print" = "Edit Print";
 
 /* Onboarding */
 "Get Started" = "Get Started";
 "Continue" = "Continue";
 "Poly." = "Poly.";
-"Authentic polaroids,\ndirect from your camera." = "Authentic polaroids,\ndirect from your camera.";
+"Authentic instant photos,\ndirect from your camera." = "Authentic instant photos,\ndirect from your camera.";
 "Camera\nAccess" = "Camera\nAccess";
 
 /* Paywall */
@@ -105,7 +105,7 @@
 /* Dynamic format strings */
 "Interval: %d s between shots" = "Interval: %d s between shots";
 "Duration: %@" = "Duration: %@";
-"%d separate photo polaroids" = "%d separate photo polaroids";
+"%d separate photo prints" = "%d separate photo prints";
 "Total frames: %d" = "Total frames: %d";
 "Between photos: %d s" = "Between photos: %d s";
 "Total duration: %d s" = "Total duration: %d s";
@@ -127,11 +127,11 @@
 "Previewing %@" = "Previewing %@";
 "Unlock" = "Unlock";
 "Remember where you shot it?" = "Remember where you shot it?";
-"Double-tap a polaroid to flip it and see a map of where it was taken." = "Double-tap a polaroid to flip it and see a map of where it was taken.";
+"Double-tap a print to flip it and see a map of where it was taken." = "Double-tap a print to flip it and see a map of where it was taken.";
 "Not Now" = "Not Now";
 "Enable Location" = "Enable Location";
 "Tap any stock to preview it in the viewfinder. SOLVA is on the house." = "Tap any stock to preview it in the viewfinder. SOLVA is on the house.";
-"Pick a stock to give your polaroids an analog film look." = "Pick a stock to give your polaroids an analog film look.";
+"Pick a stock to give your prints an analog film look." = "Pick a stock to give your prints an analog film look.";
 "Frame" = "Frame";
 "Classic" = "Classic";
 "NEW" = "NEW";
@@ -140,23 +140,23 @@
 "Share as Story" = "Share as Story";
 "%d FILM STOCKS" = "%d FILM STOCKS";
 "Shoot on\nreal film looks" = "Shoot on\nreal film looks";
-"From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop." = "From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your polaroid develop.";
+"From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your print develop." = "From warm golden tones to infrared and VHS horror. Pick a stock, press the shutter and watch your print develop.";
 "%d Film Stocks" = "%d Film Stocks";
 "Colored Frames" = "Colored Frames";
-"Any border color, on any polaroid" = "Any border color, on any polaroid";
+"Any border color, on any print" = "Any border color, on any print";
 "Date Stamp" = "Date Stamp";
 "Retro date imprint on your shots" = "Retro date imprint on your shots";
 "Print Sheets" = "Print Sheets";
 "A4 layouts ready to print at home" = "A4 layouts ready to print at home";
 "No logo on shares and saves" = "No logo on shares and saves";
 "Every film stock, every look." = "Every film stock, every look.";
-"Give every polaroid its own color." = "Give every polaroid its own color.";
+"Give every print its own color." = "Give every print its own color.";
 "Make every caption yours." = "Make every caption yours.";
 "Stamp the date like a real film camera." = "Stamp the date like a real film camera.";
-"Print your polaroids at home." = "Print your polaroids at home.";
-"Share your polaroids without the logo." = "Share your polaroids without the logo.";
+"Print your instant photos at home." = "Print your instant photos at home.";
+"Share your prints without the logo." = "Share your prints without the logo.";
 "You're on a roll" = "You're on a roll";
-"Take your polaroids further with every film stock, frame and font." = "Take your polaroids further with every film stock, frame and font.";
+"Take your prints further with every film stock, frame and font." = "Take your prints further with every film stock, frame and font.";
 "Shoot with %@" = "Shoot with %@";
 "Unlock all %d film stocks and keep every look." = "Unlock all %d film stocks and keep every look.";
 "This is your last photo on %1$@. Unlock all %2$d film stocks and keep every look." = "This is your last photo on %1$@. Unlock all %2$d film stocks and keep every look.";
@@ -169,8 +169,8 @@
 "Square, Wide and Mini sizes" = "Square, Wide and Mini sizes";
 "Shoot square, wide or mini." = "Shoot square, wide or mini.";
 "Memories Widget" = "Memories Widget";
-"A polaroid a day on your Home Screen" = "A polaroid a day on your Home Screen";
-"Relive a polaroid every day on your Home Screen." = "Relive a polaroid every day on your Home Screen.";
+"A print a day on your Home Screen" = "A print a day on your Home Screen";
+"Relive a print every day on your Home Screen." = "Relive a print every day on your Home Screen.";
 "Memories widget" = "Memories widget";
 "Touch and hold your Home Screen, tap Edit, then Add Widget and search for Poly." = "Touch and hold your Home Screen, tap Edit, then Add Widget and search for Poly.";
 "Format" = "Format";
@@ -199,7 +199,7 @@
 "Mirror front camera" = "Mirror front camera";
 "When enabled, the selfie camera preview and captures appear like a mirror." = "When enabled, the selfie camera preview and captures appear like a mirror.";
 "Print animation" = "Print animation";
-"Your polaroids sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud." = "Your polaroids sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud.";
+"Your prints sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud." = "Your prints sync automatically via iCloud. You can manage iCloud access in Settings > Apple Account > iCloud.";
 "Rate the App" = "Rate the App";
 "Filters" = "Filters";
 "Original" = "Original";
@@ -259,8 +259,8 @@
 /* Double exposure */
 "DOUBLE EXPOSURE" = "DOUBLE";
 "Double Exposure" = "Double Exposure";
-"Two shots blended on one polaroid" = "Two shots blended on one polaroid";
-"Layer two shots into one dreamy polaroid." = "Layer two shots into one dreamy polaroid.";
+"Two shots blended on one print" = "Two shots blended on one print";
+"Layer two shots into one dreamy print." = "Layer two shots into one dreamy print.";
 "Take First Exposure" = "Take First Exposure";
 "Take Second Exposure" = "Take Second Exposure";
 "Take the first shot" = "Take the first shot";
@@ -296,3 +296,6 @@
 /* Camera controls */
 "Flash" = "Flash";
 "Auto" = "Auto";
+
+/* Print animation */
+"%d prints" = "%d prints";

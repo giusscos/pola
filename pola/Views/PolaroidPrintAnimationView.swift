@@ -625,7 +625,7 @@ final class MultiPolaroidPrintAnimationVC: UIViewController {
         countBadge = blur
 
         let lbl = UILabel()
-        lbl.text  = "\(count) polaroids"
+        lbl.text  = String(format: NSLocalizedString("%d prints", comment: "Count of prints from a time lapse"), count)
         lbl.font  = .systemFont(ofSize: 13, weight: .semibold)
         lbl.textColor = .white
         lbl.translatesAutoresizingMaskIntoConstraints = false

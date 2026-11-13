@@ -552,7 +552,7 @@ struct FiltersView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Text(LocalizedStringKey(premium.isPremium
-                         ? "Pick a stock to give your polaroids an analog film look."
+                         ? "Pick a stock to give your prints an analog film look."
                          : "Tap any stock to preview it in the viewfinder. SOLVA is on the house."))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)

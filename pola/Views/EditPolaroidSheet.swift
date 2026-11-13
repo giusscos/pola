@@ -97,7 +97,7 @@ struct EditPolaroidSheet: View {
                             .scrollContentBackground(.hidden)
                     }
                 } header: {
-                    Text("Back of polaroid")
+                    Text("Back of the print")
                 }
 
                 if entry.coordinate != nil {
@@ -110,7 +110,7 @@ struct EditPolaroidSheet: View {
                     }
                 }
             }
-            .navigationTitle("Edit Polaroid")
+            .navigationTitle("Edit Print")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
