@@ -311,3 +311,8 @@
 "Videos" = "Videos";
 "Time Lapses" = "Time Lapses";
 "Double Exposures" = "Double Exposures";
+
+/* Undo delete */
+"Print deleted" = "Print deleted";
+"%d prints deleted" = "%d prints deleted";
+"Undo" = "Undo";

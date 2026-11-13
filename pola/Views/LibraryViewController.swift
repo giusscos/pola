@@ -125,8 +125,17 @@ final class LibraryViewController: UICollectionViewController {
         }
     }
 
+    /// Deleted prints stay in SwiftData for a few seconds so the delete can be undone.
+    private var pendingDeletionIDs: Set<UUID> = []
+    private var deletionTask: Task<Void, Never>?
+    private var undoBanner: UIView?
+
+    private var liveEntries: [PolaroidEntry] {
+        pendingDeletionIDs.isEmpty ? entries : entries.filter { !pendingDeletionIDs.contains($0.id) }
+    }
+
     private var filteredEntries: [PolaroidEntry] {
-        var result = entries
+        var result = liveEntries
         if let selectedKind {
             result = result.filter(selectedKind.matches)
         }
@@ -404,7 +413,7 @@ final class LibraryViewController: UICollectionViewController {
 
     private func updateEmptyState() {
         let filtered = filteredEntries
-        if entries.isEmpty {
+        if liveEntries.isEmpty {
             setBackground(title: NSLocalizedString("No Photos Yet", comment: ""),
                           subtitle: NSLocalizedString("Take your first photo to see it here", comment: ""))
         } else if filtered.isEmpty {
@@ -483,7 +492,7 @@ final class LibraryViewController: UICollectionViewController {
             ]
         } else {
             var items: [UIBarButtonItem] = []
-            if !entries.isEmpty {
+            if !liveEntries.isEmpty {
                 // Rebuilt on every open so checkmarks and the film list are never stale.
                 let menu = UIMenu(children: [UIDeferredMenuElement.uncached { [weak self] completion in
                     completion(self?.makeOptionsMenu() ?? [])
@@ -722,9 +731,11 @@ final class LibraryViewController: UICollectionViewController {
     // MARK: - Navigation
 
     private func openDetail(for entry: PolaroidEntry) {
-        guard let idx = entries.firstIndex(where: { $0.id == entry.id }) else { return }
+        let live = liveEntries
+        guard let idx = live.firstIndex(where: { $0.id == entry.id }) else { return }
         let vc = PolaroidDetailViewController()
-        vc.entries = entries
+        vc.entries = live
+        vc.onDelete = { [weak self] entry in self?.deleteEntries(ids: [entry.id]) }
         vc.startIndex = idx
         vc.store = store
         vc.modelContext = modelContext
@@ -856,20 +867,115 @@ final class LibraryViewController: UICollectionViewController {
         updateSelectToolbar()
     }
 
+    /// Hides the prints at once and deletes them for real (with their video files) once the undo
+    /// banner expires. The deletion task holds what it needs, so it still runs if the library closes.
     private func deleteEntries(ids: Set<UUID>) {
-        var snap = dataSource.snapshot()
-        snap.deleteItems(Array(ids))
-        dataSource.apply(snap, animatingDifferences: true)
-        Task {
-            try? await Task.sleep(for: .seconds(0.35))
-            for id in ids {
-                if let entry = entries.first(where: { $0.id == id }) {
-                    if let filename = entry.videoFilename { store.deleteVideo(filename: filename) }
-                    ThumbnailCache.remove(id: entry.id)
-                    modelContext.delete(entry)
-                }
-            }
+        commitPendingDeletion()
+        let doomed = entries.filter { ids.contains($0.id) }
+        guard !doomed.isEmpty else { return }
+        pendingDeletionIDs = Set(doomed.map(\.id))
+        applySnapshot(animated: true)
+        updateNavigationBarButtons()
+        showUndoBanner(count: doomed.count)
+
+        let store = store!
+        let context = modelContext!
+        deletionTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.undoDuration))
+            guard !Task.isCancelled else { return }
+            Self.permanentlyDelete(doomed, store: store, context: context)
+            self?.pendingDeletionIDs.removeAll()
+            self?.hideUndoBanner()
         }
+    }
+
+    private static let undoDuration: Double = 5
+
+    private static func permanentlyDelete(_ doomed: [PolaroidEntry], store: PhotoStore, context: ModelContext) {
+        for entry in doomed {
+            if let filename = entry.videoFilename { store.deleteVideo(filename: filename) }
+            ThumbnailCache.remove(id: entry.id)
+            context.delete(entry)
+        }
+    }
+
+    /// Deletes a batch still waiting on its undo banner straight away.
+    private func commitPendingDeletion() {
+        guard !pendingDeletionIDs.isEmpty else { return }
+        deletionTask?.cancel()
+        deletionTask = nil
+        let doomed = entries.filter { pendingDeletionIDs.contains($0.id) }
+        pendingDeletionIDs.removeAll()
+        Self.permanentlyDelete(doomed, store: store, context: modelContext)
+        hideUndoBanner()
+    }
+
+    @objc private func undoDeletion() {
+        deletionTask?.cancel()
+        deletionTask = nil
+        pendingDeletionIDs.removeAll()
+        hideUndoBanner()
+        applySnapshot(animated: true)
+        updateNavigationBarButtons()
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    private func showUndoBanner(count: Int) {
+        hideUndoBanner()
+        guard let host = navigationController?.view ?? view else { return }
+        let message = count == 1
+            ? NSLocalizedString("Print deleted", comment: "")
+            : String(format: NSLocalizedString("%d prints deleted", comment: ""), count)
+
+        let label = UILabel()
+        label.text = message
+        label.font = .preferredFont(forTextStyle: .subheadline)
+        label.adjustsFontForContentSizeCategory = true
+        label.numberOfLines = 0
+
+        var config = UIButton.Configuration.plain()
+        config.title = NSLocalizedString("Undo", comment: "")
+        config.baseForegroundColor = .systemYellow
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+            var attributes = attributes
+            attributes.font = UIFont.preferredFont(forTextStyle: .headline)
+            return attributes
+        }
+        let undo = UIButton(configuration: config)
+        undo.addTarget(self, action: #selector(undoDeletion), for: .touchUpInside)
+        undo.setContentHuggingPriority(.required, for: .horizontal)
+        undo.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
+
+        let stack = UIStackView(arrangedSubviews: [label, undo])
+        stack.spacing = 12
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        let banner = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
+        banner.layer.cornerRadius = 22
+        banner.clipsToBounds = true
+        banner.translatesAutoresizingMaskIntoConstraints = false
+        banner.contentView.addSubview(stack)
+        host.addSubview(banner)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: banner.contentView.leadingAnchor, constant: 18),
+            stack.trailingAnchor.constraint(equalTo: banner.contentView.trailingAnchor, constant: -8),
+            stack.topAnchor.constraint(equalTo: banner.contentView.topAnchor, constant: 2),
+            stack.bottomAnchor.constraint(equalTo: banner.contentView.bottomAnchor, constant: -2),
+            banner.centerXAnchor.constraint(equalTo: host.centerXAnchor),
+            banner.leadingAnchor.constraint(greaterThanOrEqualTo: host.leadingAnchor, constant: 16),
+            banner.bottomAnchor.constraint(equalTo: host.safeAreaLayoutGuide.bottomAnchor, constant: -60),
+        ])
+        undoBanner = banner
+        banner.alpha = 0
+        UIView.animate(withDuration: UIAccessibility.isReduceMotionEnabled ? 0 : 0.25) { banner.alpha = 1 }
+        UIAccessibility.post(notification: .announcement, argument: message)
+    }
+
+    private func hideUndoBanner() {
+        guard let banner = undoBanner else { return }
+        undoBanner = nil
+        UIView.animate(withDuration: 0.2, animations: { banner.alpha = 0 }) { _ in banner.removeFromSuperview() }
     }
 
     private func showPaywall(_ context: PaywallContext) {

@@ -311,3 +311,8 @@
 "Videos" = "Video";
 "Time Lapses" = "Time lapse";
 "Double Exposures" = "Doppie esposizioni";
+
+/* Undo delete */
+"Print deleted" = "Stampa eliminata";
+"%d prints deleted" = "%d stampe eliminate";
+"Undo" = "Annulla";

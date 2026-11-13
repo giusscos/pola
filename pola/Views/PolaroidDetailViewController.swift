@@ -72,6 +72,8 @@ final class PolaroidDetailViewController: UIViewController {
     var store: PhotoStore!
     var modelContext: ModelContext!
     var onCurrentIndexChange: ((UUID) -> Void)?
+    /// Set by the library so a delete from here can be undone like one from the grid.
+    var onDelete: ((PolaroidEntry) -> Void)?
 
     var currentEntryID: UUID? {
         guard currentIndex < entries.count else { return nil }
@@ -439,10 +441,14 @@ final class PolaroidDetailViewController: UIViewController {
     private func deleteCurrentPhoto() {
         guard currentIndex < entries.count else { return }
         let entry = entries[currentIndex]
-        if let filename = entry.videoFilename { store.deleteVideo(filename: filename) }
         let target = min(max(0, currentIndex >= entries.count - 1 ? currentIndex - 1 : currentIndex), entries.count - 2)
-        ThumbnailCache.remove(id: entry.id)
-        modelContext.delete(entry)
+        if let onDelete {
+            onDelete(entry)
+        } else {
+            if let filename = entry.videoFilename { store.deleteVideo(filename: filename) }
+            ThumbnailCache.remove(id: entry.id)
+            modelContext.delete(entry)
+        }
         entries.remove(at: currentIndex)
 
         guard !entries.isEmpty else { navigationController?.popViewController(animated: true); return }
