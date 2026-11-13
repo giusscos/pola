@@ -1,5 +1,4 @@
 import CoreLocation
-import ImageIO
 import SwiftData
 import UIKit
 
@@ -86,25 +85,42 @@ final class PolaroidEntry: Identifiable {
         let bucket = max(64, Int(maxPixelSize.rounded(.up)))
         let key = "\(id.uuidString)-\(bucket)" as NSString
         if let cached = Self.thumbnailCache.object(forKey: key) { return cached }
-
-        let options = [kCGImageSourceShouldCache: false] as CFDictionary
-        guard let source = CGImageSourceCreateWithData(imageData as CFData, options) else { return nil }
-        let thumbOptions = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceShouldCacheImmediately: true,
-            kCGImageSourceThumbnailMaxPixelSize: bucket
-        ] as CFDictionary
-        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbOptions) else { return nil }
-
-        let thumbnail = UIImage(cgImage: cgImage)
-        Self.thumbnailCache.setObject(thumbnail, forKey: key, cost: cgImage.bytesPerRow * cgImage.height)
+        guard let thumbnail = ImageDownsampler.downsample(imageData, maxPixelSize: bucket) else { return nil }
+        remember(thumbnail, key: key)
         return thumbnail
+    }
+
+    /// The most recent thumbnail made for this entry, whatever its size, if one is still in memory.
+    /// Lets a bigger view show something at once while it loads its own size.
+    var latestThumbnail: UIImage? {
+        Self.latestThumbnails.object(forKey: id.uuidString as NSString)
+    }
+
+    /// `imageData` downsampled to `maxPixelSize` off the main actor. Only the data read is on main.
+    func downsampledImage(maxPixelSize: CGFloat) async -> UIImage? {
+        let bucket = max(64, Int(maxPixelSize.rounded(.up)))
+        let key = "\(id.uuidString)-\(bucket)" as NSString
+        if let cached = Self.thumbnailCache.object(forKey: key) { return cached }
+        guard let image = await ImageDownsampler.downsampleInBackground(imageData, maxPixelSize: bucket) else { return nil }
+        remember(image, key: key)
+        return image
+    }
+
+    private func remember(_ image: UIImage, key: NSString) {
+        let cost = image.cgImage.map { $0.bytesPerRow * $0.height } ?? 0
+        Self.thumbnailCache.setObject(image, forKey: key, cost: cost)
+        Self.latestThumbnails.setObject(image, forKey: id.uuidString as NSString, cost: cost)
     }
 
     private static let thumbnailCache: NSCache<NSString, UIImage> = {
         let cache = NSCache<NSString, UIImage>()
         cache.totalCostLimit = 150 * 1024 * 1024
+        return cache
+    }()
+
+    private static let latestThumbnails: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.totalCostLimit = 60 * 1024 * 1024
         return cache
     }()
 

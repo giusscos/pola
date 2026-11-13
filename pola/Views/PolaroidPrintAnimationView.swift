@@ -53,6 +53,8 @@ final class PolaroidPrintAnimationVC: UIViewController {
     private var imageAreaW:    CGFloat { polaroidWidth - imagePadding * 2 }
     private var imageAreaH:    CGFloat { imageAreaW / entry.frameFormat.imageAspect }
     private var polaroidHeight:   CGFloat { imagePadding + imageAreaH + captionStripH }
+    /// Enough pixels for the photo to fill the print at any frame format, without decoding all 12 MP.
+    private var printPixelSize:   CGFloat { max(imageAreaW, imageAreaH) * 4 / 3 * max(traitCollection.displayScale, 2) }
 
     private var printEndCenter = CGPoint.zero
     private var screenCenter   = CGPoint.zero
@@ -122,7 +124,7 @@ final class PolaroidPrintAnimationVC: UIViewController {
         // Photo
         photoImageView.contentMode = .scaleAspectFill
         photoImageView.clipsToBounds = true
-        photoImageView.image = entry.image
+        photoImageView.image = entry.thumbnail(maxPixelSize: printPixelSize)
         photoImageView.frame = CGRect(x: imagePadding, y: imagePadding,
                                       width: imageAreaW, height: imageAreaH)
         polaroidView.addSubview(photoImageView)
@@ -508,6 +510,7 @@ final class MultiPolaroidPrintAnimationVC: UIViewController {
     // A time lapse batch is always shot in one format
     private var imageAreaH:     CGFloat { imageAreaW / (entries.first?.frameFormat.imageAspect ?? FrameFormat.classic.imageAspect) }
     private var polaroidHeight: CGFloat { imagePadding + imageAreaH + captionStripH }
+    private var printPixelSize: CGFloat { max(imageAreaW, imageAreaH) * 4 / 3 * max(traitCollection.displayScale, 2) }
 
     // Rotations / offsets for each card in the stack (index 0 = printed first = back)
     private let stackRotations: [CGFloat] = [-7, 5, -3, 9, -2]
@@ -593,7 +596,7 @@ final class MultiPolaroidPrintAnimationVC: UIViewController {
         card.layer.shadowOffset  = CGSize(width: 0, height: 5)
         card.layer.shadowPath    = UIBezierPath(rect: card.bounds).cgPath
 
-        let imgView = UIImageView(image: entry.image)
+        let imgView = UIImageView(image: entry.thumbnail(maxPixelSize: printPixelSize))
         imgView.contentMode = .scaleAspectFill
         imgView.clipsToBounds = true
         imgView.frame = CGRect(x: imagePadding, y: imagePadding, width: imageAreaW, height: imageAreaH)

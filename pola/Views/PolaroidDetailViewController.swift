@@ -23,10 +23,18 @@ private struct DetailPageView: View {
     @Bindable var entry: PolaroidEntry
     let store: PhotoStore
     let videoState: DetailVideoState
+    @Environment(\.displayScale) private var displayScale
+    @State private var pageSize: CGSize = .zero
+    /// Downsampled to the screen; the full photo is only decoded for export.
+    @State private var screenImage: UIImage?
+
+    private var screenPixelSize: Int {
+        Int((max(pageSize.width, pageSize.height) * displayScale).rounded(.up))
+    }
 
     var body: some View {
         PolaroidPhotoCell(
-            image: entry.image,
+            image: screenImage ?? entry.latestThumbnail,
             videoURL: entry.videoURL(in: store.videoDirectory),
             isTimelapse: entry.isTimelapse,
             playVideo: true,
@@ -49,6 +57,11 @@ private struct DetailPageView: View {
         .shadow(color: .black.opacity(0.2), radius: 24, x: 0, y: 6)
         .padding(.horizontal)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { pageSize = $0 }
+        .task(id: screenPixelSize) {
+            guard screenPixelSize > 0 else { return }
+            screenImage = await entry.downsampledImage(maxPixelSize: CGFloat(screenPixelSize))
+        }
     }
 }
 
