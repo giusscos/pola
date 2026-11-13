@@ -142,7 +142,11 @@ final class LibraryViewController: UICollectionViewController {
     }
 
     // MARK: - UI
-    private var dataSource: UICollectionViewDiffableDataSource<Int, UUID>!
+    /// Sections are months ("2026-11") while month headers show, otherwise a single section.
+    private var dataSource: UICollectionViewDiffableDataSource<String, UUID>!
+    private var layoutHasHeaders = false
+    private var monthTitles: [String: String] = [:]
+    private static let singleSection = "all"
     private let searchController = UISearchController(searchResultsController: nil)
     private var selectToolbar: UIToolbar?
 
@@ -192,8 +196,38 @@ final class LibraryViewController: UICollectionViewController {
         let section = NSCollectionLayoutSection(group: group)
         let side: CGFloat = displayedColumnCount == 1 ? 60 : 7
         section.contentInsets = NSDirectionalEdgeInsets(top: 7, leading: side, bottom: 7, trailing: side)
+        layoutHasHeaders = showsMonthHeaders
+        if layoutHasHeaders {
+            let header = NSCollectionLayoutBoundarySupplementaryItem(
+                layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(36)),
+                elementKind: UICollectionView.elementKindSectionHeader,
+                alignment: .top
+            )
+            header.pinToVisibleBounds = true
+            header.zIndex = 2
+            section.boundarySupplementaryItems = [header]
+        }
         return UICollectionViewCompositionalLayout(section: section)
     }
+
+    /// Month headers organise the full library; a short filtered or searched list reads better without them.
+    private var showsMonthHeaders: Bool {
+        let isNarrowed = selectedCategory != "All" || !(searchController.searchBar.text ?? "").isEmpty
+        return !isNarrowed || filteredEntries.count >= 12
+    }
+
+    private static let monthKeyFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM"
+        return formatter
+    }()
+
+    private static let monthTitleFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("MMMMyyyy")
+        return formatter
+    }()
 
     private func updateLayout() {
         UIView.animate(withDuration: 0.4, delay: 0, usingSpringWithDamping: 0.8, initialSpringVelocity: 0) {
@@ -210,6 +244,16 @@ final class LibraryViewController: UICollectionViewController {
         }
         dataSource = UICollectionViewDiffableDataSource(collectionView: collectionView) { cv, indexPath, id in
             cv.dequeueConfiguredReusableCell(using: cellReg, for: indexPath, item: id)
+        }
+        let headerReg = UICollectionView.SupplementaryRegistration<MonthHeaderView>(
+            elementKind: UICollectionView.elementKindSectionHeader
+        ) { [weak self] header, _, indexPath in
+            guard let self,
+                  let key = self.dataSource.sectionIdentifier(for: indexPath.section) else { return }
+            header.title = self.monthTitles[key] ?? ""
+        }
+        dataSource.supplementaryViewProvider = { cv, kind, indexPath in
+            cv.dequeueConfiguredReusableSupplementary(using: headerReg, for: indexPath)
         }
     }
 
@@ -317,10 +361,26 @@ final class LibraryViewController: UICollectionViewController {
         updateEmptyState()
         updateNavigationTitle()
         let existingIDs = Set(dataSource.snapshot().itemIdentifiers)
-        var snap = NSDiffableDataSourceSnapshot<Int, UUID>()
-        snap.appendSections([0])
-        let newIDs = filteredEntries.map(\.id)
-        snap.appendItems(newIDs)
+        var snap = NSDiffableDataSourceSnapshot<String, UUID>()
+        let filtered = filteredEntries
+        if showsMonthHeaders != layoutHasHeaders {
+            collectionView.setCollectionViewLayout(makeLayout(), animated: false)
+        }
+        if layoutHasHeaders {
+            // Entries are already in date order, so each month is one contiguous run.
+            for entry in filtered {
+                let key = Self.monthKeyFormatter.string(from: entry.timestamp)
+                if snap.sectionIdentifiers.last != key {
+                    snap.appendSections([key])
+                    monthTitles[key] = Self.monthTitleFormatter.string(from: entry.timestamp)
+                }
+                snap.appendItems([entry.id], toSection: key)
+            }
+        } else {
+            snap.appendSections([Self.singleSection])
+            snap.appendItems(filtered.map(\.id))
+        }
+        let newIDs = filtered.map(\.id)
         // Reconfigure items already in the data source so property changes (e.g. border color) are reflected.
         let toReconfigure = newIDs.filter { existingIDs.contains($0) }
         if !toReconfigure.isEmpty { snap.reconfigureItems(toReconfigure) }
@@ -690,8 +750,8 @@ final class LibraryViewController: UICollectionViewController {
 
     private func toggleSelection(_ id: UUID) {
         if selectedIDs.contains(id) { selectedIDs.remove(id) } else { selectedIDs.insert(id) }
-        if let idx = filteredEntries.firstIndex(where: { $0.id == id }),
-           let cell = collectionView.cellForItem(at: IndexPath(item: idx, section: 0)) {
+        if let indexPath = dataSource.indexPath(for: id),
+           let cell = collectionView.cellForItem(at: indexPath) {
             configure(cell: cell, forID: id)
         }
     }
@@ -896,4 +956,37 @@ extension LibraryViewController: UINavigationControllerDelegate {
             reconfigureVisible()
         }
     }
+}
+
+/// Sticky "November 2026" header above each month of prints.
+private final class MonthHeaderView: UICollectionReusableView {
+    private let label = UILabel()
+
+    var title: String {
+        get { label.text ?? "" }
+        set {
+            label.text = newValue
+            accessibilityLabel = newValue
+        }
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = UIColor.systemBackground.withAlphaComponent(0.94)
+        label.font = .preferredFont(forTextStyle: .headline)
+        label.adjustsFontForContentSizeCategory = true
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+            label.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+            label.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -6),
+        ])
+        isAccessibilityElement = true
+        accessibilityTraits = .header
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
 }
