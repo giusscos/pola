@@ -1,4 +1,5 @@
 import AVFoundation
+import CoreLocation
 import StoreKit
 import SwiftData
 import SwiftUI
@@ -75,6 +76,9 @@ struct ContentView: View {
     @State private var timelapsePendingEntries: [PolaroidEntry] = []
     @State private var isInTimelapse = false
     @State private var isProcessingTimelapse = false
+    /// Tail of the chain that develops captures one at a time, so prints arrive in shooting order.
+    @State private var developmentQueue: Task<Void, Never>? = nil
+    @State private var pendingDevelopments = 0
     @AppStorage("printAnimationEnabled") private var printAnimationEnabled: Bool = true
     @AppStorage("frontCameraMirrored") private var frontCameraMirrored: Bool = true
 
@@ -113,8 +117,50 @@ struct ContentView: View {
         return nil
     }
 
-    private func develop(_ image: UIImage) -> UIImage {
-        FilmPipeline.apply(to: image, film: activeFilter?.effect, lens: selectedLens)
+    /// The film, lens and frame a capture is developed with, taken at the moment the shutter
+    /// fires so changing the stock while it develops doesn't change the print.
+    private struct CaptureLook {
+        let film: FilmFilterEffect?
+        let lens: Lens?
+        let filterName: String?
+        let packName: String?
+        let frameFormat: FrameFormat
+        let coordinate: CLLocationCoordinate2D?
+    }
+
+    private var currentLook: CaptureLook {
+        CaptureLook(film: activeFilter?.effect, lens: selectedLens, filterName: selectedFilterName,
+                    packName: selectedPackName, frameFormat: activeFrameFormat,
+                    coordinate: cameraManager.lastCoordinate)
+    }
+
+    private func makeEntry(imageData: Data, look: CaptureLook, isTimelapse: Bool = false) -> PolaroidEntry {
+        PolaroidEntry(
+            imageData: imageData,
+            isTimelapse: isTimelapse,
+            filterName: look.filterName,
+            lensName: look.lens?.name,
+            packName: look.packName,
+            frameFormat: look.frameFormat,
+            coordinate: look.coordinate
+        )
+    }
+
+    /// Runs `work` after every capture queued before it has been developed and inserted.
+    private func enqueueDevelopment(_ work: @escaping @MainActor () async -> Void) {
+        let previous = developmentQueue
+        pendingDevelopments += 1
+        developmentQueue = Task {
+            await previous?.value
+            await work()
+            pendingDevelopments -= 1
+        }
+    }
+
+    /// A photo or double exposure is still being developed; another press would only queue up.
+    private var isDevelopingStill: Bool {
+        (pendingDevelopments > 0 || cameraManager.isBlendingDoubleExposure)
+            && (cameraMode == .photo || cameraMode == .doubleExposure)
     }
 
     private var captureAnalytics: [String: String] {
@@ -529,98 +575,62 @@ struct ContentView: View {
         .onChange(of: cameraManager.capturedImage) { _, image in
             guard let image else { return }
             cameraManager.capturedImage = nil
-            let processed = develop(image)
-            let entry = PolaroidEntry(
-                image: processed,
-                filterName: selectedFilterName,
-                lensName: selectedLens?.name,
-                packName: selectedPackName,
-                frameFormat: activeFrameFormat,
-                coordinate: cameraManager.lastCoordinate
-            )
-            modelContext.insert(entry)
-            pendingEntryID = entry.id
-            if isInTimelapse {
-                timelapsePendingEntries.append(entry)
-            } else {
+            let look = currentLook
+            let inTimelapse = isInTimelapse
+            let mode = cameraMode
+            enqueueDevelopment {
+                let jpeg = await CaptureDevelopment.developedJPEG(from: image, film: look.film, lens: look.lens)
+                let entry = makeEntry(imageData: jpeg, look: look)
+                modelContext.insert(entry)
+                if inTimelapse {
+                    timelapsePendingEntries.append(entry)
+                    return
+                }
+                pendingEntryID = entry.id
                 totalPhotosCount += 1
-                Analytics.track(cameraMode == .doubleExposure ? .doubleExposureCaptured : .photoCaptured, captureAnalytics)
-                if cameraMode == .doubleExposure {
+                Analytics.track(mode == .doubleExposure ? .doubleExposureCaptured : .photoCaptured, captureAnalytics)
+                if mode == .doubleExposure {
                     // Each double exposure starts from the default balance; Retake keeps it.
                     doubleExposureBalance = 0
                 }
-                if printAnimationEnabled {
-                    printingEntry = entry
-                } else if captionPromptEnabled {
-                    showCaptionInput = true
-                } else {
-                    captureFlowFinished()
-                }
+                presentNewPrint(entry)
             }
         }
         .onChange(of: cameraManager.capturedVideoURL) { _, url in
             guard let url else { return }
             cameraManager.capturedVideoURL = nil
-            Task {
+            let look = currentLook
+            enqueueDevelopment {
                 let thumbnail = await videoThumbnail(from: url) ?? UIImage()
-                let processed = develop(thumbnail)
-                let entry = PolaroidEntry(
-                    image: processed,
-                    filterName: selectedFilterName,
-                    lensName: selectedLens?.name,
-                    packName: selectedPackName,
-                    frameFormat: activeFrameFormat,
-                    coordinate: cameraManager.lastCoordinate
-                )
+                let jpeg = await CaptureDevelopment.developedJPEG(from: thumbnail, film: look.film, lens: look.lens)
+                let entry = makeEntry(imageData: jpeg, look: look)
                 entry.videoFilename = store.saveVideo(from: url, id: entry.id)
                 modelContext.insert(entry)
                 pendingEntryID = entry.id
                 totalPhotosCount += 1
                 Analytics.track(.videoCaptured, captureAnalytics)
-                if printAnimationEnabled {
-                    printingEntry = entry
-                } else if captionPromptEnabled {
-                    showCaptionInput = true
-                } else {
-                    captureFlowFinished()
-                }
+                presentNewPrint(entry)
             }
         }
         .onChange(of: cameraManager.timelapseVideoFrames) { _, frames in
             guard let frames else { return }
             cameraManager.timelapseVideoFrames = nil
-            let processed = frames.map { develop($0) }
-            let coord = cameraManager.lastCoordinate
+            let look = currentLook
             isProcessingTimelapse = true
             Task {
-                guard let videoURL = await composeVideo(from: processed) else {
-                    await MainActor.run { isProcessingTimelapse = false }
+                let processed = await CaptureDevelopment.developed(frames, film: look.film, lens: look.lens)
+                guard let videoURL = await composeVideo(from: processed),
+                      let thumbnail = processed.first?.jpegData(compressionQuality: CaptureDevelopment.jpegQuality) else {
+                    isProcessingTimelapse = false
                     return
                 }
-                let thumbnail = processed.first ?? UIImage()
-                await MainActor.run {
-                    isProcessingTimelapse = false
-                    let entry = PolaroidEntry(
-                        image: thumbnail,
-                        isTimelapse: true,
-                        filterName: selectedFilterName,
-                        lensName: selectedLens?.name,
-                        packName: selectedPackName,
-                        frameFormat: activeFrameFormat,
-                        coordinate: coord
-                    )
-                    entry.videoFilename = store.saveVideo(from: videoURL, id: entry.id)
-                    modelContext.insert(entry)
-                    pendingEntryID = entry.id
-                    Analytics.track(.timelapseCaptured, captureAnalytics)
-                    if printAnimationEnabled {
-                        printingEntry = entry
-                    } else if captionPromptEnabled {
-                        showCaptionInput = true
-                    } else {
-                        captureFlowFinished()
-                    }
-                }
+                isProcessingTimelapse = false
+                let entry = makeEntry(imageData: thumbnail, look: look, isTimelapse: true)
+                entry.videoFilename = store.saveVideo(from: videoURL, id: entry.id)
+                modelContext.insert(entry)
+                pendingEntryID = entry.id
+                Analytics.track(.timelapseCaptured, captureAnalytics)
+                presentNewPrint(entry)
             }
         }
         .onChange(of: cameraManager.isTimelapsing) { _, isActive in
@@ -630,9 +640,11 @@ struct ContentView: View {
             } else {
                 // Flip the local flag inside a Task so that the capturedImage onChange
                 // for the final frame (batched in the same SwiftUI update) still sees
-                // isInTimelapse = true and appends to the stack before we collect it.
+                // isInTimelapse = true, then wait for the queued frames to finish developing
+                // so they are all on the stack before we collect it.
                 Task { @MainActor in
                     isInTimelapse = false
+                    await developmentQueue?.value
                     guard !timelapsePendingEntries.isEmpty else { return }
                     totalPhotosCount += timelapsePendingEntries.count
                     Analytics.track(.timelapseCaptured, captureAnalytics)
@@ -1300,6 +1312,17 @@ struct ContentView: View {
 
     /// Runs once a capture has fully settled (print animation or caption done). At most one
     /// follow-up is shown per capture, in priority order: location opt-in, milestone paywall, review.
+    /// Starts the print animation for a new capture, or goes straight to the caption prompt.
+    private func presentNewPrint(_ entry: PolaroidEntry) {
+        if printAnimationEnabled {
+            printingEntry = entry
+        } else if captionPromptEnabled {
+            showCaptionInput = true
+        } else {
+            captureFlowFinished()
+        }
+    }
+
     private func captureFlowFinished() {
         if !hasAnsweredLocationPrompt && cameraManager.locationStatus == .notDetermined {
             withAnimation { showLocationPrompt = true }
@@ -1620,6 +1643,9 @@ struct ContentView: View {
         }
         if cameraMode == .timeLapse && cameraManager.isTimelapsing {
             cameraManager.stopTimelapse()
+            return
+        }
+        if isDevelopingStill {
             return
         }
         if isCountingDown {

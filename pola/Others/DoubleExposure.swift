@@ -12,6 +12,12 @@ nonisolated enum DoubleExposure {
     /// 1 favours the second (nearly opaque everywhere, shadows included).
     static let balanceRange: ClosedRange<Double> = -1...1
 
+    /// `blend` renders two full-size photos, so callers on the main actor use this instead.
+    @concurrent
+    static func blendInBackground(_ first: UIImage, _ second: UIImage, balance: Double) async -> UIImage? {
+        blend(first, second, balance: balance)
+    }
+
     static func blend(_ first: UIImage, _ second: UIImage, balance: Double = 0) -> UIImage? {
         let balance = min(max(balance, balanceRange.lowerBound), balanceRange.upperBound)
         guard let base = upright(first), let overlay = upright(second) else { return nil }

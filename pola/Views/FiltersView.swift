@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Filter Effect
 
-enum FilmFilterEffect {
+nonisolated enum FilmFilterEffect {
     case chrome   // FLÄRN — Kodachrome-inspired pushed contrast
     case warm     // SOLVA — warm analog, Ektar-like
     case sepia    // BRÖKK — old Polaroid SX-70, heavy fade

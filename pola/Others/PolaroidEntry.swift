@@ -23,7 +23,7 @@ final class PolaroidEntry: Identifiable {
     var packColorHex: String? = nil
     var frameFormatRaw: String = FrameFormat.classic.rawValue
 
-    init(
+    convenience init(
         image: UIImage,
         videoFilename: String? = nil,
         isTimelapse: Bool = false,
@@ -33,8 +33,31 @@ final class PolaroidEntry: Identifiable {
         frameFormat: FrameFormat = .classic,
         coordinate: CLLocationCoordinate2D? = nil
     ) {
+        self.init(
+            imageData: image.jpegData(compressionQuality: CaptureDevelopment.jpegQuality) ?? Data(),
+            videoFilename: videoFilename,
+            isTimelapse: isTimelapse,
+            filterName: filterName,
+            lensName: lensName,
+            packName: packName,
+            frameFormat: frameFormat,
+            coordinate: coordinate
+        )
+    }
+
+    /// Takes an already encoded JPEG, so the encoding can happen off the main actor.
+    init(
+        imageData: Data,
+        videoFilename: String? = nil,
+        isTimelapse: Bool = false,
+        filterName: String? = nil,
+        lensName: String? = nil,
+        packName: String? = nil,
+        frameFormat: FrameFormat = .classic,
+        coordinate: CLLocationCoordinate2D? = nil
+    ) {
         self.id = UUID()
-        self.imageData = image.jpegData(compressionQuality: 0.9) ?? Data()
+        self.imageData = imageData
         self.videoFilename = videoFilename
         self.isTimelapse = isTimelapse
         self.filterName = filterName

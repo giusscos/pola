@@ -5,7 +5,7 @@ import SwiftUI
 
 /// Optical and grain character applied on top of any film stock, the way a camera body
 /// keeps its lens whatever film is loaded.
-enum Lens: String, CaseIterable, Identifiable {
+nonisolated enum Lens: String, CaseIterable, Identifiable {
     case glimt = "GLIMT"  // cheap plastic lens: bulge, colour fringing, soft corners
     case korn  = "KORN"   // coarse, clumpy grain
     case leka  = "LEKA"   // worn toy camera: all of the above plus a light leak
@@ -23,6 +23,7 @@ enum Lens: String, CaseIterable, Identifiable {
 
     var isNew: Bool { false }
 
+    @MainActor
     func isLocked(for premium: PremiumManager) -> Bool {
         !premium.isPremium
     }
@@ -189,7 +190,7 @@ enum Lens: String, CaseIterable, Identifiable {
 
 // MARK: - Pipeline
 
-enum FilmPipeline {
+nonisolated enum FilmPipeline {
     private static let context = CIContext()
 
     /// Lens optics first, then the film stock's grade, then the lens grain and leaks on the print.
@@ -210,7 +211,7 @@ enum FilmPipeline {
 }
 
 private extension CGImagePropertyOrientation {
-    init(_ orientation: UIImage.Orientation) {
+    nonisolated init(_ orientation: UIImage.Orientation) {
         switch orientation {
         case .up:            self = .up
         case .upMirrored:    self = .upMirrored

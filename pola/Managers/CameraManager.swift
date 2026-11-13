@@ -41,6 +41,8 @@ final class CameraManager: NSObject {
     var timelapseVideoFrames: [UIImage]? = nil
     /// First half of a double exposure, held until the second shot is blended onto it.
     private(set) var doubleExposureFirstShot: UIImage? = nil
+    /// True while the two halves of a double exposure are being blended, off the main actor.
+    private(set) var isBlendingDoubleExposure = false
 
     private var isCapturingDoubleExposure = false
     private var doubleExposureBalance: Double = 0
@@ -371,7 +373,13 @@ final class CameraManager: NSObject {
             return
         }
         doubleExposureFirstShot = nil
-        capturedImage = DoubleExposure.blend(first, image, balance: doubleExposureBalance) ?? image
+        isBlendingDoubleExposure = true
+        let balance = doubleExposureBalance
+        Task {
+            let blended = await DoubleExposure.blendInBackground(first, image, balance: balance)
+            isBlendingDoubleExposure = false
+            capturedImage = blended ?? image
+        }
     }
 
     func startVideoRecording() {
