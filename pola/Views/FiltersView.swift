@@ -17,6 +17,11 @@ nonisolated enum FilmFilterEffect {
     case roda     // RÖDA — overexposed warm instant print with colour fringing
     case lilja    // LILJA — modern Polaroid colour film, lavender shadows
     case skift    // SKIFT — RGB split glitch
+    // Film drop 3. Names and swatches are proposals awaiting Giuseppe's confirmation.
+    case glod     // GLÖD — tungsten night film with red-orange halation
+    case forn     // FÖRN — expired colour film
+    case tinn     // TINN — wet-plate tintype
+    case prikk    // PRIKK — newsprint CMYK halftone
 
     private static let instantWarmKernel: CIColorKernel? = {
         guard let data = PolaroidKernels.data else { return nil }
@@ -51,6 +56,31 @@ nonisolated enum FilmFilterEffect {
     private static let nightVisionKernel: CIColorKernel? = {
         guard let data = PolaroidKernels.data else { return nil }
         return try? CIColorKernel(functionName: "nightVisionKernel", fromMetalLibraryData: data)
+    }()
+
+    private static let tungstenNightKernel: CIColorKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIColorKernel(functionName: "tungstenNightKernel", fromMetalLibraryData: data)
+    }()
+
+    private static let halationSourceKernel: CIColorKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIColorKernel(functionName: "halationSourceKernel", fromMetalLibraryData: data)
+    }()
+
+    private static let expiredFilmKernel: CIColorKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIColorKernel(functionName: "expiredFilmKernel", fromMetalLibraryData: data)
+    }()
+
+    private static let wetPlateKernel: CIKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIKernel(functionName: "wetPlateKernel", fromMetalLibraryData: data)
+    }()
+
+    private static let halftoneKernel: CIKernel? = {
+        guard let data = PolaroidKernels.data else { return nil }
+        return try? CIKernel(functionName: "halftoneKernel", fromMetalLibraryData: data)
     }()
 
     private static let vhsKernel: CIKernel? = {
@@ -89,6 +119,8 @@ nonisolated enum FilmFilterEffect {
         case .cool:   return 0.03
         case .noir:   return 0.0
         case .lomur, .dreki, .skrim, .frosinn, .nott, .roda, .lilja, .skift: return nil
+        // The new kernels do their own fade and grain.
+        case .glod, .forn, .tinn, .prikk: return nil
         }
     }
 
@@ -104,7 +136,8 @@ nonisolated enum FilmFilterEffect {
         case .roda:    return 0.70
         case .lilja:   return 0.60
         case .skift:   return 0.90
-        case .lomur, .dreki, .frosinn: return nil
+        case .glod:    return 0.7
+        case .lomur, .dreki, .frosinn, .forn, .tinn, .prikk: return nil
         }
     }
 
@@ -119,7 +152,9 @@ nonisolated enum FilmFilterEffect {
         case .nott:    return 2.0
         case .roda:    return 0.6
         // LILJA's kernel does its own lavender falloff.
-        case .dreki, .skrim, .frosinn, .lilja, .skift: return nil
+        case .glod:    return 0.7
+        case .forn:    return 0.5
+        case .dreki, .skrim, .frosinn, .lilja, .skift, .tinn, .prikk: return nil
         }
     }
 
@@ -370,7 +405,72 @@ nonisolated enum FilmFilterEffect {
                     Double.random(in: 0...1000),
                 ]
             ) ?? punchy
+
+        case .glod:
+            return halation(input)
+
+        case .forn:
+            guard let kernel = Self.expiredFilmKernel else { return input }
+            let extent = input.extent
+            let shortSide = min(extent.width, extent.height)
+            return kernel.apply(
+                extent: extent,
+                roiCallback: { _, rect in rect },
+                arguments: [input, CIVector(cgRect: extent), max(1, shortSide / 450)]
+            ) ?? input
+
+        case .tinn:
+            guard let kernel = Self.wetPlateKernel else { return input }
+            let extent = input.extent
+            let shortSide = min(extent.width, extent.height)
+            let swirl = shortSide * 0.02
+            let pad = ceil(swirl * 0.6) + 2
+            return kernel.apply(
+                extent: extent,
+                roiCallback: { _, rect in rect.insetBy(dx: -pad, dy: -pad) },
+                arguments: [
+                    input.clampedToExtent(),
+                    CIVector(x: extent.midX, y: extent.midY),
+                    hypot(extent.width, extent.height) / 2,
+                    swirl,
+                    max(1, shortSide / 30),
+                ]
+            ) ?? input
+
+        case .prikk:
+            guard let kernel = Self.halftoneKernel else { return input }
+            let extent = input.extent
+            // About 110 dots across the short side, whatever the resolution.
+            let cell = max(1, min(extent.width, extent.height) / 110)
+            let pad = ceil(cell) + 2
+            return kernel.apply(
+                extent: extent,
+                roiCallback: { _, rect in rect.insetBy(dx: -pad, dy: -pad) },
+                arguments: [input.clampedToExtent(), cell]
+            ) ?? input
         }
+    }
+
+    /// GLÖD: the cool night grade, then the brightest highlights blurred, tinted red-orange and
+    /// screened back on, the way light bounces off the back of a film without an anti-halation layer.
+    private func halation(_ input: CIImage) -> CIImage {
+        let graded = applyColorKernel(Self.tungstenNightKernel, to: input)
+        guard let source = Self.halationSourceKernel?.apply(
+            extent: input.extent, roiCallback: { _, rect in rect }, arguments: [input, 0.66]
+        ) else { return graded }
+        let extent = input.extent
+        let shortSide = min(extent.width, extent.height)
+        let tight = source.clampedToExtent().applyingGaussianBlur(sigma: shortSide * 0.006)
+        let wide = source.clampedToExtent().applyingGaussianBlur(sigma: shortSide * 0.025)
+        let glow = tight.applyingFilter("CIAdditionCompositing", parameters: [
+            kCIInputBackgroundImageKey: wide.applyingFilter("CIColorMatrix", parameters: [
+                "inputRVector": CIVector(x: 0.9, y: 0, z: 0, w: 0),
+                "inputGVector": CIVector(x: 0, y: 0.9, z: 0, w: 0),
+                "inputBVector": CIVector(x: 0, y: 0, z: 0.9, w: 0),
+            ]),
+        ]).cropped(to: extent)
+        return glow.applyingFilter("CIScreenBlendMode", parameters: [kCIInputBackgroundImageKey: graded])
+            .cropped(to: extent)
     }
 
     /// Lateral colour fringing with no barrel bulge: red spreads outward, blue inward.
@@ -420,6 +520,10 @@ struct FilmFilter: Identifiable {
         case .lomur:   return 1.2
         case .roda:    return 1.2
         case .lilja:   return 0.85
+        case .glod:    return 1.1
+        case .forn:    return 0.75
+        case .tinn:    return 0.0
+        case .prikk:   return 1.15
         default:       return 1.0
         }
     }
@@ -436,11 +540,15 @@ let filmFilters: [FilmFilter] = [
     FilmFilter(name: "BRÖKK", color: Color(red: 0.78, green: 0.43, blue: 0.22), imageName: "filter_brokk", effect: .sepia),
     FilmFilter(name: "VYLUR", color: Color(red: 0.68, green: 0.27, blue: 0.82), imageName: "filter_vylur", effect: .cool),
     FilmFilter(name: "GRÅLT", color: Color(red: 0.28, green: 0.28, blue: 0.28), imageName: "filter_gralt", effect: .noir),
+    // Proposed name and swatch; awaiting confirmation.
+    FilmFilter(name: "GLÖD", color: Color(red: 0.95, green: 0.36, blue: 0.16), imageName: nil, effect: .glod, isNew: true),
+    // Proposed name and swatch; awaiting confirmation.
+    FilmFilter(name: "FÖRN", color: Color(red: 0.80, green: 0.55, blue: 0.66), imageName: nil, effect: .forn, isNew: true),
 ]
 
 let instantFilters: [FilmFilter] = [
-    FilmFilter(name: "RÖDA",  color: Color(red: 0.88, green: 0.22, blue: 0.14), imageName: nil, effect: .roda, isNew: true),
-    FilmFilter(name: "LILJA", color: Color(red: 0.74, green: 0.64, blue: 0.88), imageName: nil, effect: .lilja, isNew: true),
+    FilmFilter(name: "RÖDA",  color: Color(red: 0.88, green: 0.22, blue: 0.14), imageName: nil, effect: .roda),
+    FilmFilter(name: "LILJA", color: Color(red: 0.74, green: 0.64, blue: 0.88), imageName: nil, effect: .lilja),
 ]
 
 let weirdFilters: [FilmFilter] = [
@@ -449,7 +557,10 @@ let weirdFilters: [FilmFilter] = [
     FilmFilter(name: "SKRÍM",  color: Color(red: 0.15, green: 0.75, blue: 0.35), imageName: nil, effect: .skrim),
     FilmFilter(name: "FROSINN", color: Color(red: 0.1, green: 0.35, blue: 0.75),  imageName: nil, effect: .frosinn),
     FilmFilter(name: "NÓTT",   color: Color(red: 0.18, green: 0.88, blue: 0.42), imageName: nil, effect: .nott),
-    FilmFilter(name: "SKIFT",  color: Color(red: 0.95, green: 0.20, blue: 0.62), imageName: nil, effect: .skift, isNew: true),
+    FilmFilter(name: "SKIFT",  color: Color(red: 0.95, green: 0.20, blue: 0.62), imageName: nil, effect: .skift),
+    // Proposed names and swatches; awaiting confirmation.
+    FilmFilter(name: "TINN",   color: Color(red: 0.45, green: 0.42, blue: 0.37), imageName: nil, effect: .tinn, isNew: true),
+    FilmFilter(name: "PRIKK",  color: Color(red: 0.16, green: 0.60, blue: 0.86), imageName: nil, effect: .prikk, isNew: true),
 ]
 
 let allFilters: [FilmFilter] = filmFilters + instantFilters + weirdFilters
@@ -491,7 +602,7 @@ extension FilmFilter {
 
 /// Bump `latestDropID` whenever a new filter pack ships so the NEW badges and the FILM dot reappear.
 enum FilmDrops {
-    static let latestDropID = 2
+    static let latestDropID = 3
     static let seenKey = "seenFilmDropID"
 }
 

@@ -1,4 +1,5 @@
 import ImageIO
+import OSLog
 import UIKit
 
 /// Film rendering and JPEG encoding for new captures. A 12 MP render takes long enough to freeze
@@ -8,9 +9,17 @@ nonisolated enum CaptureDevelopment {
 
     @concurrent
     static func developedJPEG(from image: UIImage, film: FilmFilterEffect?, lens: Lens?) async -> Data {
+        #if DEBUG
+        let start = ContinuousClock.now
+        defer { logger.debug("Developed \(String(describing: film), privacy: .public) in \(ContinuousClock.now - start, privacy: .public)") }
+        #endif
         let developed = FilmPipeline.apply(to: image, film: film, lens: lens)
         return developed.jpegData(compressionQuality: jpegQuality) ?? Data()
     }
+
+    #if DEBUG
+    private static let logger = Logger(subsystem: "com.giusscos.pola", category: "CaptureDevelopment")
+    #endif
 }
 
 extension CGImagePropertyOrientation {
