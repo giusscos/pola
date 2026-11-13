@@ -40,7 +40,8 @@ enum MemoryWidgetExporter {
                 timestamp: entry.timestamp,
                 frameColorHex: frameColorHex(for: entry),
                 frameFormat: entry.frameFormat,
-                imageFilename: filename
+                imageFilename: filename,
+                isFavorite: entry.isFavorite
             )
         }
         let snapshot = MemorySnapshot(isPremium: isPremium, memories: memories)
@@ -79,6 +80,12 @@ enum MemoryWidgetExporter {
 
         var picked = Array(developed.prefix(newestCount))
         var pickedIDs = Set(picked.map(\.id))
+
+        // Favourites come before anniversaries and the spread, so the widget can prefer them.
+        for entry in developed.filter({ $0.isFavorite && !pickedIDs.contains($0.id) }).prefix(maxMemories / 3) {
+            picked.append(entry)
+            pickedIDs.insert(entry.id)
+        }
 
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())

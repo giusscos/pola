@@ -21,6 +21,8 @@ final class PolaroidEntry: Identifiable {
     var packName: String? = nil
     var packColorHex: String? = nil
     var frameFormatRaw: String = FrameFormat.classic.rawValue
+    // Added in 1.0.9; a defaulted attribute is a lightweight migration and CloudKit-compatible.
+    var isFavorite: Bool = false
 
     convenience init(
         image: UIImage,

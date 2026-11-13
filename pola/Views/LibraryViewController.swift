@@ -42,6 +42,7 @@ final class LibraryViewController: UICollectionViewController {
         hasher.combine(entry.packName)
         hasher.combine(entry.packColorHex)
         hasher.combine(entry.frameFormatRaw)
+        hasher.combine(entry.isFavorite)
         hasher.combine(entry.videoFilename)
         hasher.combine(Int(entry.developmentProgress * 100))
         return hasher.finalize()
@@ -52,6 +53,8 @@ final class LibraryViewController: UICollectionViewController {
     var modelContext: ModelContext!
 
     // MARK: - State
+    /// Filter-menu value for favourites; stock names are upper-case words, so this can't clash.
+    private static let favoritesCategory = "favorites"
     private var selectedCategory = "All"
     private var sortNewest = true
     private var dragSelectInitialState: Bool?
@@ -109,12 +112,23 @@ final class LibraryViewController: UICollectionViewController {
     /// Frame colors share the stock names, so they're deliberately not counted.
     private var categoryNames: [String] {
         let used = Set(entries.compactMap(\.filterName))
-        return ["All"] + allFilters.map(\.name).filter(used.contains)
+        let favorites = entries.contains(where: \.isFavorite) ? [Self.favoritesCategory] : []
+        return ["All"] + favorites + allFilters.map(\.name).filter(used.contains)
+    }
+
+    private func displayName(ofCategory name: String) -> String {
+        switch name {
+        case "All": NSLocalizedString("All", comment: "Library filter")
+        case Self.favoritesCategory: NSLocalizedString("Favorites", comment: "Library filter")
+        default: name
+        }
     }
 
     private var filteredEntries: [PolaroidEntry] {
         var result = entries
-        if selectedCategory != "All" {
+        if selectedCategory == Self.favoritesCategory {
+            result = result.filter(\.isFavorite)
+        } else if selectedCategory != "All" {
             result = result.filter { $0.filterName == selectedCategory }
         }
         let text = searchController.searchBar.text ?? ""
@@ -239,6 +253,17 @@ final class LibraryViewController: UICollectionViewController {
             .id("\(id.uuidString)-\(Int(entry.developmentProgress * 100))")
             .aspectRatio(entry.frameFormat.frameAspect, contentMode: .fit)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: .bottomTrailing) {
+                if entry.isFavorite {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 10 * max(fontScale, 0.8), weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(4)
+                        .background(.black.opacity(0.45), in: Circle())
+                        .padding(6)
+                        .accessibilityHidden(true)
+                }
+            }
             .overlay(alignment: .topLeading) {
                 if selectMode {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
@@ -318,7 +343,7 @@ final class LibraryViewController: UICollectionViewController {
             setBackground(title: NSLocalizedString("No Photos Yet", comment: ""),
                           subtitle: NSLocalizedString("Take your first photo to see it here", comment: ""))
         } else if filtered.isEmpty {
-            let query = (searchController.searchBar.text ?? "").isEmpty ? selectedCategory : (searchController.searchBar.text ?? "")
+            let query = (searchController.searchBar.text ?? "").isEmpty ? displayName(ofCategory: selectedCategory) : (searchController.searchBar.text ?? "")
             setBackground(title: NSLocalizedString("No Results", comment: ""),
                           subtitle: String(format: NSLocalizedString("No photos matching \"%@\"", comment: ""), query))
         } else {
@@ -412,8 +437,9 @@ final class LibraryViewController: UICollectionViewController {
         let names = categoryNames
         if names.count > 1 {
             let filterActions = names.map { name in
-                UIAction(title: name == "All" ? NSLocalizedString("All", comment: "Library filter") : name,
-                         image: UIImage(systemName: name == "All" ? "photo.on.rectangle" : "camera.filters"),
+                UIAction(title: displayName(ofCategory: name),
+                         image: UIImage(systemName: name == "All" ? "photo.on.rectangle"
+                                        : name == Self.favoritesCategory ? "heart" : "camera.filters"),
                          state: selectedCategory == name ? .on : .off) { [weak self] _ in
                     guard let self else { return }
                     self.selectedCategory = (self.selectedCategory == name && name != "All") ? "All" : name
@@ -783,6 +809,10 @@ final class LibraryViewController: UICollectionViewController {
             actionProvider: { [weak self] _ in
                 guard let self else { return UIMenu() }
                 return UIMenu(children: [
+                    UIAction(title: NSLocalizedString(entry.isFavorite ? "Remove from Favorites" : "Add to Favorites", comment: ""),
+                             image: UIImage(systemName: entry.isFavorite ? "heart.slash" : "heart")) { _ in
+                        entry.isFavorite.toggle()
+                    },
                     UIAction(title: NSLocalizedString("Edit Caption & Notes", comment: ""),
                              image: UIImage(systemName: "pencil.and.outline")) { [weak self] _ in
                         self?.editEntry(entry)

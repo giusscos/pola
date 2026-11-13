@@ -82,6 +82,12 @@ struct MemoriesProvider: TimelineProvider {
         }
 
         let dayNumber = calendar.ordinality(of: .day, in: .era, for: date) ?? 0
+        // Every other slot shows a favourite, when there are any.
+        let favorites = memories.filter { $0.isFavorite == true }
+        if !favorites.isEmpty, slot % 2 == 0 {
+            let index = (dayNumber * Self.entriesPerTimeline + slot / 2) % favorites.count
+            return (favorites[index], nil)
+        }
         let index = (dayNumber * Self.entriesPerTimeline + slot) % memories.count
         return (memories[index], nil)
     }

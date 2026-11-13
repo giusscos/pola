@@ -325,8 +325,12 @@ final class PolaroidDetailViewController: UIViewController {
         let deleteBtn = UIBarButtonItem(image: UIImage(systemName: "trash"), style: .plain,
                                         target: self, action: #selector(deleteCurrentPrompt))
         deleteBtn.tintColor = .systemRed
+        let isFavorite = currentEntry?.isFavorite == true
+        let favoriteBtn = UIBarButtonItem(image: UIImage(systemName: isFavorite ? "heart.fill" : "heart"), style: .plain,
+                                          target: self, action: #selector(toggleFavorite))
+        favoriteBtn.accessibilityLabel = NSLocalizedString(isFavorite ? "Remove from Favorites" : "Add to Favorites", comment: "")
 
-        toolbarItems = [shareBtn, flex, saveBtn, flex, editBtn, flex, deleteBtn]
+        toolbarItems = [shareBtn, flex, favoriteBtn, flex, saveBtn, flex, editBtn, flex, deleteBtn]
 
         if currentEntry?.videoFilename != nil {
             let loopBtn = UIBarButtonItem(
@@ -360,6 +364,13 @@ final class PolaroidDetailViewController: UIViewController {
     }
 
     // MARK: - Actions
+
+    @objc private func toggleFavorite() {
+        guard let entry = currentEntry else { return }
+        entry.isFavorite.toggle()
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        updateToolbar()
+    }
 
     @objc private func togglePlay() {
         videoState.isPlaying.toggle()

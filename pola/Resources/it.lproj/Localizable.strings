@@ -299,3 +299,8 @@
 
 /* Print animation */
 "%d prints" = "%d stampe";
+
+/* Favorites */
+"Favorites" = "Preferiti";
+"Add to Favorites" = "Aggiungi ai preferiti";
+"Remove from Favorites" = "Rimuovi dai preferiti";

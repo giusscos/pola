@@ -299,3 +299,8 @@
 
 /* Print animation */
 "%d prints" = "%d Sofortbilder";
+
+/* Favorites */
+"Favorites" = "Favoriten";
+"Add to Favorites" = "Zu Favoriten hinzufügen";
+"Remove from Favorites" = "Aus Favoriten entfernen";

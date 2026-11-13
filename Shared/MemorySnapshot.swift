@@ -19,6 +19,8 @@ struct MemorySnapshot: Codable {
         let frameColorHex: String
         let frameFormat: FrameFormat
         let imageFilename: String
+        /// Optional so snapshots written before 1.0.9 still decode.
+        var isFavorite: Bool? = nil
     }
 
     var isPremium: Bool
