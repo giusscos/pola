@@ -316,3 +316,10 @@
 "Print deleted" = "Sofortbild gelöscht";
 "%d prints deleted" = "%d Sofortbilder gelöscht";
 "Undo" = "Widerrufen";
+
+/* Import */
+"Import from Photos" = "Aus Fotos importieren";
+"Import Photo" = "Foto importieren";
+"Film & Frame" = "Film & Rahmen";
+"Develop" = "Entwickeln";
+"Preview" = "Vorschau";

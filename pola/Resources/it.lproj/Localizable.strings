@@ -316,3 +316,10 @@
 "Print deleted" = "Stampa eliminata";
 "%d prints deleted" = "%d stampe eliminate";
 "Undo" = "Annulla";
+
+/* Import */
+"Import from Photos" = "Importa da Foto";
+"Import Photo" = "Importa foto";
+"Film & Frame" = "Pellicola e cornice";
+"Develop" = "Sviluppa";
+"Preview" = "Anteprima";

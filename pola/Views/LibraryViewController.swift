@@ -1,4 +1,6 @@
 import Photos
+import PhotosUI
+import UniformTypeIdentifiers
 import SwiftData
 import SwiftUI
 import UIKit
@@ -415,7 +417,8 @@ final class LibraryViewController: UICollectionViewController {
         let filtered = filteredEntries
         if liveEntries.isEmpty {
             setBackground(title: NSLocalizedString("No Photos Yet", comment: ""),
-                          subtitle: NSLocalizedString("Take your first photo to see it here", comment: ""))
+                          subtitle: NSLocalizedString("Take your first photo to see it here", comment: ""),
+                          showsImport: true)
         } else if filtered.isEmpty {
             let query = (searchController.searchBar.text ?? "").isEmpty ? displayName(ofCategory: selectedCategory) : (searchController.searchBar.text ?? "")
             setBackground(title: NSLocalizedString("No Results", comment: ""),
@@ -425,17 +428,62 @@ final class LibraryViewController: UICollectionViewController {
         }
     }
 
-    private func setBackground(title: String, subtitle: String) {
+    private func setBackground(title: String, subtitle: String, showsImport: Bool = false) {
         let label = UILabel()
         label.numberOfLines = 0
         label.textAlignment = .center
+        label.adjustsFontForContentSizeCategory = true
         let attr = NSMutableAttributedString(string: title + "\n",
                                              attributes: [.font: UIFont.preferredFont(forTextStyle: .headline)])
         attr.append(NSAttributedString(string: subtitle,
                                        attributes: [.font: UIFont.preferredFont(forTextStyle: .subheadline),
                                                     .foregroundColor: UIColor.secondaryLabel]))
         label.attributedText = attr
-        collectionView.backgroundView = label
+        guard showsImport else {
+            collectionView.backgroundView = label
+            return
+        }
+        var config = UIButton.Configuration.bordered()
+        config.title = NSLocalizedString("Import from Photos", comment: "")
+        config.image = UIImage(systemName: "photo.badge.plus")
+        config.imagePadding = 6
+        let button = UIButton(configuration: config, primaryAction: UIAction { [weak self] _ in
+            self?.importFromPhotos()
+        })
+        let stack = UIStackView(arrangedSubviews: [label, button])
+        stack.axis = .vertical
+        stack.spacing = 16
+        stack.alignment = .center
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        let container = UIView()
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            stack.leadingAnchor.constraint(greaterThanOrEqualTo: container.layoutMarginsGuide.leadingAnchor),
+        ])
+        collectionView.backgroundView = container
+    }
+
+    // MARK: - Import
+
+    /// One photo at a time; the system picker needs no Photos permission.
+    @objc private func importFromPhotos() {
+        var config = PHPickerConfiguration()
+        config.filter = .images
+        config.selectionLimit = 1
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+
+    private func presentImport(_ photo: ImportedPhoto) {
+        let view = ImportPhotoView(photo: photo, onFinish: { [weak self] in self?.dismiss(animated: true) })
+            .environment(PremiumManager.shared)
+            .environment(\.modelContext, modelContext)
+        let host = UIHostingController(rootView: view)
+        host.modalPresentationStyle = .fullScreen
+        present(host, animated: true)
     }
 
     // MARK: - Navigation bar
@@ -485,6 +533,14 @@ final class LibraryViewController: UICollectionViewController {
     }
 
     private func updateNavigationBarButtons() {
+        if isSelectMode {
+            navigationItem.leftBarButtonItem = nil
+        } else {
+            let importItem = UIBarButtonItem(image: UIImage(systemName: "photo.badge.plus"), style: .plain,
+                                             target: self, action: #selector(importFromPhotos))
+            importItem.accessibilityLabel = NSLocalizedString("Import from Photos", comment: "")
+            navigationItem.leftBarButtonItem = importItem
+        }
         if isSelectMode {
             navigationItem.rightBarButtonItems = [
                 UIBarButtonItem(title: NSLocalizedString("Cancel", comment: ""), style: .plain,
@@ -1040,6 +1096,22 @@ final class LibraryViewController: UICollectionViewController {
         vc.sheetPresentationController?.detents = [.medium(), .large()]
         vc.sheetPresentationController?.prefersGrabberVisible = true
         present(vc, animated: true)
+    }
+}
+
+// MARK: - PHPickerViewControllerDelegate
+extension LibraryViewController: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        guard let provider = results.first?.itemProvider,
+              provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) else { return }
+        provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { [weak self] data, _ in
+            guard let data else { return }
+            Task { @MainActor in
+                guard let photo = await PhotoImporter.load(data) else { return }
+                self?.presentImport(photo)
+            }
+        }
     }
 }
 

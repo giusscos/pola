@@ -316,3 +316,10 @@
 "Print deleted" = "Copia eliminada";
 "%d prints deleted" = "%d copias eliminadas";
 "Undo" = "Deshacer";
+
+/* Import */
+"Import from Photos" = "Importar de Fotos";
+"Import Photo" = "Importar foto";
+"Film & Frame" = "Película y marco";
+"Develop" = "Revelar";
+"Preview" = "Vista previa";

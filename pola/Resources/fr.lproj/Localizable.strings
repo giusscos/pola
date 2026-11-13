@@ -316,3 +316,10 @@
 "Print deleted" = "Tirage supprimé";
 "%d prints deleted" = "%d tirages supprimés";
 "Undo" = "Annuler";
+
+/* Import */
+"Import from Photos" = "Importer depuis Photos";
+"Import Photo" = "Importer une photo";
+"Film & Frame" = "Pellicule et cadre";
+"Develop" = "Développer";
+"Preview" = "Aperçu";

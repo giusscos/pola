@@ -20,6 +20,7 @@ enum AnalyticsEvent: String {
     case printSheetCreated
     case reviewRequested
     case locationPromptAnswered
+    case importCompleted
 }
 
 protocol AnalyticsSink {

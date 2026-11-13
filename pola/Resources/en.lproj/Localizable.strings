@@ -316,3 +316,10 @@
 "Print deleted" = "Print deleted";
 "%d prints deleted" = "%d prints deleted";
 "Undo" = "Undo";
+
+/* Import */
+"Import from Photos" = "Import from Photos";
+"Import Photo" = "Import Photo";
+"Film & Frame" = "Film & Frame";
+"Develop" = "Develop";
+"Preview" = "Preview";
