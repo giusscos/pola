@@ -146,8 +146,9 @@ struct ContentView: View {
                     coordinate: cameraManager.lastCoordinate)
     }
 
-    private func makeEntry(imageData: Data, look: CaptureLook, isTimelapse: Bool = false) -> PolaroidEntry {
-        PolaroidEntry(
+    private func makeEntry(imageData: Data, look: CaptureLook, isTimelapse: Bool = false,
+                           isDoubleExposure: Bool = false) -> PolaroidEntry {
+        let entry = PolaroidEntry(
             imageData: imageData,
             isTimelapse: isTimelapse,
             filterName: look.filterName,
@@ -156,6 +157,8 @@ struct ContentView: View {
             frameFormat: look.frameFormat,
             coordinate: look.coordinate
         )
+        entry.isDoubleExposure = isDoubleExposure
+        return entry
     }
 
     /// Runs `work` after every capture queued before it has been developed and inserted.
@@ -664,7 +667,9 @@ struct ContentView: View {
             let mode = cameraMode
             enqueueDevelopment {
                 let jpeg = await CaptureDevelopment.developedJPEG(from: image, film: look.film, lens: look.lens)
-                let entry = makeEntry(imageData: jpeg, look: look)
+                // Time-lapse frames saved as separate prints are marked too, for the library's kind filter.
+                let entry = makeEntry(imageData: jpeg, look: look, isTimelapse: inTimelapse,
+                                      isDoubleExposure: mode == .doubleExposure)
                 modelContext.insert(entry)
                 if inTimelapse {
                     timelapsePendingEntries.append(entry)

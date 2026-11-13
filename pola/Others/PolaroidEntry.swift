@@ -23,6 +23,8 @@ final class PolaroidEntry: Identifiable {
     var frameFormatRaw: String = FrameFormat.classic.rawValue
     // Added in 1.0.9; a defaulted attribute is a lightweight migration and CloudKit-compatible.
     var isFavorite: Bool = false
+    // Added in 1.0.9; earlier double exposures can't be told apart and stay false.
+    var isDoubleExposure: Bool = false
 
     convenience init(
         image: UIImage,

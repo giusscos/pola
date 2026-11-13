@@ -304,3 +304,10 @@
 "Favorites" = "Favorites";
 "Add to Favorites" = "Add to Favorites";
 "Remove from Favorites" = "Remove from Favorites";
+
+/* Library kind filter */
+"Kind" = "Kind";
+"Photos" = "Photos";
+"Videos" = "Videos";
+"Time Lapses" = "Time Lapses";
+"Double Exposures" = "Double Exposures";

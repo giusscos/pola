@@ -56,6 +56,7 @@ final class LibraryViewController: UICollectionViewController {
     /// Filter-menu value for favourites; stock names are upper-case words, so this can't clash.
     private static let favoritesCategory = "favorites"
     private var selectedCategory = "All"
+    private var selectedKind: EntryKind?
     private var sortNewest = true
     private var dragSelectInitialState: Bool?
     private var dragSelectVisited: Set<UUID> = []
@@ -126,6 +127,9 @@ final class LibraryViewController: UICollectionViewController {
 
     private var filteredEntries: [PolaroidEntry] {
         var result = entries
+        if let selectedKind {
+            result = result.filter(selectedKind.matches)
+        }
         if selectedCategory == Self.favoritesCategory {
             result = result.filter(\.isFavorite)
         } else if selectedCategory != "All" {
@@ -212,7 +216,8 @@ final class LibraryViewController: UICollectionViewController {
 
     /// Month headers organise the full library; a short filtered or searched list reads better without them.
     private var showsMonthHeaders: Bool {
-        let isNarrowed = selectedCategory != "All" || !(searchController.searchBar.text ?? "").isEmpty
+        let isNarrowed = selectedCategory != "All" || selectedKind != nil
+            || !(searchController.searchBar.text ?? "").isEmpty
         return !isNarrowed || filteredEntries.count >= 12
     }
 
@@ -509,6 +514,28 @@ final class LibraryViewController: UICollectionViewController {
             let filterIcon = selectedCategory == "All" ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill"
             elements.append(UIMenu(title: NSLocalizedString("Filter", comment: ""),
                                    image: UIImage(systemName: filterIcon), children: filterActions))
+        }
+
+        // Only offered once the library holds more than one kind.
+        let kinds = EntryKind.allCases.filter { kind in entries.contains(where: kind.matches) }
+        if kinds.count > 1 {
+            let all = UIAction(title: NSLocalizedString("All", comment: "Library filter"),
+                               image: UIImage(systemName: "square.grid.2x2"),
+                               state: selectedKind == nil ? .on : .off) { [weak self] _ in
+                self?.selectedKind = nil
+                self?.applySnapshot()
+            }
+            let kindActions = kinds.map { kind in
+                UIAction(title: kind.title, image: UIImage(systemName: kind.icon),
+                         state: selectedKind == kind ? .on : .off) { [weak self] _ in
+                    guard let self else { return }
+                    self.selectedKind = self.selectedKind == kind ? nil : kind
+                    self.applySnapshot()
+                }
+            }
+            elements.append(UIMenu(title: NSLocalizedString("Kind", comment: "Library filter by photo, video, time lapse"),
+                                   image: UIImage(systemName: selectedKind?.icon ?? "rectangle.stack"),
+                                   children: [all] + kindActions))
         }
 
         elements.append(UIMenu(title: NSLocalizedString("Sort", comment: ""),
@@ -954,6 +981,38 @@ extension LibraryViewController: UINavigationControllerDelegate {
         onDetailStateChange?(isDeep)
         if !isDeep {
             reconfigureVisible()
+        }
+    }
+}
+
+/// What a print was shot as, for the library's kind filter.
+private enum EntryKind: CaseIterable {
+    case photo, video, timelapse, doubleExposure
+
+    func matches(_ entry: PolaroidEntry) -> Bool {
+        switch self {
+        case .photo: entry.videoFilename == nil && !entry.isTimelapse && !entry.isDoubleExposure
+        case .video: entry.videoFilename != nil && !entry.isTimelapse
+        case .timelapse: entry.isTimelapse
+        case .doubleExposure: entry.isDoubleExposure
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .photo: NSLocalizedString("Photos", comment: "Library kind filter")
+        case .video: NSLocalizedString("Videos", comment: "Library kind filter")
+        case .timelapse: NSLocalizedString("Time Lapses", comment: "Library kind filter")
+        case .doubleExposure: NSLocalizedString("Double Exposures", comment: "Library kind filter")
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .photo: "photo"
+        case .video: "video"
+        case .timelapse: "timer"
+        case .doubleExposure: "square.on.square"
         }
     }
 }

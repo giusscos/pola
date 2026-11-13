@@ -304,3 +304,10 @@
 "Favorites" = "Favoriten";
 "Add to Favorites" = "Zu Favoriten hinzufügen";
 "Remove from Favorites" = "Aus Favoriten entfernen";
+
+/* Library kind filter */
+"Kind" = "Art";
+"Photos" = "Fotos";
+"Videos" = "Videos";
+"Time Lapses" = "Zeitraffer";
+"Double Exposures" = "Doppelbelichtungen";

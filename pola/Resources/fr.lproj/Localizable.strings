@@ -304,3 +304,10 @@
 "Favorites" = "Favoris";
 "Add to Favorites" = "Ajouter aux favoris";
 "Remove from Favorites" = "Retirer des favoris";
+
+/* Library kind filter */
+"Kind" = "Type";
+"Photos" = "Photos";
+"Videos" = "Vidéos";
+"Time Lapses" = "Accélérés";
+"Double Exposures" = "Doubles expositions";
