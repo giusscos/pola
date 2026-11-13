@@ -430,6 +430,7 @@ final class PolaroidDetailViewController: UIViewController {
         let entry = entries[currentIndex]
         if let filename = entry.videoFilename { store.deleteVideo(filename: filename) }
         let target = min(max(0, currentIndex >= entries.count - 1 ? currentIndex - 1 : currentIndex), entries.count - 2)
+        ThumbnailCache.remove(id: entry.id)
         modelContext.delete(entry)
         entries.remove(at: currentIndex)
 

@@ -13,13 +13,19 @@ enum MemoryWidgetExporter {
         guard let directory = MemorySnapshot.directory else { return }
 
         let chosen = pickMemories(from: entries)
-        var pendingThumbnails: [(filename: String, data: Data)] = []
+        // A grid thumbnail is already big enough when there is one, which saves decoding the photo.
+        var pendingThumbnails: [(filename: String, source: ThumbnailSource)] = []
         let fileManager = FileManager.default
 
         let memories: [MemorySnapshot.Memory] = chosen.map { entry in
             let filename = "\(entry.id.uuidString).jpg"
             if !fileManager.fileExists(atPath: directory.appendingPathComponent(filename).path) {
-                pendingThumbnails.append((filename, entry.imageData))
+                let minimumSize = Int(max(thumbnailSize.width, thumbnailSize.height))
+                if let cached = ThumbnailCache.diskFileURL(id: entry.id, minimumPixelSize: minimumSize) {
+                    pendingThumbnails.append((filename, .file(cached)))
+                } else {
+                    pendingThumbnails.append((filename, .photo(entry.imageData)))
+                }
             }
             return MemorySnapshot.Memory(
                 id: entry.id,
@@ -39,8 +45,9 @@ enum MemoryWidgetExporter {
         // Decoding full-size photos is slow, so the file work happens off the main actor.
         Task.detached(priority: .utility) {
             try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-            for (filename, data) in pendingThumbnails {
-                guard let image = UIImage(data: data),
+            for (filename, source) in pendingThumbnails {
+                guard let data = source.data,
+                      let image = UIImage(data: data),
                       let thumb = image.preparingThumbnail(of: fitting(image.size, in: maxSize)),
                       let jpeg = thumb.jpegData(compressionQuality: 0.8) else { continue }
                 try? jpeg.write(to: directory.appendingPathComponent(filename), options: .atomic)
@@ -98,6 +105,18 @@ enum MemoryWidgetExporter {
         if let hex = entry.packColorHex { return hex }
         if let pack = polaPackColors.first(where: { $0.name == entry.packName }) { return pack.color.hexString }
         return "FFFFFF"
+    }
+}
+
+nonisolated private enum ThumbnailSource {
+    case file(URL)
+    case photo(Data)
+
+    var data: Data? {
+        switch self {
+        case .file(let url): try? Data(contentsOf: url)
+        case .photo(let data): data
+        }
     }
 }
 

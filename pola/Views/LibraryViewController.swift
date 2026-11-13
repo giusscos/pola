@@ -16,6 +16,7 @@ final class LibraryViewController: UICollectionViewController {
             // The last photo on the selected stock was deleted or re-filmed.
             if !categoryNames.contains(selectedCategory) { selectedCategory = "All" }
             applySnapshot(animated: !oldValue.isEmpty)
+            pruneThumbnailsIfNeeded()
             // Select and the options menu only exist when there are photos.
             if entries.isEmpty != oldValue.isEmpty { updateNavigationBarButtons() }
         }
@@ -75,6 +76,9 @@ final class LibraryViewController: UICollectionViewController {
     private var isSaving = false
     private var saveDidSucceed = false
     private var pendingDetailID: UUID?
+    private var loadingThumbnailIDs: Set<UUID> = []
+    private var thumbnailReadyIDs: Set<UUID> = []
+    private var didPruneThumbnails = false
 
     private var columnCount: Int {
         get { UserDefaults.standard.object(forKey: "libraryColumnCount") as? Int ?? 3 }
@@ -155,6 +159,7 @@ final class LibraryViewController: UICollectionViewController {
         collectionView.allowsMultipleSelection = true
         collectionView.collectionViewLayout = makeLayout()
         collectionView.keyboardDismissMode = .onDrag
+        collectionView.prefetchDataSource = self
     }
 
     private func makeLayout() -> UICollectionViewCompositionalLayout {
@@ -200,7 +205,10 @@ final class LibraryViewController: UICollectionViewController {
         let selectMode = isSelectMode
         let fontScale = cellFontScale
         let store = store!
-        let thumbnail = entry.thumbnail(maxPixelSize: thumbnailPixelSize)
+        // Never decode on the main thread here: until the thumbnail is loaded the cell shows
+        // the frame around an undeveloped (black) photo.
+        let thumbnail = entry.cachedThumbnail(maxPixelSize: thumbnailPixelSize)
+        if thumbnail == nil { loadThumbnail(for: entry) }
 
         cell.contentConfiguration = UIHostingConfiguration {
             PolaroidPhotoCell(
@@ -242,6 +250,42 @@ final class LibraryViewController: UICollectionViewController {
             }
         }
         .margins(.all, 0)
+    }
+
+    private func loadThumbnail(for entry: PolaroidEntry) {
+        let id = entry.id
+        guard !loadingThumbnailIDs.contains(id) else { return }
+        loadingThumbnailIDs.insert(id)
+        let pixelSize = thumbnailPixelSize
+        Task { [weak self] in
+            let image = await entry.loadThumbnail(maxPixelSize: pixelSize)
+            guard let self else { return }
+            self.loadingThumbnailIDs.remove(id)
+            if image != nil { self.thumbnailDidLoad(id) }
+        }
+    }
+
+    /// Reconfigures whichever cell now shows each loaded entry, a batch per run loop pass.
+    private func thumbnailDidLoad(_ id: UUID) {
+        let isFirst = thumbnailReadyIDs.isEmpty
+        thumbnailReadyIDs.insert(id)
+        guard isFirst else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            var snap = self.dataSource.snapshot()
+            let ids = self.thumbnailReadyIDs.filter { snap.indexOfItem($0) != nil }
+            self.thumbnailReadyIDs.removeAll()
+            guard !ids.isEmpty else { return }
+            snap.reconfigureItems(Array(ids))
+            self.dataSource.apply(snap, animatingDifferences: false)
+        }
+    }
+
+    private func pruneThumbnailsIfNeeded() {
+        guard !didPruneThumbnails, !entries.isEmpty else { return }
+        didPruneThumbnails = true
+        let ids = Set(entries.map(\.id))
+        Task.detached(priority: .background) { await ThumbnailCache.prune(keeping: ids) }
     }
 
     private func applySnapshot(animated: Bool = true) {
@@ -708,6 +752,7 @@ final class LibraryViewController: UICollectionViewController {
             for id in ids {
                 if let entry = entries.first(where: { $0.id == id }) {
                     if let filename = entry.videoFilename { store.deleteVideo(filename: filename) }
+                    ThumbnailCache.remove(id: entry.id)
                     modelContext.delete(entry)
                 }
             }
@@ -772,6 +817,19 @@ final class LibraryViewController: UICollectionViewController {
         vc.sheetPresentationController?.detents = [.medium(), .large()]
         vc.sheetPresentationController?.prefersGrabberVisible = true
         present(vc, animated: true)
+    }
+}
+
+// MARK: - UICollectionViewDataSourcePrefetching
+extension LibraryViewController: UICollectionViewDataSourcePrefetching {
+    func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
+        let pixelSize = thumbnailPixelSize
+        for indexPath in indexPaths {
+            guard let id = dataSource.itemIdentifier(for: indexPath),
+                  let entry = entriesByID[id],
+                  entry.cachedThumbnail(maxPixelSize: pixelSize) == nil else { continue }
+            loadThumbnail(for: entry)
+        }
     }
 }
 

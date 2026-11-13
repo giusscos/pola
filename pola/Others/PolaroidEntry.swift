@@ -79,50 +79,47 @@ final class PolaroidEntry: Identifiable {
     }
 
     /// Downsampled image for grids. Decoding full-resolution photos for every cell exhausts
-    /// memory with large libraries, so this decodes straight to `maxPixelSize` and caches it.
-    /// `imageData` never changes after creation, so the entry ID is a safe cache key.
+    /// memory with large libraries, so this decodes straight to `maxPixelSize`, from the memory or
+    /// disk cache when it can. Synchronous; views that scroll use `loadThumbnail` instead.
     func thumbnail(maxPixelSize: CGFloat) -> UIImage? {
-        let bucket = max(64, Int(maxPixelSize.rounded(.up)))
-        let key = "\(id.uuidString)-\(bucket)" as NSString
-        if let cached = Self.thumbnailCache.object(forKey: key) { return cached }
-        guard let thumbnail = ImageDownsampler.downsample(imageData, maxPixelSize: bucket) else { return nil }
-        remember(thumbnail, key: key)
-        return thumbnail
+        let bucket = ThumbnailCache.bucket(for: maxPixelSize)
+        if let cached = ThumbnailCache.memoryImage(id: id, bucket: bucket)
+            ?? ThumbnailCache.diskImage(id: id, bucket: bucket) {
+            return cached
+        }
+        guard let image = ThumbnailCache.makeThumbnail(from: imageData, id: id, bucket: bucket, persist: false) else {
+            return nil
+        }
+        ThumbnailCache.writeInBackground(image, id: id, bucket: bucket)
+        return image
+    }
+
+    /// The thumbnail if it is already in memory; never touches the disk or the photo.
+    func cachedThumbnail(maxPixelSize: CGFloat) -> UIImage? {
+        ThumbnailCache.memoryImage(id: id, bucket: ThumbnailCache.bucket(for: maxPixelSize))
+    }
+
+    /// Like `thumbnail`, but the disk read and the decode happen off the main actor.
+    func loadThumbnail(maxPixelSize: CGFloat) async -> UIImage? {
+        let bucket = ThumbnailCache.bucket(for: maxPixelSize)
+        let id = id
+        if let cached = ThumbnailCache.memoryImage(id: id, bucket: bucket) { return cached }
+        if let cached = await ThumbnailCache.diskImageInBackground(id: id, bucket: bucket) { return cached }
+        return await ThumbnailCache.makeThumbnailInBackground(from: imageData, id: id, bucket: bucket)
     }
 
     /// The most recent thumbnail made for this entry, whatever its size, if one is still in memory.
     /// Lets a bigger view show something at once while it loads its own size.
     var latestThumbnail: UIImage? {
-        Self.latestThumbnails.object(forKey: id.uuidString as NSString)
+        ThumbnailCache.latestImage(id: id)
     }
 
-    /// `imageData` downsampled to `maxPixelSize` off the main actor. Only the data read is on main.
+    /// `imageData` downsampled to screen size off the main actor; kept in memory only.
     func downsampledImage(maxPixelSize: CGFloat) async -> UIImage? {
-        let bucket = max(64, Int(maxPixelSize.rounded(.up)))
-        let key = "\(id.uuidString)-\(bucket)" as NSString
-        if let cached = Self.thumbnailCache.object(forKey: key) { return cached }
-        guard let image = await ImageDownsampler.downsampleInBackground(imageData, maxPixelSize: bucket) else { return nil }
-        remember(image, key: key)
-        return image
+        let bucket = ThumbnailCache.bucket(for: maxPixelSize)
+        if let cached = ThumbnailCache.memoryImage(id: id, bucket: bucket) { return cached }
+        return await ThumbnailCache.makeThumbnailInBackground(from: imageData, id: id, bucket: bucket, persist: false)
     }
-
-    private func remember(_ image: UIImage, key: NSString) {
-        let cost = image.cgImage.map { $0.bytesPerRow * $0.height } ?? 0
-        Self.thumbnailCache.setObject(image, forKey: key, cost: cost)
-        Self.latestThumbnails.setObject(image, forKey: id.uuidString as NSString, cost: cost)
-    }
-
-    private static let thumbnailCache: NSCache<NSString, UIImage> = {
-        let cache = NSCache<NSString, UIImage>()
-        cache.totalCostLimit = 150 * 1024 * 1024
-        return cache
-    }()
-
-    private static let latestThumbnails: NSCache<NSString, UIImage> = {
-        let cache = NSCache<NSString, UIImage>()
-        cache.totalCostLimit = 60 * 1024 * 1024
-        return cache
-    }()
 
     var coordinate: CLLocationCoordinate2D? {
         guard let lat = latitude, let lon = longitude else { return nil }
