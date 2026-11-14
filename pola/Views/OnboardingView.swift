@@ -258,7 +258,7 @@ struct OnboardingView: View {
 
     /// Every film stock and lens on the reference photo, in two rows drifting in opposite directions.
     private var filterVisual: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: -14) {
             FilmMarqueeRow(tiles: marqueeTiles(filmFilters + instantFilters), reversed: false)
             FilmMarqueeRow(tiles: marqueeTiles(weirdFilters) + lensTiles, reversed: true)
         }
@@ -386,27 +386,35 @@ private struct FilmMarqueeRow: View {
 
     var body: some View {
         let cycle = (tileSize + spacing) * CGFloat(tiles.count)
-        TimelineView(.animation(paused: reduceMotion)) { context in
-            let phase = CGFloat((context.date.timeIntervalSinceReferenceDate * speed)
-                .truncatingRemainder(dividingBy: Double(max(cycle, 1))))
-            HStack(spacing: spacing) {
-                // Two copies, so one is always on screen while the other wraps around.
-                ForEach(0..<(tiles.count * 2), id: \.self) { index in
-                    tile(tiles[index % tiles.count])
+        // The row takes only the space it's given: the tiles live in an overlay, so their full
+        // width never reaches the page's layout, and anything past the edges is clipped and faded.
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: rowHeight)
+            .overlay(alignment: .leading) {
+                TimelineView(.animation(paused: reduceMotion)) { context in
+                    let phase = CGFloat((context.date.timeIntervalSinceReferenceDate * speed)
+                        .truncatingRemainder(dividingBy: Double(max(cycle, 1))))
+                    HStack(spacing: spacing) {
+                        // Three copies cover any screen width while one wraps around.
+                        ForEach(0..<(tiles.count * 3), id: \.self) { index in
+                            tile(tiles[index % tiles.count])
+                        }
+                    }
+                    .fixedSize()
+                    .offset(x: reversed ? phase - cycle : -phase)
                 }
             }
-            .fixedSize()
-            .offset(x: reversed ? phase - cycle : -phase)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(height: tileSize + 20)
-        .clipped()
-        .mask {
-            LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.12),
-                                   .init(color: .black, location: 0.88), .init(color: .clear, location: 1)],
-                           startPoint: .leading, endPoint: .trailing)
-        }
+            .clipped()
+            .mask {
+                LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.15),
+                                       .init(color: .black, location: 0.85), .init(color: .clear, location: 1)],
+                               startPoint: .leading, endPoint: .trailing)
+            }
     }
+
+    /// Tall enough for the tile, its label and the coloured glow, so the clip never cuts the glow.
+    private var rowHeight: CGFloat { tileSize + 48 }
 
     private func tile(_ tile: Tile) -> some View {
         VStack(spacing: 6) {

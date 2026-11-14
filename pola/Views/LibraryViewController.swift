@@ -320,7 +320,6 @@ final class LibraryViewController: UICollectionViewController {
             )
             .id("\(id.uuidString)-\(Int(entry.developmentProgress * 100))")
             .aspectRatio(entry.frameFormat.frameAspect, contentMode: .fit)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .accessibilityAddTraits(selectMode && isSelected ? .isSelected : [])
             .accessibilityAction(named: Text(selectMode && isSelected ? "Deselect" : "Select")) { [weak self] in
                 guard let self else { return }
@@ -357,16 +356,17 @@ final class LibraryViewController: UICollectionViewController {
                         .accessibilityHidden(true)
                 }
             }
+            // Overlays sit on the print itself, so wide and square frames get them on their corner too.
             .overlay(alignment: .topLeading) {
                 if selectMode {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, .blue)
+                    SelectionBadge(isSelected: isSelected)
                         .padding(6)
                         .accessibilityHidden(true)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Reconfiguring cells while the grid auto-scrolls must not animate their content.
+            .transaction { if selectMode { $0.animation = nil } }
         }
         .margins(.all, 0)
     }
@@ -860,9 +860,16 @@ final class LibraryViewController: UICollectionViewController {
         guard updated != selectedIDs else { return }
         let changed = updated.symmetricDifference(selectedIDs)
         selectedIDs = updated
-        var snap = snapshot
-        snap.reconfigureItems(Array(changed))
-        dataSource.apply(snap, animatingDifferences: false)
+        // Only cells on screen need redrawing; the rest pick up the selection when they appear.
+        let visible = Set(collectionView.indexPathsForVisibleItems.compactMap { dataSource.itemIdentifier(for: $0) })
+        let toRedraw = changed.intersection(visible)
+        if !toRedraw.isEmpty {
+            var snap = snapshot
+            snap.reconfigureItems(Array(toRedraw))
+            UIView.performWithoutAnimation {
+                dataSource.apply(snap, animatingDifferences: false)
+            }
+        }
         UISelectionFeedbackGenerator().selectionChanged()
     }
 
@@ -907,8 +914,11 @@ final class LibraryViewController: UICollectionViewController {
         let maxY = max(minY, collectionView.contentSize.height + insets.bottom - collectionView.bounds.height)
         let newY = min(max(collectionView.contentOffset.y + delta, minY), maxY)
         guard newY != collectionView.contentOffset.y else { return }
-        collectionView.contentOffset.y = newY
-        updateDragSelection()
+        UIView.performWithoutAnimation {
+            collectionView.contentOffset.y = newY
+            updateDragSelection()
+            collectionView.layoutIfNeeded()
+        }
     }
 
     // MARK: - Navigation
@@ -1361,4 +1371,28 @@ private final class MonthHeaderView: UICollectionReusableView {
     }
 
     required init?(coder: NSCoder) { fatalError() }
+}
+
+/// The select-mode circle: a dimmed, outlined disc when empty so it shows on white and pale
+/// frames as well as on dark photos; a blue checkmark when selected.
+private struct SelectionBadge: View {
+    let isSelected: Bool
+
+    var body: some View {
+        ZStack {
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, .blue)
+            } else {
+                Circle()
+                    .fill(.black.opacity(0.25))
+                    .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
+                    .padding(2)
+            }
+        }
+        .font(.title3)
+        .frame(width: 24, height: 24)
+        .shadow(color: .black.opacity(0.3), radius: 1.5, y: 0.5)
+    }
 }
