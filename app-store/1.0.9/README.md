@@ -13,7 +13,7 @@ python3 app-store/check_lengths.py app-store/1.0.9/search-a
 python3 app-store/check_lengths.py app-store/1.0.9/search-b
 ```
 
-- **Version:** not bumped on the branch. Set `MARKETING_VERSION` to 1.0.9 for the app and the widget when it's time to ship.
+- **Version:** `MARKETING_VERSION` 1.0.9 for the app and the widget (set Nov 14, 2026). Builds come from Xcode Cloud after a push to `main`.
 - **Go-live date:** _not live yet_
 - **Search option applied:** _not chosen yet_ (write A or B and the date here)
 
