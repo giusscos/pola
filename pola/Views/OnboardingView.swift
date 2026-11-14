@@ -262,7 +262,8 @@ struct OnboardingView: View {
         return VStack(spacing: 16) {
             // Film filter row — shows reference photo with each effect applied
             HStack(spacing: 10) {
-                ForEach(Array(filmFilters.enumerated()), id: \.offset) { i, filter in
+                // One tile per arc position; the Classic pack has more stocks than fit.
+                ForEach(Array(filmFilters.prefix(arcOffsets.count).enumerated()), id: \.offset) { i, filter in
                     VStack(spacing: 6) {
                         ZStack {
                             if let preview = filterPreviews[filter.name] {
