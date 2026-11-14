@@ -365,6 +365,8 @@ final class LibraryViewController: UICollectionViewController {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Cells passing under the navigation bar must not shrink to fit its safe area.
+            .ignoresSafeArea()
             // Reconfiguring cells while the grid auto-scrolls must not animate their content.
             .transaction { if selectMode { $0.animation = nil } }
         }
@@ -825,10 +827,9 @@ final class LibraryViewController: UICollectionViewController {
             dragSelectAnchor = anchor
             dragSelectOriginal = selectedIDs
             dragSelectInitialState = !selectedIDs.contains(id)
-            // The finger now selects instead of scrolling; toggling the pan cancels any scroll in progress.
+            // The finger now selects instead of scrolling. Pausing the pan (rather than turning
+            // scrolling off) cancels any scroll in progress without changing how cells get safe areas.
             collectionView.panGestureRecognizer.isEnabled = false
-            collectionView.panGestureRecognizer.isEnabled = true
-            collectionView.isScrollEnabled = false
             updateDragSelection()
             startAutoScroll()
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -878,7 +879,7 @@ final class LibraryViewController: UICollectionViewController {
         dragSelectAnchor = nil
         dragSelectInitialState = nil
         dragSelectOriginal = []
-        collectionView.isScrollEnabled = true
+        collectionView.panGestureRecognizer.isEnabled = true
         autoScrollLink?.invalidate()
         autoScrollLink = nil
     }
