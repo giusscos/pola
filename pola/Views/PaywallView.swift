@@ -229,8 +229,10 @@ struct PaywallView: View {
                     } else {
                         header
                     }
-                    featureList
+                    // Plans first, so the prices are on screen without scrolling.
                     pricingSection
+                        .padding(.bottom, 20)
+                    featureList
                     footerButtons
                 }
             }
