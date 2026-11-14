@@ -60,9 +60,16 @@ final class LibraryViewController: UICollectionViewController {
     private var selectedCategory = "All"
     private var selectedKind: EntryKind?
     private var sortNewest = true
+    // Drag to select: a sideways drag, or a hold then drag, selects every print between where it
+    // started and the finger; the grid scrolls only when the finger nears the top or bottom edge.
     private var dragSelectInitialState: Bool?
-    private var dragSelectVisited: Set<UUID> = []
+    private var dragSelectAnchor: Int?
+    private var dragSelectOriginal: Set<UUID> = []
     private weak var dragSelectPanGesture: UIPanGestureRecognizer?
+    private weak var dragSelectHoldGesture: UILongPressGestureRecognizer?
+    private weak var activeDragSelectGesture: UIGestureRecognizer?
+    private var autoScrollLink: CADisplayLink?
+    private var autoScrollLastTimestamp: CFTimeInterval = 0
     private var isSelectMode = false {
         didSet {
             if !isSelectMode { selectedIDs.removeAll() }
@@ -161,6 +168,8 @@ final class LibraryViewController: UICollectionViewController {
     private var dataSource: UICollectionViewDiffableDataSource<String, UUID>!
     private var layoutHasHeaders = false
     private var monthTitles: [String: String] = [:]
+    /// The month of the topmost visible prints, shown beside the item count.
+    private var visibleMonthTitle: String?
     private static let singleSection = "all"
     private let searchController = UISearchController(searchResultsController: nil)
     private var selectToolbar: UIToolbar?
@@ -218,8 +227,7 @@ final class LibraryViewController: UICollectionViewController {
                 elementKind: UICollectionView.elementKindSectionHeader,
                 alignment: .top
             )
-            header.pinToVisibleBounds = true
-            header.zIndex = 2
+            // Inline titles scroll with the prints; the month at the top shows in the navigation header.
             section.boundarySupplementaryItems = [header]
         }
         return UICollectionViewCompositionalLayout(section: section)
@@ -392,6 +400,22 @@ final class LibraryViewController: UICollectionViewController {
         }
     }
 
+    override func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        updateVisibleMonth()
+    }
+
+    private func updateVisibleMonth() {
+        guard layoutHasHeaders else { return }
+        let top = collectionView.contentOffset.y + collectionView.adjustedContentInset.top
+        let section = collectionView.indexPathsForVisibleItems
+            .filter { collectionView.layoutAttributesForItem(at: $0).map { $0.frame.maxY > top } ?? false }
+            .min()?.section
+        let title = section.flatMap { dataSource.sectionIdentifier(for: $0) }.flatMap { monthTitles[$0] }
+        guard title != visibleMonthTitle else { return }
+        visibleMonthTitle = title
+        updateNavigationTitle()
+    }
+
     private func pruneThumbnailsIfNeeded() {
         guard !didPruneThumbnails, !entries.isEmpty else { return }
         didPruneThumbnails = true
@@ -426,7 +450,9 @@ final class LibraryViewController: UICollectionViewController {
         // Reconfigure items already in the data source so property changes (e.g. border color) are reflected.
         let toReconfigure = newIDs.filter { existingIDs.contains($0) }
         if !toReconfigure.isEmpty { snap.reconfigureItems(toReconfigure) }
-        dataSource.apply(snap, animatingDifferences: animated)
+        dataSource.apply(snap, animatingDifferences: animated) { [weak self] in
+            self?.updateVisibleMonth()
+        }
     }
 
     private func reconfigureVisible() {
@@ -552,9 +578,14 @@ final class LibraryViewController: UICollectionViewController {
             subtitle = "\(selectedIDs.count)/\(entries.count)"
         } else {
             let count = filteredEntries.count
-            subtitle = count == 1
+            let items = count == 1
                 ? NSLocalizedString("1 item", comment: "")
                 : String(format: NSLocalizedString("%d items", comment: ""), count)
+            if layoutHasHeaders, let month = visibleMonthTitle {
+                subtitle = "\(month) · \(items)"
+            } else {
+                subtitle = items
+            }
         }
         if subtitleLabel.text != subtitle { subtitleLabel.text = subtitle }
         if subtitleLabel.isHidden != (subtitle == nil) { subtitleLabel.isHidden = subtitle == nil }
@@ -767,6 +798,13 @@ final class LibraryViewController: UICollectionViewController {
         dragPan.delegate = self
         collectionView.addGestureRecognizer(dragPan)
         dragSelectPanGesture = dragPan
+
+        let hold = UILongPressGestureRecognizer(target: self, action: #selector(handleDragSelect(_:)))
+        hold.minimumPressDuration = 0.3
+        hold.allowableMovement = .greatestFiniteMagnitude
+        hold.delegate = self
+        collectionView.addGestureRecognizer(hold)
+        dragSelectHoldGesture = hold
     }
 
     @objc private func handlePinch(_ gr: UIPinchGestureRecognizer) {
@@ -775,43 +813,102 @@ final class LibraryViewController: UICollectionViewController {
         else if gr.scale < 0.75, columnCount < 3 { columnCount += 1 }
     }
 
-    @objc private func handleDragSelect(_ gr: UIPanGestureRecognizer) {
+    @objc private func handleDragSelect(_ gr: UIGestureRecognizer) {
         guard isSelectMode else { return }
-        let location = gr.location(in: collectionView)
-
         switch gr.state {
         case .began:
-            dragSelectVisited.removeAll()
-            guard let indexPath = collectionView.indexPathForItem(at: location),
-                  let id = dataSource.itemIdentifier(for: indexPath) else { return }
+            guard activeDragSelectGesture == nil,
+                  let indexPath = collectionView.indexPathForItem(at: gr.location(in: collectionView)),
+                  let id = dataSource.itemIdentifier(for: indexPath),
+                  let anchor = dataSource.snapshot().indexOfItem(id) else { return }
+            activeDragSelectGesture = gr
+            dragSelectAnchor = anchor
+            dragSelectOriginal = selectedIDs
             dragSelectInitialState = !selectedIDs.contains(id)
-            dragSelectVisited.insert(id)
-            applyDragSelection(id: id)
+            // The finger now selects instead of scrolling; toggling the pan cancels any scroll in progress.
+            collectionView.panGestureRecognizer.isEnabled = false
+            collectionView.panGestureRecognizer.isEnabled = true
+            collectionView.isScrollEnabled = false
+            updateDragSelection()
+            startAutoScroll()
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
         case .changed:
-            guard dragSelectInitialState != nil,
-                  let indexPath = collectionView.indexPathForItem(at: location),
-                  let id = dataSource.itemIdentifier(for: indexPath),
-                  !dragSelectVisited.contains(id) else { return }
-            dragSelectVisited.insert(id)
-            applyDragSelection(id: id)
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            guard gr === activeDragSelectGesture else { return }
+            updateDragSelection()
 
         case .ended, .cancelled, .failed:
-            dragSelectInitialState = nil
-            dragSelectVisited.removeAll()
+            guard gr === activeDragSelectGesture else { return }
+            endDragSelection()
 
         default: break
         }
     }
 
-    private func applyDragSelection(id: UUID) {
-        guard let selecting = dragSelectInitialState else { return }
-        if selecting { selectedIDs.insert(id) } else { selectedIDs.remove(id) }
-        var snap = dataSource.snapshot()
-        snap.reconfigureItems([id])
+    /// Applies the anchor-to-finger range on top of the selection as it was when the drag began,
+    /// so moving back un-selects what the drag added and fast drags never skip prints.
+    private func updateDragSelection() {
+        guard let gr = activeDragSelectGesture, let anchor = dragSelectAnchor,
+              let selecting = dragSelectInitialState else { return }
+        let snapshot = dataSource.snapshot()
+        guard let indexPath = collectionView.indexPathForItem(at: gr.location(in: collectionView)),
+              let id = dataSource.itemIdentifier(for: indexPath),
+              let current = snapshot.indexOfItem(id) else { return }
+        let ids = snapshot.itemIdentifiers
+        let range = Set(ids[min(anchor, current)...max(anchor, current)])
+        let updated = selecting ? dragSelectOriginal.union(range) : dragSelectOriginal.subtracting(range)
+        guard updated != selectedIDs else { return }
+        let changed = updated.symmetricDifference(selectedIDs)
+        selectedIDs = updated
+        var snap = snapshot
+        snap.reconfigureItems(Array(changed))
         dataSource.apply(snap, animatingDifferences: false)
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+
+    private func endDragSelection() {
+        activeDragSelectGesture = nil
+        dragSelectAnchor = nil
+        dragSelectInitialState = nil
+        dragSelectOriginal = []
+        collectionView.isScrollEnabled = true
+        autoScrollLink?.invalidate()
+        autoScrollLink = nil
+    }
+
+    private func startAutoScroll() {
+        autoScrollLink?.invalidate()
+        autoScrollLastTimestamp = 0
+        let link = CADisplayLink(target: self, selector: #selector(autoScrollTick(_:)))
+        link.add(to: .main, forMode: .common)
+        autoScrollLink = link
+    }
+
+    /// Scrolls only while the finger is in the outer fifth of the visible grid, faster the
+    /// further it is from the centre, up to `maxSpeed` at the edge.
+    @objc private func autoScrollTick(_ link: CADisplayLink) {
+        guard let gr = activeDragSelectGesture else { return }
+        let elapsed = autoScrollLastTimestamp == 0 ? 0 : link.timestamp - autoScrollLastTimestamp
+        autoScrollLastTimestamp = link.timestamp
+
+        let insets = collectionView.adjustedContentInset
+        let visibleHeight = collectionView.bounds.height - insets.top - insets.bottom
+        guard visibleHeight > 0 else { return }
+        let fingerY = gr.location(in: collectionView).y - collectionView.contentOffset.y - insets.top
+        let half = visibleHeight / 2
+        let fromCenter = fingerY - half
+        let zoneStart = half * 0.6
+        guard abs(fromCenter) > zoneStart else { return }
+
+        let progress = min(1, (abs(fromCenter) - zoneStart) / (half - zoneStart))
+        let maxSpeed: CGFloat = 1600
+        let delta = (fromCenter > 0 ? 1 : -1) * maxSpeed * progress * progress * CGFloat(elapsed)
+        let minY = -insets.top
+        let maxY = max(minY, collectionView.contentSize.height + insets.bottom - collectionView.bounds.height)
+        let newY = min(max(collectionView.contentOffset.y + delta, minY), maxY)
+        guard newY != collectionView.contentOffset.y else { return }
+        collectionView.contentOffset.y = newY
+        updateDragSelection()
     }
 
     // MARK: - Navigation
@@ -1078,7 +1175,9 @@ final class LibraryViewController: UICollectionViewController {
     override func collectionView(_ collectionView: UICollectionView,
                                   contextMenuConfigurationForItemsAt indexPaths: [IndexPath],
                                   point: CGPoint) -> UIContextMenuConfiguration? {
-        guard let indexPath = indexPaths.first,
+        // In select mode a hold starts a drag selection instead.
+        guard !isSelectMode,
+              let indexPath = indexPaths.first,
               let id = dataSource.itemIdentifier(for: indexPath),
               let entry = entriesByID[id] else { return nil }
 
@@ -1161,15 +1260,21 @@ extension LibraryViewController: UICollectionViewDataSourcePrefetching {
 // MARK: - UIGestureRecognizerDelegate
 extension LibraryViewController: UIGestureRecognizerDelegate {
     func gestureRecognizerShouldBegin(_ gr: UIGestureRecognizer) -> Bool {
-        guard gr === dragSelectPanGesture else { return true }
-        guard isSelectMode else { return false }
-        let location = gr.location(in: collectionView)
-        return collectionView.indexPathForItem(at: location) != nil
+        guard gr === dragSelectPanGesture || gr === dragSelectHoldGesture else { return true }
+        guard isSelectMode,
+              collectionView.indexPathForItem(at: gr.location(in: collectionView)) != nil else { return false }
+        // A vertical swipe scrolls; a sideways one selects. A hold selects in any direction.
+        if let pan = gr as? UIPanGestureRecognizer {
+            let velocity = pan.velocity(in: collectionView)
+            return abs(velocity.x) > abs(velocity.y)
+        }
+        return true
     }
 
     func gestureRecognizer(_ gr: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
-        return gr === dragSelectPanGesture || other === dragSelectPanGesture
+        let ours: [UIGestureRecognizer?] = [dragSelectPanGesture, dragSelectHoldGesture]
+        return ours.contains { $0 === gr || $0 === other }
     }
 }
 
@@ -1239,7 +1344,7 @@ private final class MonthHeaderView: UICollectionReusableView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = UIColor.systemBackground.withAlphaComponent(0.94)
+        backgroundColor = .clear
         label.font = .preferredFont(forTextStyle: .headline)
         label.adjustsFontForContentSizeCategory = true
         label.numberOfLines = 0

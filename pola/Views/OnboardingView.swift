@@ -256,72 +256,27 @@ struct OnboardingView: View {
 
     // MARK: - Feature Visuals
 
+    /// Every film stock and lens on the reference photo, in two rows drifting in opposite directions.
     private var filterVisual: some View {
-        let arcOffsets: [CGFloat] = [-18, -6, 4, -6, -18]
-
-        return VStack(spacing: 16) {
-            // Film filter row — shows reference photo with each effect applied
-            HStack(spacing: 10) {
-                // One tile per arc position; the Classic pack has more stocks than fit.
-                ForEach(Array(filmFilters.prefix(arcOffsets.count).enumerated()), id: \.offset) { i, filter in
-                    VStack(spacing: 6) {
-                        ZStack {
-                            if let preview = filterPreviews[filter.name] {
-                                Image(uiImage: preview)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    .clipped()
-                            } else if let imageName = filter.imageName {
-                                Image(imageName)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .clipped()
-                            } else {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(filter.color.opacity(0.15))
-                                Circle()
-                                    .fill(filter.color)
-                                    .frame(width: 26, height: 26)
-                            }
-                        }
-                        .frame(width: 54, height: 54)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .shadow(color: filter.color.opacity(0.45), radius: 10)
-                        .offset(y: arcOffsets[i])
-
-                        Text(filter.name)
-                            .font(.system(size: 8, weight: .bold).width(.expanded))
-                            .foregroundStyle(.white.opacity(0.6))
-                            .offset(y: arcOffsets[i])
-                    }
-                }
-            }
-
-            // Weird Film row
-            HStack(spacing: 10) {
-                // Five fixed-size tiles is all that fits on the smallest iPhones.
-                ForEach(weirdFilters.prefix(5)) { filter in
-                    ZStack {
-                        if let preview = filterPreviews[filter.name] {
-                            Image(uiImage: preview)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .clipped()
-                        } else {
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(filter.color.opacity(0.15))
-                        }
-                    }
-                    .frame(width: 44, height: 44)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .shadow(color: filter.color.opacity(0.4), radius: 8)
-                }
-            }
+        VStack(spacing: 14) {
+            FilmMarqueeRow(tiles: marqueeTiles(filmFilters + instantFilters), reversed: false)
+            FilmMarqueeRow(tiles: marqueeTiles(weirdFilters) + lensTiles, reversed: true)
         }
-        .padding(.horizontal, 16)
+        .accessibilityHidden(true)
     }
+
+    private func marqueeTiles(_ filters: [FilmFilter]) -> [FilmMarqueeRow.Tile] {
+        filters.map { FilmMarqueeRow.Tile(name: $0.name, color: $0.color, imageName: $0.imageName,
+                                          preview: filterPreviews[$0.name]) }
+    }
+
+    private var lensTiles: [FilmMarqueeRow.Tile] {
+        Lens.allCases.map { FilmMarqueeRow.Tile(name: $0.name, color: $0.color, imageName: nil,
+                                                preview: filterPreviews[Self.lensPreviewKey($0)]) }
+    }
+
+    /// Lens previews share the dictionary with the stocks, so their keys can't clash with a stock name.
+    private static func lensPreviewKey(_ lens: Lens) -> String { "lens:\(lens.name)" }
 
     // MARK: - Helpers
 
@@ -329,7 +284,11 @@ struct OnboardingView: View {
         guard let ref = UIImage(named: "filter_reference") else { return }
         let size = CGSize(width: 120, height: 120)
         let small = ref.preparingThumbnail(of: size) ?? ref
-        filterPreviews = await renderFilmStockPreviews(from: small)
+        var previews = await renderFilmStockPreviews(from: small)
+        for (name, image) in await FilmStockPreviews.renderLenses(film: nil, from: small) {
+            if let lens = Lens(rawValue: name) { previews[Self.lensPreviewKey(lens)] = image }
+        }
+        filterPreviews = previews
     }
 
     private func background(topColor: Color, bottomColor: Color) -> some View {
@@ -405,4 +364,75 @@ struct OnboardingView: View {
 #Preview {
     OnboardingView(hasSeenOnboarding: .constant(false))
         .environment(PremiumManager.shared)
+}
+
+/// An endless row of film tiles. Stills under Reduce Motion.
+private struct FilmMarqueeRow: View {
+    struct Tile {
+        let name: String
+        let color: Color
+        let imageName: String?
+        let preview: UIImage?
+    }
+
+    let tiles: [Tile]
+    /// The bottom row drifts the other way.
+    let reversed: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private let tileSize: CGFloat = 58
+    private let spacing: CGFloat = 12
+    private let speed: Double = 18
+
+    var body: some View {
+        let cycle = (tileSize + spacing) * CGFloat(tiles.count)
+        TimelineView(.animation(paused: reduceMotion)) { context in
+            let phase = CGFloat((context.date.timeIntervalSinceReferenceDate * speed)
+                .truncatingRemainder(dividingBy: Double(max(cycle, 1))))
+            HStack(spacing: spacing) {
+                // Two copies, so one is always on screen while the other wraps around.
+                ForEach(0..<(tiles.count * 2), id: \.self) { index in
+                    tile(tiles[index % tiles.count])
+                }
+            }
+            .fixedSize()
+            .offset(x: reversed ? phase - cycle : -phase)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(height: tileSize + 20)
+        .clipped()
+        .mask {
+            LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.12),
+                                   .init(color: .black, location: 0.88), .init(color: .clear, location: 1)],
+                           startPoint: .leading, endPoint: .trailing)
+        }
+    }
+
+    private func tile(_ tile: Tile) -> some View {
+        VStack(spacing: 6) {
+            ZStack {
+                if let preview = tile.preview {
+                    Image(uiImage: preview)
+                        .resizable()
+                        .scaledToFill()
+                } else if let imageName = tile.imageName {
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    tile.color.opacity(0.2)
+                }
+            }
+            .frame(width: tileSize, height: tileSize)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .shadow(color: tile.color.opacity(0.4), radius: 8)
+
+            Text(verbatim: tile.name)
+                .font(.system(size: 8, weight: .bold).width(.expanded))
+                .foregroundStyle(.white.opacity(0.6))
+                .lineLimit(1)
+                .frame(width: tileSize + spacing)
+        }
+        .frame(width: tileSize)
+    }
 }
