@@ -34,6 +34,7 @@ struct ContentView: View {
     @State private var pendingEntry: PolaroidEntry? = nil
     @State private var pendingCaption: String = ""
     @State private var showCaptionInput = false
+    @State private var viewfinderSteadyHeight: CGFloat?
     @State private var showLibrary = false
     @State private var libraryDetailOpen = false
     @State private var librarySelectMode = false
@@ -446,6 +447,15 @@ struct ContentView: View {
                             Spacer()
                         }
                     }
+                    // The keyboard for the caption shrinks this layout, and the viewfinder fits whatever
+                    // height it gets. Its height from before the caption card is kept instead, so the
+                    // keyboard covers the viewfinder rather than squeezing it.
+                    .frame(height: usesBottomControls && showCaptionInput ? viewfinderSteadyHeight : nil,
+                           alignment: .top)
+                    .pinned(to: sidePanes?.axis == .vertical ? .center : .top)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                        if !showCaptionInput { viewfinderSteadyHeight = height }
+                    }
                     .viewfinderPane(sidePanes)
                 } else {
                     VStack(spacing: 8) {
@@ -522,8 +532,6 @@ struct ContentView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: sideBySide ? .trailing : .bottom)
                 }
             }
-            // The side layout keeps its shape while typing a caption; the compact one still lifts with the keyboard.
-            .ignoresSafeArea(.keyboard, edges: usesBottomControls ? [] : .all)
             .onGeometryChange(for: ControlPanes?.self) { proxy in
                 Self.panes(in: proxy)
             } action: { panes in
@@ -535,6 +543,10 @@ struct ContentView: View {
                         .ignoresSafeArea()
                 }
             }
+            // Only the compact layout's caption card lifts the screen with the keyboard. The print
+            // animation moves its own caption field, and the side layout keeps its shape, so the
+            // viewfinder and the bottom row stay where they are.
+            .ignoresSafeArea(.keyboard, edges: usesBottomControls && showCaptionInput ? [] : .all)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showSettings = true } label: {
@@ -1339,7 +1351,6 @@ struct ContentView: View {
     private var isPrinting: Bool {
         printingEntry != nil || !printingEntries.isEmpty
     }
-
     /// The print-and-develop animation for the latest capture: full screen on phones, inside the
     /// control pane in the wide layout. `height` shrinks the polaroid so the whole sequence fits.
     @ViewBuilder
@@ -1987,6 +1998,12 @@ nonisolated private struct ControlPanes: Equatable, Sendable {
 private extension View {
     /// Pins the view to the viewfinder pane of the wide layout. Without panes it lays out as before;
     /// the modifiers stay in place either way so the camera preview isn't rebuilt on fold changes.
+    /// Takes exactly the space offered and places the view in it, letting anything taller spill
+    /// past the bottom instead of growing the container and shifting it off-center.
+    func pinned(to alignment: Alignment) -> some View {
+        Color.clear.overlay(alignment: alignment) { self }
+    }
+
     func viewfinderPane(_ panes: ControlPanes?) -> some View {
         padding(panes == nil ? 0 : ControlPanes.viewfinderMargin)
             .frame(width: panes?.axis == .horizontal ? panes?.viewfinder : nil,
