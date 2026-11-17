@@ -695,6 +695,9 @@ struct ContentView: View {
                 cameraManager.resume()
             }
         }
+        .onChange(of: totalPhotosCount) { oldCount, newCount in
+            if newCount > oldCount { ReviewPrompter.recordCaptureDay() }
+        }
         .onChange(of: frontCameraMirrored) { _, mirrored in
             cameraManager.setFrontCameraMirrored(mirrored)
         }
@@ -1510,7 +1513,7 @@ struct ContentView: View {
             }
             return
         }
-        ReviewPrompter.requestIfAppropriate()
+        // No review prompt here: it would interrupt someone mid-shoot. Saves and shares ask instead.
     }
 
     private func handleDeepLink(_ url: URL) {

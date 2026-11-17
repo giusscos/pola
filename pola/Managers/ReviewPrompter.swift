@@ -1,11 +1,15 @@
 import StoreKit
 import UIKit
 
-/// Asks for an App Store review only after a positive moment (a finished print, a share, a save),
-/// once the user has some history with the app, and at most once per app version.
+/// Asks for an App Store review only after a save or a share, once the user has come back to
+/// shoot on a few different days, and at most once per app version. iOS shows the prompt at most
+/// three times a year, so asking someone who has only just started would waste one.
 enum ReviewPrompter {
-    private static let minimumPhotos = 3
+    private static let minimumPhotos = 10
+    private static let minimumCaptureDays = 3
     private static let lastVersionKey = "reviewRequestedForVersion"
+    private static let captureDaysKey = "reviewCaptureDays"
+    private static let lastCaptureDayKey = "reviewLastCaptureDay"
     /// Someone who just closed a paywall is the least likely to leave a good rating.
     private static let paywallCooldown: TimeInterval = 5 * 60
     private static var lastPaywallShown: Date?
@@ -18,9 +22,19 @@ enum ReviewPrompter {
         lastPaywallShown = .now
     }
 
+    /// Counts each calendar day with at least one capture.
+    static func recordCaptureDay() {
+        let defaults = UserDefaults.standard
+        let today = Calendar.current.startOfDay(for: .now)
+        if let lastDay = defaults.object(forKey: lastCaptureDayKey) as? Date, lastDay >= today { return }
+        defaults.set(today, forKey: lastCaptureDayKey)
+        defaults.set(defaults.integer(forKey: captureDaysKey) + 1, forKey: captureDaysKey)
+    }
+
     static func requestIfAppropriate() {
-        let photos = UserDefaults.standard.integer(forKey: "totalPhotosCount")
-        guard photos >= minimumPhotos else { return }
+        let defaults = UserDefaults.standard
+        guard defaults.integer(forKey: "totalPhotosCount") >= minimumPhotos,
+              defaults.integer(forKey: captureDaysKey) >= minimumCaptureDays else { return }
 
         if let lastPaywallShown, Date.now.timeIntervalSince(lastPaywallShown) < paywallCooldown { return }
 
