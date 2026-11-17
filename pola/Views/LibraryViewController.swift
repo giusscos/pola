@@ -935,7 +935,11 @@ final class LibraryViewController: UICollectionViewController {
         vc.modelContext = modelContext
 
         if #available(iOS 18.0, *) {
-            vc.preferredTransition = .zoom { [weak self] context in
+            let options = UIViewController.Transition.ZoomOptions()
+            options.interactiveDismissShouldBegin = { [weak vc] context in
+                vc?.shouldBeginInteractiveDismiss(at: context.location, velocity: context.velocity) ?? true
+            }
+            vc.preferredTransition = .zoom(options: options) { [weak self] context in
                 guard let self,
                       let detailVC = context.zoomedViewController as? PolaroidDetailViewController,
                       let entryID = detailVC.currentEntryID,

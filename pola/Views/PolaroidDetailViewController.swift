@@ -19,17 +19,29 @@ private final class DetailVideoState {
     }
 }
 
+@Observable
+private final class PageZoomState {
+    var isZoomedIn = false
+    /// The page's safe area, applied as padding: the hosting view ignores its own safe area
+    /// because zooming scales it, which would otherwise make SwiftUI relayout mid-pinch.
+    var insets = EdgeInsets()
+}
+
 private struct DetailPageView: View {
     @Bindable var entry: PolaroidEntry
     let store: PhotoStore
     let videoState: DetailVideoState
+    let zoomState: PageZoomState
     @Environment(\.displayScale) private var displayScale
     @State private var pageSize: CGSize = .zero
     /// Downsampled to the screen; the full photo is only decoded for export.
     @State private var screenImage: UIImage?
 
+    /// The longest side of the page already covers about twice the print's width, so doubling it
+    /// while zoomed reaches the full 12 MP photo without decoding it for every page.
     private var screenPixelSize: Int {
-        Int((max(pageSize.width, pageSize.height) * displayScale).rounded(.up))
+        let zoomMultiplier: CGFloat = zoomState.isZoomedIn ? 2 : 1
+        return Int((max(pageSize.width, pageSize.height) * displayScale * zoomMultiplier).rounded(.up))
     }
 
     var body: some View {
@@ -62,6 +74,79 @@ private struct DetailPageView: View {
             guard screenPixelSize > 0 else { return }
             screenImage = await entry.downsampledImage(maxPixelSize: CGFloat(screenPixelSize))
         }
+        .padding(zoomState.insets)
+    }
+}
+
+/// One detail page inside a scroll view, so the print can be pinched and panned like in Photos.
+/// Double-tap stays the print's flip, so zooming is pinch-only.
+private final class ZoomablePageViewController: UIViewController, UIScrollViewDelegate {
+    private static let maximumZoomScale: CGFloat = 4
+
+    let index: Int
+    private let zoomState = PageZoomState()
+    private let scrollView = UIScrollView()
+    private let hostingController: UIHostingController<DetailPageView>
+
+    var isZoomedIn: Bool { zoomState.isZoomedIn }
+
+    init(index: Int, entry: PolaroidEntry, store: PhotoStore, videoState: DetailVideoState) {
+        self.index = index
+        hostingController = UIHostingController(rootView: DetailPageView(
+            entry: entry, store: store, videoState: videoState, zoomState: zoomState
+        ))
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .clear
+
+        scrollView.frame = view.bounds
+        scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        scrollView.delegate = self
+        scrollView.minimumZoomScale = 1
+        scrollView.maximumZoomScale = Self.maximumZoomScale
+        scrollView.bouncesZoom = true
+        // Without edge bounce a zoomed print hands the swipe to the page view at its edge.
+        scrollView.bounces = false
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.decelerationRate = .fast
+        view.addSubview(scrollView)
+
+        hostingController.safeAreaRegions = []
+        hostingController.view.backgroundColor = .clear
+        addChild(hostingController)
+        scrollView.addSubview(hostingController.view)
+        hostingController.didMove(toParent: self)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard hostingController.view.bounds.size != scrollView.bounds.size else { return }
+        scrollView.setZoomScale(scrollView.minimumZoomScale, animated: false)
+        hostingController.view.frame = scrollView.bounds
+        scrollView.contentSize = scrollView.bounds.size
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        let insets = view.safeAreaInsets
+        zoomState.insets = EdgeInsets(top: insets.top, leading: insets.left,
+                                      bottom: insets.bottom, trailing: insets.right)
+    }
+
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        hostingController.view
+    }
+
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        let zoomedIn = scrollView.zoomScale > scrollView.minimumZoomScale + 0.01
+        if zoomState.isZoomedIn != zoomedIn { zoomState.isZoomedIn = zoomedIn }
     }
 }
 
@@ -85,12 +170,14 @@ final class PolaroidDetailViewController: UIViewController {
             updateNavigationTitle()
             updateToolbar()
             manageDevelopment()
+            thumbnailStrip.setCurrentIndex(currentIndex, animated: true)
             if let id = currentEntryID { onCurrentIndexChange?(id) }
         }
     }
 
     private let videoState = DetailVideoState()
     private var pageVC: UIPageViewController!
+    private let thumbnailStrip = DetailThumbnailStrip()
     private var isSaving = false
     private var saveDidSucceed = false
 
@@ -181,8 +268,10 @@ final class PolaroidDetailViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         setupTitleView()
+        thumbnailStrip.entries = entries
         currentIndex = startIndex
         setupPageViewController()
+        setupThumbnailStrip()
         updateNavigationTitle()
         updateToolbar()
     }
@@ -224,6 +313,30 @@ final class PolaroidDetailViewController: UIViewController {
         observePageScroll()
     }
 
+    private func setupThumbnailStrip() {
+        let gap: CGFloat = 8
+        thumbnailStrip.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(thumbnailStrip)
+        NSLayoutConstraint.activate([
+            thumbnailStrip.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            thumbnailStrip.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            thumbnailStrip.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -gap),
+            thumbnailStrip.heightAnchor.constraint(equalToConstant: DetailThumbnailStrip.height)
+        ])
+        // The pages lay the print out above the strip rather than behind it.
+        pageVC.additionalSafeAreaInsets.bottom = DetailThumbnailStrip.height + gap * 2
+        thumbnailStrip.onSelect = { [weak self] index in self?.showPage(at: index) }
+    }
+
+    /// Jumps straight to a print picked in the thumbnail strip, without the page-turn animation.
+    private func showPage(at index: Int) {
+        guard index != currentIndex, index < entries.count else { return }
+        let direction: UIPageViewController.NavigationDirection = index > currentIndex ? .forward : .reverse
+        currentIndex = index
+        pageVC.setViewControllers([makePage(for: index)], direction: direction, animated: false)
+        videoState.isPlaying = true
+    }
+
     private func observePageScroll() {
         guard let sv = pageVC.view.subviews.compactMap({ $0 as? UIScrollView }).first else { return }
         contentOffsetObservation = sv.observe(\.contentOffset, options: .new) { [weak self] scrollView, _ in
@@ -241,14 +354,26 @@ final class PolaroidDetailViewController: UIViewController {
         stack.alpha = 1 - magnitude * 0.72
     }
 
-    private func makePage(for index: Int) -> UIHostingController<AnyView> {
-        let entry = entries[index]
-        let vc = UIHostingController(rootView: AnyView(
-            DetailPageView(entry: entry, store: store, videoState: videoState)
-        ))
+    private func makePage(for index: Int) -> UIViewController {
+        let vc = ZoomablePageViewController(index: index, entry: entries[index], store: store, videoState: videoState)
         vc.view.tag = index
-        vc.view.backgroundColor = .clear
         return vc
+    }
+
+    private var isCurrentPageZoomedIn: Bool {
+        (pageVC?.viewControllers?.first as? ZoomablePageViewController)?.isZoomedIn ?? false
+    }
+
+    /// Asked by the library's zoom transition before a drag closes this view. Sideways drags
+    /// belong to paging and the thumbnail strip, so only a drag from the left edge or a clearly
+    /// downward one closes it, and never while the print is zoomed in.
+    func shouldBeginInteractiveDismiss(at location: CGPoint, velocity: CGVector) -> Bool {
+        guard !isCurrentPageZoomedIn else { return false }
+        guard !thumbnailStrip.frame.contains(location) else { return false }
+        let backSwipeEdgeWidth: CGFloat = 24
+        if location.x <= backSwipeEdgeWidth { return true }
+        let isMostlyDownward = velocity.dy > 0 && velocity.dy > abs(velocity.dx) * 2
+        return isMostlyDownward
     }
 
     // MARK: - Navigation title
@@ -464,6 +589,7 @@ final class PolaroidDetailViewController: UIViewController {
             modelContext.delete(entry)
         }
         entries.remove(at: currentIndex)
+        thumbnailStrip.entries = entries
 
         guard !entries.isEmpty else { navigationController?.popViewController(animated: true); return }
         currentIndex = target
